@@ -1,0 +1,381 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+enum ProjectStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  ARCHIVED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskRecurrenceType {
+  NONE
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum ActivityAction {
+  EMPLOYEE_CREATED
+  EMPLOYEE_UPDATED
+  EMPLOYEE_STATUS_CHANGED
+
+  PROJECT_CREATED
+  PROJECT_UPDATED
+  PROJECT_DELETED
+  PROJECT_STATUS_CHANGED
+
+  PROJECT_MEMBER_ADDED
+  PROJECT_MEMBER_REMOVED
+
+  TASK_CREATED
+  TASK_UPDATED
+  TASK_DELETED
+  TASK_ASSIGNED
+  TASK_STATUS_CHANGED
+  TASK_PRIORITY_CHANGED
+  TASK_DEADLINE_CHANGED
+  TASK_COMPLETED
+
+  COMMENT_CREATED
+
+  ATTACHMENT_ADDED
+  ATTACHMENT_DELETED
+
+  NOTIFICATION_CREATED
+  NOTIFICATION_READ
+}
+
+enum ActivityEntityType {
+  USER
+  PROJECT
+  TASK
+  COMMENT
+  ATTACHMENT
+  NOTIFICATION
+  SYSTEM
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_DEADLINE_NEAR
+  TASK_COMPLETED
+  PROJECT_STATUS_CHANGED
+}
+
+model User {
+  id           String  @id @default(uuid()) @db.Uuid
+  name         String  @db.VarChar(120)
+  email        String  @unique @db.VarChar(320)
+  passwordHash String
+  role         Role    @default(EMPLOYEE)
+  isActive     Boolean @default(true)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  sessions Session[]
+
+  createdProjects Project[]       @relation("ProjectCreatedBy")
+  projectMembers  ProjectMember[]
+
+  createdTasks  Task[] @relation("TaskCreatedBy")
+  assignedTasks Task[] @relation("TaskAssignedTo")
+
+  comments TaskComment[]
+
+  uploadedAttachments TaskAttachment[]
+
+  completedTaskOccurrences TaskOccurrence[] @relation("TaskOccurrenceCompletedBy")
+
+  activityLogs ActivityLog[]
+
+  notifications Notification[]
+
+  @@index([role])
+  @@index([isActive])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model Session {
+  id String @id @default(uuid()) @db.Uuid
+
+  tokenHash String @unique @db.VarChar(128)
+
+  userId String @db.Uuid
+
+  expiresAt DateTime @db.Timestamptz(3)
+
+  lastAccessedAt DateTime @default(now()) @db.Timestamptz(3)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([userId, expiresAt])
+  @@map("sessions")
+}
+
+model Project {
+  id          String  @id @default(uuid()) @db.Uuid
+  title       String  @db.VarChar(200)
+  description String? @db.Text
+
+  status ProjectStatus @default(PLANNED)
+
+  startDate DateTime @db.Date
+  deadline  DateTime @db.Date
+
+  createdById String @db.Uuid
+
+  createdBy User @relation("ProjectCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  members ProjectMember[]
+
+  tasks Task[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([status])
+  @@index([createdById])
+  @@index([deadline])
+  @@index([status, deadline])
+  @@index([createdAt])
+  @@map("projects")
+}
+
+model ProjectMember {
+  id String @id @default(uuid()) @db.Uuid
+
+  projectId String @db.Uuid
+  userId    String @db.Uuid
+
+  joinedAt DateTime @default(now()) @db.Timestamptz(3)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([projectId])
+  @@index([userId])
+  @@index([userId, projectId])
+  @@map("project_members")
+}
+
+model Task {
+  id String @id @default(uuid()) @db.Uuid
+
+  projectId String @db.Uuid
+
+  title String @db.VarChar(255)
+
+  description String? @db.Text
+
+  status   TaskStatus   @default(TODO)
+  priority TaskPriority @default(MEDIUM)
+
+  assignedToId String @db.Uuid
+  createdById  String @db.Uuid
+
+  deadline    DateTime  @db.Timestamptz(3)
+  completedAt DateTime? @db.Timestamptz(3)
+
+  isRecurring          Boolean            @default(false)
+  recurrenceType       TaskRecurrenceType @default(NONE)
+  recurrenceStartDate  DateTime?          @db.Date
+  recurrenceEndDate    DateTime?          @db.Date
+  recurrenceWeekdays   Int[]              @default([])
+  recurrenceDayOfMonth Int?
+  recurrenceActive     Boolean            @default(true)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  assignedTo User @relation("TaskAssignedTo", fields: [assignedToId], references: [id], onDelete: Restrict)
+
+  createdBy User @relation("TaskCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  comments TaskComment[]
+
+  attachments TaskAttachment[]
+
+  occurrences TaskOccurrence[]
+
+  @@index([projectId])
+  @@index([assignedToId])
+  @@index([createdById])
+  @@index([status])
+  @@index([priority])
+  @@index([deadline])
+  @@index([createdAt])
+  @@index([assignedToId, status])
+  @@index([assignedToId, deadline])
+  @@index([projectId, status])
+  @@index([projectId, deadline])
+  @@index([isRecurring])
+  @@index([recurrenceActive])
+  @@index([recurrenceType])
+  @@map("tasks")
+}
+
+model TaskOccurrence {
+  id String @id @default(uuid()) @db.Uuid
+
+  taskId String @db.Uuid
+
+  occurrenceDate DateTime @db.Date
+
+  completed   Boolean   @default(false)
+  completedAt DateTime? @db.Timestamptz(3)
+
+  completedById String? @db.Uuid
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  completedBy User? @relation("TaskOccurrenceCompletedBy", fields: [completedById], references: [id], onDelete: SetNull)
+
+  @@unique([taskId, occurrenceDate])
+  @@index([taskId])
+  @@index([occurrenceDate])
+  @@index([completedById])
+  @@index([taskId, occurrenceDate])
+  @@map("task_occurrences")
+}
+
+model TaskComment {
+  id String @id @default(uuid()) @db.Uuid
+
+  taskId String @db.Uuid
+  userId String @db.Uuid
+
+  content String @db.Text
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([taskId])
+  @@index([taskId, createdAt])
+  @@index([userId])
+  @@map("task_comments")
+}
+
+model TaskAttachment {
+  id String @id @default(uuid()) @db.Uuid
+
+  taskId       String @db.Uuid
+  uploadedById String @db.Uuid
+
+  fileName String @db.VarChar(255)
+
+  storageKey String @unique @db.VarChar(500)
+
+  mimeType String? @db.VarChar(150)
+
+  sizeBytes BigInt
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  uploadedBy User @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+
+  @@index([taskId])
+  @@index([uploadedById])
+  @@index([createdAt])
+  @@map("task_attachments")
+}
+
+model ActivityLog {
+  id String @id @default(uuid()) @db.Uuid
+
+  userId String? @db.Uuid
+
+  action ActivityAction
+
+  entityType ActivityEntityType
+
+  entityId String? @db.Uuid
+
+  metadata Json?
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@map("activity_logs")
+}
+
+model Notification {
+  id String @id @default(uuid()) @db.Uuid
+
+  userId String @db.Uuid
+
+  type NotificationType
+
+  title String @db.VarChar(200)
+
+  message String @db.Text
+
+  entityType ActivityEntityType?
+
+  entityId String? @db.Uuid
+
+  readAt DateTime? @db.Timestamptz(3)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@index([type])
+  @@index([createdAt])
+  @@map("notifications")
+}
