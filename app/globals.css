@@ -1,3 +1,4 @@
+
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -8,10 +9,14 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-geist-sans);
+  /* Typography */
+  --font-sans: "Estedad Variable", Tahoma, Arial, sans-serif;
+  --font-heading: "Estedad Variable", Tahoma, Arial, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    monospace;
 
+  /* Sidebar */
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -21,36 +26,44 @@
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
 
+  /* Charts */
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
 
+  /* Base */
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
-
   --color-destructive: var(--destructive);
 
+  /* Accent */
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
 
+  /* Muted */
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
 
+  /* Secondary */
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
 
+  /* Primary */
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
 
+  /* Popover */
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
 
+  /* Card */
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
 
+  /* Radius scale */
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -59,6 +72,10 @@
   --radius-3xl: calc(var(--radius) * 2.1);
   --radius-4xl: calc(var(--radius) * 2.6);
 }
+
+/* =========================================================
+   LIGHT THEME
+   ========================================================= */
 
 :root {
   --background: oklch(0.965 0.008 250);
@@ -96,6 +113,7 @@
 
   --radius: 1rem;
 
+  /* Sidebar */
   --sidebar: oklch(1 0 0 / 0.64);
   --sidebar-foreground: oklch(0.19 0.025 250);
   --sidebar-primary: oklch(0.26 0.045 250);
@@ -105,6 +123,7 @@
   --sidebar-border: oklch(0.78 0.018 250 / 0.35);
   --sidebar-ring: oklch(0.42 0.08 250 / 0.45);
 
+  /* Glass */
   --glass-white: rgb(255 255 255 / 0.62);
   --glass-white-strong: rgb(255 255 255 / 0.82);
   --glass-border: rgb(255 255 255 / 0.62);
@@ -118,6 +137,10 @@
     0 28px 70px rgb(15 23 42 / 0.13),
     0 8px 24px rgb(15 23 42 / 0.08);
 }
+
+/* =========================================================
+   DARK THEME
+   ========================================================= */
 
 .dark {
   --background: oklch(0.15 0.02 250);
@@ -153,6 +176,7 @@
   --chart-4: oklch(0.72 0.2 315);
   --chart-5: oklch(0.75 0.19 25);
 
+  /* Sidebar */
   --sidebar: oklch(0.18 0.025 250 / 0.72);
   --sidebar-foreground: oklch(0.96 0.01 250);
   --sidebar-primary: oklch(0.86 0.03 250);
@@ -163,6 +187,10 @@
   --sidebar-ring: oklch(0.74 0.04 250 / 0.45);
 }
 
+/* =========================================================
+   BASE
+   ========================================================= */
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -170,36 +198,68 @@
 
   html {
     @apply min-h-full font-sans antialiased;
+
     direction: rtl;
     text-rendering: optimizeLegibility;
     overflow-x: clip;
     overflow-y: auto;
+
+    font-family:
+      "Estedad Variable",
+      Tahoma,
+      Arial,
+      sans-serif;
+
+    font-synthesis: none;
   }
 
   body {
     @apply min-h-screen bg-background text-foreground;
+
+    margin: 0;
+    min-width: 320px;
+
     font-family:
-      var(--font-geist-sans),
+      "Estedad Variable",
       Tahoma,
       Arial,
       sans-serif;
+
+    font-weight: 400;
+
     font-feature-settings:
       "kern" 1,
       "liga" 1,
-      "calt" 1;
+      "calt" 1,
+      "locl" 1;
+
+    font-variant-numeric: proportional-nums;
+
     overflow-x: clip;
     overflow-y: auto;
   }
 
-  ::selection {
-    background: rgb(51 65 85 / 0.16);
-    color: inherit;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family:
+      "Estedad Variable",
+      Tahoma,
+      Arial,
+      sans-serif;
+
+    font-weight: 700;
+    text-wrap: balance;
   }
 
   button,
   input,
   textarea,
-  select {
+  select,
+  option {
     font: inherit;
   }
 
@@ -207,15 +267,47 @@
   a {
     -webkit-tap-highlight-color: transparent;
   }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  img,
+  svg,
+  video,
+  canvas {
+    max-width: 100%;
+  }
+
+  img {
+    height: auto;
+  }
+
+  ::selection {
+    background: rgb(51 65 85 / 0.16);
+    color: inherit;
+  }
 }
 
+/* =========================================================
+   COMPONENTS
+   ========================================================= */
+
 @layer components {
+  /* -------------------------------------------------------
+     Main application background
+     ------------------------------------------------------- */
+
   .app-background {
     position: relative;
     isolation: isolate;
+
     min-height: 100vh;
     min-height: 100dvh;
+
     overflow: visible;
+
     background:
       radial-gradient(
         circle at 8% 8%,
@@ -242,11 +334,16 @@
 
   .app-background::before {
     content: "";
+
     position: fixed;
     inset: 0;
+
     z-index: -2;
+
     pointer-events: none;
+
     opacity: 0.34;
+
     background-image:
       linear-gradient(
         rgb(255 255 255 / 0.35) 1px,
@@ -257,7 +354,9 @@
         rgb(255 255 255 / 0.35) 1px,
         transparent 1px
       );
+
     background-size: 52px 52px;
+
     mask-image: linear-gradient(
       to bottom,
       black,
@@ -267,10 +366,14 @@
 
   .app-background::after {
     content: "";
+
     position: fixed;
     inset: 0;
+
     z-index: -1;
+
     pointer-events: none;
+
     background:
       radial-gradient(
         circle at 50% -15%,
@@ -284,19 +387,29 @@
       );
   }
 
+  /* -------------------------------------------------------
+     Glass cards
+     ------------------------------------------------------- */
+
   .glass-card {
     position: relative;
+
     overflow: hidden;
+
     border: 1px solid var(--glass-border);
+
     background:
       linear-gradient(
         135deg,
         rgb(255 255 255 / 0.76),
         rgb(255 255 255 / 0.48)
       );
+
     box-shadow: var(--glass-shadow);
+
     backdrop-filter: blur(26px) saturate(155%);
     -webkit-backdrop-filter: blur(26px) saturate(155%);
+
     transition:
       border-color 220ms ease,
       box-shadow 220ms ease,
@@ -306,15 +419,19 @@
 
   .glass-card::before {
     content: "";
+
     position: absolute;
     inset: 0;
+
     pointer-events: none;
+
     background:
       linear-gradient(
         135deg,
         rgb(255 255 255 / 0.58),
         transparent 35%
       );
+
     opacity: 0.8;
   }
 
@@ -327,34 +444,49 @@
     box-shadow: var(--glass-shadow-hover);
   }
 
+  /* -------------------------------------------------------
+     Strong glass
+     ------------------------------------------------------- */
+
   .glass-strong {
     border: 1px solid rgb(255 255 255 / 0.72);
+
     background:
       linear-gradient(
         145deg,
         rgb(255 255 255 / 0.9),
         rgb(255 255 255 / 0.66)
       );
+
     box-shadow:
       0 26px 80px rgb(15 23 42 / 0.1),
       0 8px 24px rgb(15 23 42 / 0.05);
+
     backdrop-filter: blur(32px) saturate(165%);
     -webkit-backdrop-filter: blur(32px) saturate(165%);
   }
 
+  /* -------------------------------------------------------
+     Glass input / field
+     ------------------------------------------------------- */
+
   .glass-field {
     border: 1px solid rgb(148 163 184 / 0.24);
+
     background:
       linear-gradient(
         145deg,
         rgb(255 255 255 / 0.66),
         rgb(255 255 255 / 0.46)
       );
+
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 0.72),
       0 3px 14px rgb(15 23 42 / 0.035);
+
     backdrop-filter: blur(16px) saturate(145%);
     -webkit-backdrop-filter: blur(16px) saturate(145%);
+
     transition:
       border-color 180ms ease,
       background-color 180ms ease,
@@ -364,7 +496,9 @@
   .glass-field:focus,
   .glass-field:focus-visible {
     border-color: rgb(100 116 139 / 0.42);
+
     background: rgb(255 255 255 / 0.78);
+
     box-shadow:
       0 0 0 4px rgb(148 163 184 / 0.11),
       inset 0 1px 0 rgb(255 255 255 / 0.82),
@@ -375,19 +509,34 @@
     background: rgb(226 232 240 / 0.3);
   }
 
+  /* -------------------------------------------------------
+     Glass chips
+     ------------------------------------------------------- */
+
   .glass-chip {
     border: 1px solid rgb(255 255 255 / 0.7);
+
     background: rgb(255 255 255 / 0.48);
+
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 0.74),
       0 3px 10px rgb(15 23 42 / 0.035);
+
     backdrop-filter: blur(12px) saturate(145%);
     -webkit-backdrop-filter: blur(12px) saturate(145%);
   }
 
+  /* -------------------------------------------------------
+     Divider
+     ------------------------------------------------------- */
+
   .glass-divider {
     border-color: rgb(148 163 184 / 0.12);
   }
+
+  /* -------------------------------------------------------
+     Sidebar
+     ------------------------------------------------------- */
 
   .glass-sidebar {
     background:
@@ -396,28 +545,42 @@
         rgb(255 255 255 / 0.82),
         rgb(255 255 255 / 0.52)
       );
+
     border-color: rgb(255 255 255 / 0.72);
+
     box-shadow:
       16px 0 55px rgb(15 23 42 / 0.07),
       inset 0 1px 0 rgb(255 255 255 / 0.72);
+
     backdrop-filter: blur(28px) saturate(160%);
     -webkit-backdrop-filter: blur(28px) saturate(160%);
   }
 
+  /* -------------------------------------------------------
+     Glass icon
+     ------------------------------------------------------- */
+
   .glass-icon {
     border: 1px solid rgb(255 255 255 / 0.72);
+
     background:
       linear-gradient(
         145deg,
         rgb(255 255 255 / 0.78),
         rgb(255 255 255 / 0.44)
       );
+
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 0.78),
       0 8px 20px rgb(15 23 42 / 0.05);
+
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
   }
+
+  /* -------------------------------------------------------
+     Grid
+     ------------------------------------------------------- */
 
   .soft-grid {
     background-image:
@@ -430,8 +593,13 @@
         rgb(148 163 184 / 0.07) 1px,
         transparent 1px
       );
+
     background-size: 24px 24px;
   }
+
+  /* -------------------------------------------------------
+     Hover elevation
+     ------------------------------------------------------- */
 
   .elevated-hover {
     transition:
@@ -445,8 +613,13 @@
     box-shadow: var(--glass-shadow-hover);
   }
 
+  /* -------------------------------------------------------
+     Thin scrollbar
+     ------------------------------------------------------- */
+
   .thin-scrollbar {
     scrollbar-width: thin;
+
     scrollbar-color:
       rgb(100 116 139 / 0.24)
       transparent;
@@ -471,13 +644,25 @@
   }
 }
 
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
 @media (max-width: 1023px) {
   .app-background::before {
     background-size: 42px 42px;
   }
 }
 
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
   *,
   *::before,
   *::after {
@@ -487,3 +672,4 @@
     animation-iteration-count: 1 !important;
   }
 }
+
