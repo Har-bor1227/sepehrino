@@ -19,12 +19,12 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "سپهرینو | مدیریت پروژه و وظایف",
-    template: "%s | سپهرینو",
+    default: "فرتاک تسکینگ | مدیریت پروژه و وظایف",
+    template: "%s | فرتاک تسکینگ",
   },
   description:
-    "سامانه مدیریت پروژه، وظایف، کارمندان و گزارش‌های سپهرینو",
-  applicationName: "سپهرینو",
+    "سامانه مدیریت پروژه، وظایف، کارمندان و گزارش‌های فرتاک تسکینگ",
+  applicationName: "فرتاک تسکینگ",
 };
 
 export const viewport: Viewport = {

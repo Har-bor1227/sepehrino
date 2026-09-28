@@ -49,7 +49,7 @@ export default function LoginPage() {
               </div>
 
               <h1 className="mt-6 text-4xl font-extrabold tracking-tight">
-                سپهرینو
+                فرتاک تسکینگ
               </h1>
 
               <p className="mt-3 max-w-sm text-sm leading-7 text-white/60">
@@ -100,7 +100,7 @@ export default function LoginPage() {
                 </div>
 
                 <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900">
-                  سپهرینو
+                  فرتاک تسکینگ
                 </h1>
 
                 <p className="mt-2 text-sm text-slate-400">

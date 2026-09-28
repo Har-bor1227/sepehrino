@@ -211,7 +211,7 @@ export function AdminSidebar({
 
                 <div className="min-w-0">
                   <p className="text-sm font-extrabold tracking-tight text-slate-900">
-                    سپهرینو
+                    فرتاک تسکینگ
                   </p>
 
                   <p className="mt-1 text-[11px] font-medium text-slate-400">
@@ -259,7 +259,7 @@ export function AdminSidebar({
 
             <div className="min-w-0 flex-1">
               <p className="text-sm font-extrabold tracking-tight text-slate-900">
-                سپهرینو
+                فرتاک تسکینگ
               </p>
 
               <p className="mt-0.5 truncate text-[11px] font-medium text-slate-400">
@@ -295,7 +295,7 @@ export function AdminSidebar({
 
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-extrabold text-slate-900">
-                      سپهرینو
+                      فرتاک تسکینگ
                     </p>
 
                     <p className="mt-1 truncate text-[11px] font-medium text-slate-400">
