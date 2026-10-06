@@ -73,6 +73,32 @@ function formatDateTime(date: Date) {
   }).format(date);
 }
 
+function getActivityHref(
+  entityType: string,
+  entityId: string | null,
+) {
+  if (!entityId) {
+    return null;
+  }
+
+  switch (entityType) {
+    case "TASK":
+      return `/admin/tasks/${entityId}`;
+
+    case "PROJECT":
+      return `/admin/projects/${entityId}`;
+
+    case "USER":
+      return `/admin/employees/${entityId}`;
+
+    case "NOTIFICATION":
+      return "/admin/notifications";
+
+    default:
+      return null;
+  }
+}
+
 function getProjectStatusClass(
   status: keyof typeof PROJECT_STATUS_LABELS,
 ) {
@@ -870,44 +896,77 @@ export default async function AdminDashboardPage() {
           ) : (
             <div className="divide-y divide-white/30">
               {data.recentActivities.map(
-                (activity) => (
-                  <div
-                    key={activity.id}
-                    className="flex flex-col gap-3 p-5 transition hover:bg-white/16 sm:flex-row sm:items-center sm:justify-between sm:p-6"
-                  >
-                    <div className="flex min-w-0 items-start gap-3">
-                      <div className="glass-icon mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl">
-                        <Activity className="size-4 text-slate-500" />
+                (activity) => {
+                  const activityHref =
+                    getActivityHref(
+                      activity.entityType,
+                      activity.entityId,
+                    );
+
+                  const activityContent = (
+                    <>
+                      <div className="flex min-w-0 items-start gap-3">
+                        <div className="glass-icon mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl transition group-hover:bg-white/70">
+                          <Activity className="size-4 text-slate-500 transition group-hover:text-slate-700" />
+                        </div>
+
+                        <div className="min-w-0">
+                          <p className="font-bold text-slate-700 transition group-hover:text-slate-900">
+                            {ACTION_LABELS[
+                              activity.action
+                            ] ??
+                              activity.action}
+                          </p>
+
+                          <p className="mt-1 truncate text-sm text-slate-400">
+                            توسط{" "}
+                            <span className="font-bold text-slate-600">
+                              {activity.user?.name ??
+                                "کاربر حذف‌شده"}
+                            </span>
+                          </p>
+                        </div>
                       </div>
 
-                      <div className="min-w-0">
-                        <p className="font-bold text-slate-700">
-                          {ACTION_LABELS[
-                            activity.action
-                          ] ??
-                            activity.action}
-                        </p>
+                      <div className="flex shrink-0 items-center gap-3">
+                        <time
+                          dateTime={activity.createdAt.toISOString()}
+                          className="text-xs font-medium text-slate-400"
+                        >
+                          {formatDateTime(
+                            activity.createdAt,
+                          )}
+                        </time>
 
-                        <p className="mt-1 truncate text-sm text-slate-400">
-                          توسط{" "}
-                          <span className="font-bold text-slate-600">
-                            {activity.user?.name ??
-                              "کاربر حذف‌شده"}
-                          </span>
-                        </p>
+                        {activityHref ? (
+                          <ArrowLeft className="size-4 text-slate-300 transition group-hover:-translate-x-1 group-hover:text-slate-600" />
+                        ) : null}
                       </div>
-                    </div>
+                    </>
+                  );
 
-                    <time
-                      dateTime={activity.createdAt.toISOString()}
-                      className="shrink-0 text-xs font-medium text-slate-400"
+                  if (activityHref) {
+                    return (
+                      <Link
+                        key={activity.id}
+                        href={activityHref}
+                        className="group flex flex-col gap-3 p-5 transition hover:bg-white/25 sm:flex-row sm:items-center sm:justify-between sm:p-6"
+                        aria-label={`مشاهده ${ACTION_LABELS[activity.action] ?? activity.action}`}
+                      >
+                        {activityContent}
+                      </Link>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={activity.id}
+                      className="flex flex-col gap-3 p-5 transition hover:bg-white/16 sm:flex-row sm:items-center sm:justify-between sm:p-6"
                     >
-                      {formatDateTime(
-                        activity.createdAt,
-                      )}
-                    </time>
-                  </div>
-                ),
+                      {activityContent}
+                    </div>
+                  );
+                },
               )}
             </div>
           )}

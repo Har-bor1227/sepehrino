@@ -15,6 +15,7 @@ import {
   Search,
   Users,
   X,
+  Zap,
 } from "lucide-react";
 
 type AdminSidebarProps = {
@@ -27,6 +28,11 @@ const navigationItems = [
     href: "/admin/dashboard",
     label: "داشبورد",
     icon: LayoutDashboard,
+  },
+  {
+    href: "/admin/quick-access",
+    label: "دسترسی سریع",
+    icon: Zap,
   },
   {
     href: "/admin/employees",

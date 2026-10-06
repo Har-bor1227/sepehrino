@@ -4,6 +4,8 @@ import {
   CalendarDays,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Circle,
   Clock3,
   ListChecks,
@@ -41,7 +43,10 @@ type SearchParams = {
   status?: string;
   priority?: string;
   sort?: string;
+  page?: string;
 };
+
+const PAGE_SIZE = 12;
 
 const STATUS_LABELS: Record<
   TaskStatus,
@@ -131,13 +136,13 @@ function getStatusClass(
 ) {
   const classes = {
     TODO:
-      "border-slate-200/55 bg-slate-500/8 text-slate-700",
+      "border-slate-200/70 bg-slate-50 text-slate-700",
     IN_PROGRESS:
-      "border-blue-200/55 bg-blue-50/50 text-blue-700",
+      "border-blue-200/70 bg-blue-50 text-blue-700",
     COMPLETED:
-      "border-emerald-200/55 bg-emerald-50/50 text-emerald-700",
+      "border-emerald-200/70 bg-emerald-50 text-emerald-700",
     CANCELLED:
-      "border-red-200/55 bg-red-50/50 text-red-700",
+      "border-red-200/70 bg-red-50 text-red-700",
   };
 
   return classes[status];
@@ -148,13 +153,13 @@ function getPriorityClass(
 ) {
   const classes = {
     LOW:
-      "border-slate-200/55 bg-slate-500/8 text-slate-600",
+      "border-slate-200/70 bg-slate-50 text-slate-600",
     MEDIUM:
-      "border-amber-200/55 bg-amber-50/50 text-amber-700",
+      "border-amber-200/70 bg-amber-50 text-amber-700",
     HIGH:
-      "border-orange-200/55 bg-orange-50/50 text-orange-700",
+      "border-orange-200/70 bg-orange-50 text-orange-700",
     URGENT:
-      "border-red-200/55 bg-red-50/50 text-red-700",
+      "border-red-200/70 bg-red-50 text-red-700",
   };
 
   return classes[priority];
@@ -243,7 +248,7 @@ function getRecurrenceDescription(
       return "برنامه هفتگی";
     }
 
-    return weekdays
+    return [...weekdays]
       .sort((a, b) => a - b)
       .map(
         (weekday) =>
@@ -266,6 +271,58 @@ function getRecurrenceDescription(
   }
 
   return "";
+}
+
+function buildPageHref(
+  page: number,
+  params: {
+    q: string;
+    status: string;
+    priority: string;
+    sort: keyof typeof SORT_LABELS;
+  },
+) {
+  const search =
+    new URLSearchParams();
+
+  if (params.q) {
+    search.set("q", params.q);
+  }
+
+  if (params.status) {
+    search.set(
+      "status",
+      params.status,
+    );
+  }
+
+  if (params.priority) {
+    search.set(
+      "priority",
+      params.priority,
+    );
+  }
+
+  if (params.sort) {
+    search.set(
+      "sort",
+      params.sort,
+    );
+  }
+
+  if (page > 1) {
+    search.set(
+      "page",
+      String(page),
+    );
+  }
+
+  const query =
+    search.toString();
+
+  return query
+    ? `/employee/tasks?${query}`
+    : "/employee/tasks";
 }
 
 function SummaryCard({
@@ -349,10 +406,492 @@ function RecurrenceBadge({
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200/55 bg-violet-50/60 px-2.5 py-1.5 text-[11px] font-bold text-violet-700">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200/60 bg-violet-50/70 px-3 py-1.5 text-[11px] font-bold text-violet-700">
       <Repeat2 className="size-3.5" />
       {RECURRENCE_LABELS[type]}
     </span>
+  );
+}
+
+function TaskCard({
+  task,
+}: {
+  task: Awaited<
+    ReturnType<
+      typeof getEmployeeTasks
+    >
+  >[number];
+}) {
+  const overdue =
+    !task.isRecurring &&
+    isOverdue(
+      task.deadline,
+      task.status,
+    );
+
+  const dueSoon =
+    !task.isRecurring &&
+    isDueSoon(
+      task.deadline,
+      task.status,
+    );
+
+  const recurrenceType =
+    task.recurrenceType as RecurrenceType;
+
+  const recurrenceDescription =
+    task.isRecurring
+      ? getRecurrenceDescription(
+          recurrenceType,
+          task.recurrenceWeekdays,
+          task.recurrenceDayOfMonth,
+        )
+      : "";
+
+  const todayOccurrence =
+    task.todayOccurrence;
+
+  const isTodayCompleted =
+    Boolean(
+      task.isRecurring &&
+        todayOccurrence?.completed,
+    );
+
+  return (
+    <article
+      className={`group relative flex h-full min-w-0 flex-col overflow-hidden rounded-[2rem] border p-5 text-center backdrop-blur-2xl transition duration-300 ease-out [perspective:1200px] sm:p-6 ${
+        isTodayCompleted ||
+        task.status ===
+          "COMPLETED"
+          ? "border-emerald-200/60 bg-emerald-50/45 shadow-[0_20px_45px_rgba(16,185,129,0.09),inset_0_1px_0_rgba(255,255,255,0.9)]"
+          : overdue
+            ? "border-red-200/65 bg-red-50/40 shadow-[0_20px_45px_rgba(239,68,68,0.08),inset_0_1px_0_rgba(255,255,255,0.9)]"
+            : "border-white/65 bg-white/48 shadow-[0_18px_42px_rgba(15,23,42,0.07),inset_0_1px_0_rgba(255,255,255,0.9)]"
+      } hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(15,23,42,0.11),inset_0_1px_0_rgba(255,255,255,0.95)]`}
+    >
+      <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-white/90" />
+
+      <div className="flex min-h-[34px] flex-wrap items-center justify-center gap-2">
+        {task.isRecurring ? (
+          <RecurrenceBadge
+            type={
+              recurrenceType
+            }
+          />
+        ) : (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/70 bg-slate-50/80 px-3 py-1.5 text-[11px] font-bold text-slate-600">
+            <ListChecks className="size-3.5" />
+            Task معمولی
+          </span>
+        )}
+
+        <span
+          className={`inline-flex items-center rounded-full border px-3 py-1.5 text-[11px] font-bold ${getPriorityClass(
+            task.priority,
+          )}`}
+        >
+          {PRIORITY_LABELS[
+            task.priority
+          ]}
+        </span>
+      </div>
+
+      <div className="mx-auto mt-5 flex size-16 items-center justify-center rounded-[1.35rem] border border-white/75 bg-white/55 text-slate-700 shadow-[0_12px_24px_rgba(15,23,42,0.07),inset_0_1px_0_rgba(255,255,255,0.95)] transition duration-300 group-hover:-translate-y-0.5 group-hover:rotate-1">
+        {task.isRecurring ? (
+          <Repeat2 className="size-7 text-violet-600" />
+        ) : task.status ===
+          "COMPLETED" ? (
+          <CheckCircle2 className="size-7 text-emerald-600" />
+        ) : overdue ? (
+          <Clock3 className="size-7 text-red-600" />
+        ) : (
+          <ListChecks className="size-7 text-slate-600" />
+        )}
+      </div>
+
+      <div className="mt-5 min-w-0">
+        <Link
+          href={`/employee/tasks/${task.id}`}
+          className="block break-words text-lg font-extrabold leading-8 text-slate-900 transition group-hover:text-slate-700"
+        >
+          {task.title}
+        </Link>
+
+        <Link
+          href={`/employee/projects/${task.project.id}`}
+          className="mt-2 block truncate text-xs font-bold text-slate-400 transition hover:text-slate-700"
+        >
+          {task.project.title}
+        </Link>
+      </div>
+
+      {task.description ? (
+        <p className="mx-auto mt-4 line-clamp-3 max-w-[34rem] text-sm leading-7 text-slate-500">
+          {task.description}
+        </p>
+      ) : (
+        <div className="h-6" />
+      )}
+
+      <div className="mx-auto mt-5 grid w-full max-w-md gap-3 sm:grid-cols-2">
+        <div className="rounded-2xl border border-white/65 bg-white/38 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
+          <p className="text-[10px] font-semibold text-slate-400">
+            وضعیت
+          </p>
+
+          <div className="mt-2 flex justify-center">
+            {task.isRecurring ? (
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-bold ${
+                  isTodayCompleted
+                    ? "border-emerald-200/70 bg-emerald-50 text-emerald-700"
+                    : todayOccurrence
+                      ? "border-amber-200/70 bg-amber-50 text-amber-700"
+                      : "border-slate-200/70 bg-slate-50 text-slate-500"
+                }`}
+              >
+                {isTodayCompleted ? (
+                  <CheckCircle2 className="size-3.5" />
+                ) : (
+                  <Circle className="size-3.5" />
+                )}
+
+                {isTodayCompleted
+                  ? "امروز انجام شده"
+                  : todayOccurrence
+                    ? "امروز در انتظار انجام"
+                    : "امروز برنامه ندارد"}
+              </span>
+            ) : (
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-bold ${getStatusClass(
+                  task.status,
+                )}`}
+              >
+                {task.status ===
+                "COMPLETED" ? (
+                  <CheckCircle2 className="size-3.5" />
+                ) : (
+                  <Circle className="size-3.5" />
+                )}
+
+                {
+                  STATUS_LABELS[
+                    task.status
+                  ]
+                }
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div
+          className={`rounded-2xl border px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] ${
+            overdue
+              ? "border-red-200/65 bg-red-50/45"
+              : dueSoon
+                ? "border-amber-200/65 bg-amber-50/45"
+                : "border-white/65 bg-white/38"
+          }`}
+        >
+          <p className="text-[10px] font-semibold text-slate-400">
+            {task.isRecurring
+              ? "برنامه"
+              : "Deadline"}
+          </p>
+
+          <div className="mt-2 flex items-center justify-center gap-1.5">
+            <CalendarDays
+              className={`size-3.5 ${
+                overdue
+                  ? "text-red-500"
+                  : dueSoon
+                    ? "text-amber-500"
+                    : "text-slate-400"
+              }`}
+            />
+
+            <span
+              className={`text-xs font-bold ${
+                overdue
+                  ? "text-red-600"
+                  : dueSoon
+                    ? "text-amber-700"
+                    : "text-slate-700"
+              }`}
+            >
+              {task.isRecurring
+                ? recurrenceDescription ||
+                  "برنامه تکرارشونده"
+                : formatDate(
+                    task.deadline,
+                  )}
+            </span>
+          </div>
+
+          {!task.isRecurring ? (
+            <p
+              className={`mt-1 text-[10px] ${
+                overdue
+                  ? "text-red-500"
+                  : dueSoon
+                    ? "text-amber-600"
+                    : "text-slate-400"
+              }`}
+            >
+              {overdue
+                ? "عقب‌افتاده"
+                : dueSoon
+                  ? "Deadline نزدیک"
+                  : formatDateTime(
+                      task.deadline,
+                    )}
+            </p>
+          ) : task.recurrenceStartDate ? (
+            <p className="mt-1 text-[10px] text-slate-400">
+              شروع از{" "}
+              {formatDate(
+                task.recurrenceStartDate,
+              )}
+            </p>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="mt-4 grid w-full max-w-md grid-cols-2 gap-3">
+        <div className="rounded-2xl border border-white/65 bg-white/32 px-3 py-3">
+          <p className="text-[10px] font-semibold text-slate-400">
+            نوع
+          </p>
+
+          <p className="mt-1 text-xs font-bold text-slate-700">
+            {task.isRecurring
+              ? RECURRENCE_LABELS[
+                  recurrenceType
+                ]
+              : "Task عادی"}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-white/65 bg-white/32 px-3 py-3">
+          <p className="text-[10px] font-semibold text-slate-400">
+            ثبت شده
+          </p>
+
+          <p className="mt-1 text-xs font-bold text-slate-700">
+            {formatDate(
+              task.createdAt,
+            )}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-auto flex w-full flex-col items-center gap-3 pt-5">
+        <Link
+          href={`/employee/tasks/${task.id}`}
+          className="inline-flex min-h-11 w-full max-w-md items-center justify-center gap-2 rounded-2xl border border-white/70 bg-white/58 px-4 text-sm font-bold text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition hover:bg-white/80 hover:shadow-[0_14px_28px_rgba(15,23,42,0.08)]"
+        >
+          مشاهده جزئیات
+          <ArrowLeft className="size-4" />
+        </Link>
+
+        <div className="flex w-full max-w-md justify-center">
+          {task.isRecurring ? (
+            <TaskOccurrenceStatusActions
+              taskId={
+                task.id
+              }
+              occurrenceDate={
+                todayOccurrence
+                  ? getDateKey(
+                      todayOccurrence.occurrenceDate,
+                    )
+                  : getTodayDateKey()
+              }
+              completed={
+                todayOccurrence?.completed ??
+                false
+              }
+              disabled={
+                !todayOccurrence
+              }
+            />
+          ) : (
+            <EmployeeTaskStatusActions
+              taskId={
+                task.id
+              }
+              currentStatus={
+                task.status
+              }
+            />
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function EmptyState({
+  hasFilters,
+}: {
+  hasFilters: boolean;
+}) {
+  return (
+    <div className="soft-grid flex min-h-72 flex-col items-center justify-center rounded-[2rem] border border-dashed border-slate-300/45 bg-white/15 px-6 text-center">
+      <div className="glass-icon flex size-14 items-center justify-center rounded-2xl">
+        <Search className="size-6 text-slate-400" />
+      </div>
+
+      <h3 className="mt-5 font-extrabold text-slate-800">
+        Taskی پیدا نشد
+      </h3>
+
+      <p className="mt-2 max-w-md text-sm leading-7 text-slate-400">
+        {hasFilters
+          ? "فیلترهای جست‌وجو را تغییر دهید یا همه فیلترها را پاک کنید."
+          : "هنوز Taskی برای نمایش وجود ندارد."}
+      </p>
+
+      {hasFilters ? (
+        <Link
+          href="/employee/tasks"
+          className="mt-5 inline-flex h-10 items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white"
+        >
+          نمایش همه Taskها
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
+function Pagination({
+  currentPage,
+  totalPages,
+  totalItems,
+  params,
+}: {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  params: {
+    q: string;
+    status: string;
+    priority: string;
+    sort: keyof typeof SORT_LABELS;
+  };
+}) {
+  if (totalPages <= 1) {
+    return null;
+  }
+
+  const startItem =
+    (currentPage - 1) *
+      PAGE_SIZE +
+    1;
+
+  const endItem = Math.min(
+    currentPage *
+      PAGE_SIZE,
+    totalItems,
+  );
+
+  return (
+    <nav
+      aria-label="صفحه‌بندی Taskها"
+      className="flex flex-col gap-4 rounded-[2rem] border border-white/60 bg-white/35 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:p-5"
+    >
+      <div className="text-center text-xs font-semibold text-slate-400 sm:text-right">
+        نمایش{" "}
+        {startItem.toLocaleString(
+          "fa-IR",
+        )}{" "}
+        تا{" "}
+        {endItem.toLocaleString(
+          "fa-IR",
+        )}{" "}
+        از{" "}
+        {totalItems.toLocaleString(
+          "fa-IR",
+        )}{" "}
+        Task
+      </div>
+
+      <div className="flex items-center justify-center gap-2">
+        {currentPage > 1 ? (
+          <Link
+            href={buildPageHref(
+              currentPage - 1,
+              params,
+            )}
+            className="inline-flex size-10 items-center justify-center rounded-xl border border-white/70 bg-white/55 text-slate-600 shadow-sm transition hover:bg-white/80 hover:text-slate-900"
+            aria-label="صفحه قبل"
+          >
+            <ChevronRight className="size-4" />
+          </Link>
+        ) : (
+          <span className="inline-flex size-10 items-center justify-center rounded-xl border border-white/40 bg-white/20 text-slate-300">
+            <ChevronRight className="size-4" />
+          </span>
+        )}
+
+        <div className="flex items-center gap-1.5">
+          {Array.from(
+            {
+              length: totalPages,
+            },
+            (_, index) =>
+              index + 1,
+          ).map((page) => {
+            const active =
+              page ===
+              currentPage;
+
+            return (
+              <Link
+                key={page}
+                href={buildPageHref(
+                  page,
+                  params,
+                )}
+                aria-current={
+                  active
+                    ? "page"
+                    : undefined
+                }
+                className={`inline-flex size-10 items-center justify-center rounded-xl border text-xs font-extrabold transition ${
+                  active
+                    ? "border-slate-900 bg-slate-900 text-white shadow-[0_9px_20px_rgba(15,23,42,0.14)]"
+                    : "border-white/70 bg-white/50 text-slate-600 hover:bg-white/80 hover:text-slate-900"
+                }`}
+              >
+                {page.toLocaleString(
+                  "fa-IR",
+                )}
+              </Link>
+            );
+          })}
+        </div>
+
+        {currentPage <
+        totalPages ? (
+          <Link
+            href={buildPageHref(
+              currentPage + 1,
+              params,
+            )}
+            className="inline-flex size-10 items-center justify-center rounded-xl border border-white/70 bg-white/55 text-slate-600 shadow-sm transition hover:bg-white/80 hover:text-slate-900"
+            aria-label="صفحه بعد"
+          >
+            <ChevronLeft className="size-4" />
+          </Link>
+        ) : (
+          <span className="inline-flex size-10 items-center justify-center rounded-xl border border-white/40 bg-white/20 text-slate-300">
+            <ChevronLeft className="size-4" />
+          </span>
+        )}
+      </div>
+    </nav>
   );
 }
 
@@ -387,6 +926,18 @@ export default async function EmployeeTasksPage({
       SORT_LABELS
       ? (params.sort as keyof typeof SORT_LABELS)
       : "deadline_asc";
+
+  const rawPage =
+    Number.parseInt(
+      params.page ?? "1",
+      10,
+    );
+
+  const requestedPage =
+    Number.isFinite(rawPage) &&
+    rawPage > 0
+      ? rawPage
+      : 1;
 
   const tasks =
     await getEmployeeTasks();
@@ -519,6 +1070,34 @@ export default async function EmployeeTasksPage({
     query.length > 0 ||
     status.length > 0 ||
     priority.length > 0;
+
+  const totalFilteredTasks =
+    filteredTasks.length;
+
+  const totalPages =
+    Math.max(
+      1,
+      Math.ceil(
+        totalFilteredTasks /
+          PAGE_SIZE,
+      ),
+    );
+
+  const currentPage =
+    Math.min(
+      requestedPage,
+      totalPages,
+    );
+
+  const pageStart =
+    (currentPage - 1) *
+    PAGE_SIZE;
+
+  const paginatedTasks =
+    filteredTasks.slice(
+      pageStart,
+      pageStart + PAGE_SIZE,
+    );
 
   return (
     <main className="min-h-screen">
@@ -789,6 +1368,12 @@ export default async function EmployeeTasksPage({
             </label>
 
             <div className="flex flex-col gap-2 sm:flex-row xl:flex-col">
+              <input
+                type="hidden"
+                name="page"
+                value="1"
+              />
+
               <button
                 type="submit"
                 className="h-11 flex-1 rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(15,23,42,0.13)] transition hover:bg-slate-800"
@@ -811,604 +1396,75 @@ export default async function EmployeeTasksPage({
         <section className="glass-card overflow-hidden rounded-[2rem]">
           <div className="flex flex-col gap-3 border-b border-white/40 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div>
-              <h2 className="text-lg font-extrabold text-slate-900">
-                لیست Taskها
+              <h2 className="text-xl font-extrabold tracking-tight text-slate-900">
+                Taskهای من
               </h2>
 
-              <p className="mt-1 text-sm text-slate-400">
-                {filteredTasks.length.toLocaleString(
+              <p className="mt-1 text-sm leading-6 text-slate-400">
+                {totalFilteredTasks.toLocaleString(
                   "fa-IR",
                 )}{" "}
-                Task نمایش داده می‌شود.
+                Task با فیلترهای فعلی پیدا شد.
               </p>
             </div>
 
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <span className="flex size-7 items-center justify-center rounded-lg bg-slate-900/7">
-                <Circle className="size-2.5 fill-slate-300 text-slate-300" />
+            <div className="flex items-center justify-center gap-2 text-xs font-semibold text-slate-400 sm:justify-end">
+              <span className="glass-icon flex size-8 items-center justify-center rounded-xl">
+                <ListChecks className="size-3.5" />
               </span>
 
-              Taskهای تکرارشونده بر اساس Occurrence امروز مدیریت می‌شوند.
+              هر صفحه{" "}
+              {PAGE_SIZE.toLocaleString(
+                "fa-IR",
+              )}{" "}
+              Task
             </div>
           </div>
 
-          {filteredTasks.length ===
+          {totalFilteredTasks ===
           0 ? (
-            <div className="soft-grid flex min-h-64 flex-col items-center justify-center px-6 text-center">
-              <div className="glass-icon flex size-14 items-center justify-center rounded-2xl">
-                <Search className="size-6 text-slate-400" />
-              </div>
-
-              <h3 className="mt-5 font-extrabold text-slate-800">
-                Taskی پیدا نشد
-              </h3>
-
-              <p className="mt-2 max-w-md text-sm leading-7 text-slate-400">
-                فیلترهای جست‌وجو را تغییر دهید یا همه فیلترها را پاک کنید.
-              </p>
-
-              {hasFilters ? (
-                <Link
-                  href="/employee/tasks"
-                  className="mt-5 inline-flex h-10 items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white"
-                >
-                  نمایش همه Taskها
-                </Link>
-              ) : null}
+            <div className="p-5 sm:p-6">
+              <EmptyState
+                hasFilters={
+                  hasFilters
+                }
+              />
             </div>
           ) : (
             <>
-              <div className="thin-scrollbar hidden overflow-x-auto lg:block">
-                <table className="w-full min-w-[1180px]">
-                  <thead>
-                    <tr className="border-y border-white/40 bg-white/25 text-right text-xs font-bold text-slate-500">
-                      <th className="px-6 py-4">
-                        Task
-                      </th>
-
-                      <th className="px-4 py-4">
-                        پروژه
-                      </th>
-
-                      <th className="px-4 py-4">
-                        وضعیت
-                      </th>
-
-                      <th className="px-4 py-4">
-                        نوع
-                      </th>
-
-                      <th className="px-4 py-4">
-                        برنامه
-                      </th>
-
-                      <th className="px-4 py-4">
-                        Deadline
-                      </th>
-
-                      <th className="px-6 py-4">
-                        عملیات
-                      </th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {filteredTasks.map(
-                      (task) => {
-                        const overdue =
-                          !task.isRecurring &&
-                          isOverdue(
-                            task.deadline,
-                            task.status,
-                          );
-
-                        const dueSoon =
-                          !task.isRecurring &&
-                          isDueSoon(
-                            task.deadline,
-                            task.status,
-                          );
-
-                        const recurrenceType =
-                          task.recurrenceType as RecurrenceType;
-
-                        const recurrenceDescription =
-                          task.isRecurring
-                            ? getRecurrenceDescription(
-                                recurrenceType,
-                                task.recurrenceWeekdays,
-                                task.recurrenceDayOfMonth,
-                              )
-                            : "";
-
-                        return (
-                          <tr
-                            key={
-                              task.id
-                            }
-                            className="border-b border-white/30 transition hover:bg-white/30 last:border-b-0"
-                          >
-                            <td className="px-6 py-5">
-                              <div className="max-w-[340px]">
-                                <Link
-                                  href={`/employee/tasks/${task.id}`}
-                                  className="block truncate font-bold text-slate-800 transition hover:text-slate-950"
-                                >
-                                  {
-                                    task.title
-                                  }
-                                </Link>
-
-                                {task.description ? (
-                                  <p className="mt-1 line-clamp-2 text-xs leading-6 text-slate-400">
-                                    {
-                                      task.description
-                                    }
-                                  </p>
-                                ) : null}
-                              </div>
-                            </td>
-
-                            <td className="px-4 py-5">
-                              <Link
-                                href={`/employee/projects/${task.project.id}`}
-                                className="font-semibold text-slate-600 transition hover:text-slate-950"
-                              >
-                                {
-                                  task.project
-                                    .title
-                                }
-                              </Link>
-                            </td>
-
-                            <td className="px-4 py-5">
-                              {task.isRecurring ? (
-                                <div className="space-y-2">
-                                  {task.todayOccurrence ? (
-                                    <span
-                                      className={`inline-flex rounded-full border px-3 py-1.5 text-xs font-bold ${
-                                        task.todayOccurrence
-                                          .completed
-                                          ? "border-emerald-200/55 bg-emerald-50/60 text-emerald-700"
-                                          : "border-amber-200/55 bg-amber-50/60 text-amber-700"
-                                      }`}
-                                    >
-                                      {task.todayOccurrence
-                                        .completed
-                                        ? "امروز انجام شده"
-                                        : "امروز در انتظار انجام"}
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex rounded-full border border-slate-200/55 bg-slate-500/8 px-3 py-1.5 text-xs font-bold text-slate-500">
-                                      امروز برنامه ندارد
-                                    </span>
-                                  )}
-                                </div>
-                              ) : (
-                                <span
-                                  className={`inline-flex rounded-full border px-3 py-1.5 text-xs font-bold ${getStatusClass(
-                                    task.status,
-                                  )}`}
-                                >
-                                  {
-                                    STATUS_LABELS[
-                                      task.status
-                                    ]
-                                  }
-                                </span>
-                              )}
-                            </td>
-
-                            <td className="px-4 py-5">
-                              {task.isRecurring ? (
-                                <RecurrenceBadge
-                                  type={
-                                    recurrenceType
-                                  }
-                                />
-                              ) : (
-                                <span className="inline-flex rounded-full border border-white/55 bg-white/30 px-3 py-1.5 text-xs font-bold text-slate-400">
-                                  عادی
-                                </span>
-                              )}
-                            </td>
-
-                            <td className="px-4 py-5">
-                              {task.isRecurring ? (
-                                <div className="max-w-[210px]">
-                                  <p className="text-xs font-bold text-slate-700">
-                                    {
-                                      recurrenceDescription
-                                    }
-                                  </p>
-
-                                  {task.recurrenceStartDate ? (
-                                    <p className="mt-1 text-[11px] text-slate-400">
-                                      شروع:{" "}
-                                      {formatDate(
-                                        task.recurrenceStartDate,
-                                      )}
-                                    </p>
-                                  ) : null}
-                                </div>
-                              ) : (
-                                <span className="text-xs text-slate-400">
-                                  بدون تکرار
-                                </span>
-                              )}
-                            </td>
-
-                            <td className="px-4 py-5">
-                              {task.isRecurring ? (
-                                <div className="flex items-start gap-2 text-xs text-slate-500">
-                                  <span className="glass-icon mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg">
-                                    <CalendarDays className="size-3.5" />
-                                  </span>
-
-                                  <div>
-                                    <p className="font-bold text-slate-700">
-                                      شروع تکرار
-                                    </p>
-
-                                    <p className="mt-1">
-                                      {task.recurrenceStartDate
-                                        ? formatDate(
-                                            task.recurrenceStartDate,
-                                          )
-                                        : formatDate(
-                                            task.deadline,
-                                          )}
-                                    </p>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div
-                                  className={`flex items-start gap-2 text-xs ${
-                                    overdue
-                                      ? "text-red-600"
-                                      : dueSoon
-                                        ? "text-amber-600"
-                                        : "text-slate-500"
-                                  }`}
-                                >
-                                  <span className="glass-icon mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg">
-                                    <CalendarDays className="size-3.5" />
-                                  </span>
-
-                                  <div>
-                                    <p
-                                      className={
-                                        overdue ||
-                                        dueSoon
-                                          ? "font-bold"
-                                          : ""
-                                      }
-                                    >
-                                      {formatDate(
-                                        task.deadline,
-                                      )}
-                                    </p>
-
-                                    <p className="mt-1">
-                                      {overdue
-                                        ? "عقب‌افتاده"
-                                        : dueSoon
-                                          ? "Deadline نزدیک"
-                                          : formatDateTime(
-                                              task.deadline,
-                                            )}
-                                    </p>
-                                  </div>
-                                </div>
-                              )}
-                            </td>
-
-                            <td className="px-6 py-5">
-                              {task.isRecurring ? (
-                                <TaskOccurrenceStatusActions
-                                  taskId={
-                                    task.id
-                                  }
-                                  occurrenceDate={
-                                    task.todayOccurrence
-                                      ? getDateKey(
-                                          task
-                                            .todayOccurrence
-                                            .occurrenceDate,
-                                        )
-                                      : todayDateKey
-                                  }
-                                  completed={
-                                    task
-                                      .todayOccurrence
-                                      ?.completed ??
-                                    false
-                                  }
-                                  disabled={
-                                    !task.todayOccurrence
-                                  }
-                                />
-                              ) : (
-                                <EmployeeTaskStatusActions
-                                  taskId={
-                                    task.id
-                                  }
-                                  currentStatus={
-                                    task.status
-                                  }
-                                />
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      },
-                    )}
-                  </tbody>
-                </table>
+              <div className="grid gap-5 p-5 sm:grid-cols-2 sm:p-6 xl:grid-cols-3">
+                {paginatedTasks.map(
+                  (task) => (
+                    <TaskCard
+                      key={
+                        task.id
+                      }
+                      task={
+                        task
+                      }
+                    />
+                  ),
+                )}
               </div>
 
-              <div className="divide-y divide-white/30 lg:hidden">
-                {filteredTasks.map(
-                  (task) => {
-                    const overdue =
-                      !task.isRecurring &&
-                      isOverdue(
-                        task.deadline,
-                        task.status,
-                      );
-
-                    const dueSoon =
-                      !task.isRecurring &&
-                      isDueSoon(
-                        task.deadline,
-                        task.status,
-                      );
-
-                    const recurrenceType =
-                      task.recurrenceType as RecurrenceType;
-
-                    const recurrenceDescription =
-                      task.isRecurring
-                        ? getRecurrenceDescription(
-                            recurrenceType,
-                            task.recurrenceWeekdays,
-                            task.recurrenceDayOfMonth,
-                          )
-                        : "";
-
-                    return (
-                      <article
-                        key={
-                          task.id
-                        }
-                        className="p-5 transition hover:bg-white/18 sm:p-6"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="min-w-0">
-                            <Link
-                              href={`/employee/tasks/${task.id}`}
-                              className="block break-words font-bold text-slate-800"
-                            >
-                              {
-                                task.title
-                              }
-                            </Link>
-
-                            <Link
-                              href={`/employee/projects/${task.project.id}`}
-                              className="mt-1 block truncate text-sm text-slate-400"
-                            >
-                              {
-                                task
-                                  .project
-                                  .title
-                              }
-                            </Link>
-                          </div>
-
-                          {task.isRecurring ? (
-                            <RecurrenceBadge
-                              type={
-                                recurrenceType
-                              }
-                            />
-                          ) : (
-                            <span
-                              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold ${getStatusClass(
-                                task.status,
-                              )}`}
-                            >
-                              {
-                                STATUS_LABELS[
-                                  task.status
-                                ]
-                              }
-                            </span>
-                          )}
-                        </div>
-
-                        {task.description ? (
-                          <p className="mt-4 line-clamp-3 text-sm leading-7 text-slate-500">
-                            {
-                              task.description
-                            }
-                          </p>
-                        ) : null}
-
-                        {task.isRecurring ? (
-                          <div className="mt-4 space-y-3">
-                            <div className="rounded-2xl border border-violet-200/45 bg-violet-50/35 p-4">
-                              <div className="flex items-center gap-2 text-xs font-bold text-violet-700">
-                                <Repeat2 className="size-4" />
-                                برنامه تکرار
-                              </div>
-
-                              <p className="mt-2 text-sm font-bold text-slate-700">
-                                {
-                                  recurrenceDescription
-                                }
-                              </p>
-
-                              {task.recurrenceStartDate ? (
-                                <p className="mt-1 text-[11px] text-slate-400">
-                                  شروع از{" "}
-                                  {formatDate(
-                                    task.recurrenceStartDate,
-                                  )}
-                                </p>
-                              ) : null}
-                            </div>
-
-                            <div
-                              className={`rounded-2xl border p-4 ${
-                                task.todayOccurrence
-                                  ?.completed
-                                  ? "border-emerald-200/45 bg-emerald-50/35"
-                                  : task.todayOccurrence
-                                    ? "border-amber-200/45 bg-amber-50/35"
-                                    : "border-white/45 bg-white/24"
-                              }`}
-                            >
-                              <p className="text-[11px] text-slate-400">
-                                وضعیت امروز
-                              </p>
-
-                              <p
-                                className={`mt-1 text-sm font-bold ${
-                                  task.todayOccurrence
-                                    ?.completed
-                                    ? "text-emerald-700"
-                                    : task.todayOccurrence
-                                      ? "text-amber-700"
-                                      : "text-slate-500"
-                                }`}
-                              >
-                                {task.todayOccurrence
-                                  ? task
-                                      .todayOccurrence
-                                      .completed
-                                    ? "امروز انجام شده"
-                                    : "امروز در انتظار انجام"
-                                  : "امروز برنامه ندارد"}
-                              </p>
-                            </div>
-                          </div>
-                        ) : null}
-
-                        {!task.isRecurring ? (
-                          <div className="mt-4 grid grid-cols-2 gap-3">
-                            <div className="rounded-2xl border border-white/45 bg-white/24 p-3">
-                              <p className="text-[11px] text-slate-400">
-                                اولویت
-                              </p>
-
-                              <span
-                                className={`mt-1 inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold ${getPriorityClass(
-                                  task.priority,
-                                )}`}
-                              >
-                                {
-                                  PRIORITY_LABELS[
-                                    task.priority
-                                  ]
-                                }
-                              </span>
-                            </div>
-
-                            <div
-                              className={`rounded-2xl border p-3 ${
-                                overdue
-                                  ? "border-red-200/50 bg-red-50/45"
-                                  : dueSoon
-                                    ? "border-amber-200/50 bg-amber-50/45"
-                                    : "border-white/45 bg-white/24"
-                              }`}
-                            >
-                              <p className="text-[11px] text-slate-400">
-                                Deadline
-                              </p>
-
-                              <p
-                                className={`mt-1 text-sm font-bold ${
-                                  overdue
-                                    ? "text-red-600"
-                                    : dueSoon
-                                      ? "text-amber-700"
-                                      : "text-slate-700"
-                                }`}
-                              >
-                                {formatDate(
-                                  task.deadline,
-                                )}
-                              </p>
-
-                              <p
-                                className={`mt-1 text-[11px] ${
-                                  overdue
-                                    ? "text-red-500"
-                                    : dueSoon
-                                      ? "text-amber-600"
-                                      : "text-slate-400"
-                                }`}
-                              >
-                                {overdue
-                                  ? "عقب‌افتاده"
-                                  : dueSoon
-                                    ? "نزدیک"
-                                    : "برنامه‌ریزی‌شده"}
-                              </p>
-                            </div>
-                          </div>
-                        ) : null}
-
-                        <div className="mt-5 flex flex-col gap-3 border-t border-white/35 pt-5">
-                          <Link
-                            href={`/employee/tasks/${task.id}`}
-                            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/60 bg-white/45 px-4 text-sm font-semibold text-slate-700 transition hover:bg-white/70"
-                          >
-                            مشاهده جزئیات
-                            <ArrowLeft className="size-4" />
-                          </Link>
-
-                          {task.isRecurring ? (
-                            <TaskOccurrenceStatusActions
-                              taskId={
-                                task.id
-                              }
-                              occurrenceDate={
-                                task.todayOccurrence
-                                  ? getDateKey(
-                                      task
-                                        .todayOccurrence
-                                        .occurrenceDate,
-                                    )
-                                  : todayDateKey
-                              }
-                              completed={
-                                task
-                                  .todayOccurrence
-                                  ?.completed ??
-                                false
-                              }
-                              disabled={
-                                !task.todayOccurrence
-                              }
-                            />
-                          ) : (
-                            <EmployeeTaskStatusActions
-                              taskId={
-                                task.id
-                              }
-                              currentStatus={
-                                task.status
-                              }
-                            />
-                          )}
-                        </div>
-                      </article>
-                    );
-                  },
-                )}
+              <div className="px-5 pb-5 sm:px-6 sm:pb-6">
+                <Pagination
+                  currentPage={
+                    currentPage
+                  }
+                  totalPages={
+                    totalPages
+                  }
+                  totalItems={
+                    totalFilteredTasks
+                  }
+                  params={{
+                    q: query,
+                    status,
+                    priority,
+                    sort,
+                  }}
+                />
               </div>
             </>
           )}
