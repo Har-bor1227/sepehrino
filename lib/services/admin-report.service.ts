@@ -61,7 +61,9 @@ function getProjectStatusLabel(
   }
 }
 
-function getDateKey(date: Date) {
+function getDateKey(
+  date: Date,
+) {
   return date.toISOString().slice(0, 10);
 }
 
@@ -84,7 +86,10 @@ function formatTrendDate(
 function getDateRangeWhere(
   filters: ReportFilters,
 ) {
-  if (!filters.from && !filters.to) {
+  if (
+    !filters.from &&
+    !filters.to
+  ) {
     return undefined;
   }
 
@@ -94,6 +99,7 @@ function getDateRangeWhere(
           gte: filters.from,
         }
       : {}),
+
     ...(filters.to
       ? {
           lt: filters.to,
@@ -117,6 +123,31 @@ function getValidTaskStatus(
   return undefined;
 }
 
+function getTaskStatusCounts(
+  tasks: {
+    status:
+      (typeof TASK_STATUSES)[number];
+  }[],
+) {
+  return TASK_STATUSES.map(
+    (status) => {
+      const value =
+        tasks.filter(
+          (task) =>
+            task.status ===
+            status,
+        ).length;
+
+      return {
+        status,
+        name:
+          getStatusLabel(status),
+        value,
+      };
+    },
+  );
+}
+
 export async function getAdminReportData(
   filters: ReportFilters = {},
 ) {
@@ -125,7 +156,9 @@ export async function getAdminReportData(
   const now = new Date();
 
   const taskCreatedAt =
-    getDateRangeWhere(filters);
+    getDateRangeWhere(
+      filters,
+    );
 
   const taskStatus =
     getValidTaskStatus(
@@ -135,37 +168,48 @@ export async function getAdminReportData(
   const taskWhere = {
     ...(taskCreatedAt
       ? {
-          createdAt: taskCreatedAt,
+          createdAt:
+            taskCreatedAt,
         }
       : {}),
+
     ...(taskStatus
       ? {
           status: taskStatus,
         }
       : {}),
+
     ...(filters.employeeId
       ? {
-          assignedToId:
-            filters.employeeId,
+          assignees: {
+            some: {
+              userId:
+                filters.employeeId,
+            },
+          },
         }
       : {}),
+
     ...(filters.projectId
       ? {
-          projectId: filters.projectId,
+          projectId:
+            filters.projectId,
         }
       : {}),
   };
 
   const projectCreatedAt =
-    getDateRangeWhere(filters);
+    getDateRangeWhere(
+      filters,
+    );
 
   const [
     employeeRows,
     projectRows,
-    taskStatusGroups,
+    taskStatusRows,
     projectStatusProjects,
-    projectTasks,
-    employeeTasks,
+    projectTaskRows,
+    employeeTaskRows,
     overdueTasks,
     trendTasks,
   ] = await Promise.all([
@@ -173,9 +217,11 @@ export async function getAdminReportData(
       where: {
         role: "EMPLOYEE",
       },
+
       orderBy: {
         name: "asc",
       },
+
       select: {
         id: true,
         name: true,
@@ -193,9 +239,11 @@ export async function getAdminReportData(
             }
           : {}),
       },
+
       orderBy: {
         createdAt: "desc",
       },
+
       select: {
         id: true,
         title: true,
@@ -204,11 +252,11 @@ export async function getAdminReportData(
       },
     }),
 
-    prisma.task.groupBy({
-      by: ["status"],
+    prisma.task.findMany({
       where: taskWhere,
-      _count: {
-        _all: true,
+
+      select: {
+        status: true,
       },
     }),
 
@@ -221,33 +269,45 @@ export async function getAdminReportData(
             }
           : {}),
       },
+
       select: {
         status: true,
       },
     }),
 
-    prisma.task.groupBy({
-      by: ["projectId", "status"],
+    prisma.task.findMany({
       where: taskWhere,
-      _count: {
-        _all: true,
+
+      select: {
+        projectId: true,
+        status: true,
       },
     }),
 
-    prisma.task.groupBy({
-      by: ["assignedToId", "status"],
+    prisma.task.findMany({
       where: taskWhere,
-      _count: {
-        _all: true,
+
+      select: {
+        id: true,
+        status: true,
+        deadline: true,
+
+        assignees: {
+          select: {
+            userId: true,
+          },
+        },
       },
     }),
 
     prisma.task.count({
       where: {
         ...taskWhere,
+
         deadline: {
           lt: now,
         },
+
         status: {
           notIn: [
             "COMPLETED",
@@ -259,10 +319,12 @@ export async function getAdminReportData(
 
     prisma.task.findMany({
       where: taskWhere,
+
       select: {
         createdAt: true,
         completedAt: true,
       },
+
       orderBy: {
         createdAt: "asc",
       },
@@ -270,21 +332,8 @@ export async function getAdminReportData(
   ]);
 
   const taskStatusData =
-    TASK_STATUSES.map(
-      (status) => {
-        const group =
-          taskStatusGroups.find(
-            (item) =>
-              item.status === status,
-          );
-
-        return {
-          status,
-          name: getStatusLabel(status),
-          value:
-            group?._count._all ?? 0,
-        };
-      },
+    getTaskStatusCounts(
+      taskStatusRows,
     );
 
   const projectStatusData =
@@ -318,7 +367,8 @@ export async function getAdminReportData(
   const completedTaskCount =
     taskStatusData.find(
       (item) =>
-        item.status === "COMPLETED",
+        item.status ===
+        "COMPLETED",
     )?.value ?? 0;
 
   const projectTotal =
@@ -376,78 +426,91 @@ export async function getAdminReportData(
           employee.id ===
             filters.employeeId,
       )
-      .map((employee) => {
-        const groups =
-          employeeTasks.filter(
-            (group) =>
-              group.assignedToId ===
-              employee.id,
-          );
-
-        const totalTasks =
-          groups.reduce(
-            (sum, group) =>
-              sum + group._count._all,
-            0,
-          );
-
-        const activeTasks =
-          groups
-            .filter(
-              (group) =>
-                group.status ===
-                  "TODO" ||
-                group.status ===
-                  "IN_PROGRESS",
-            )
-            .reduce(
-              (sum, group) =>
-                sum +
-                group._count._all,
-              0,
+      .map(
+        (employee) => {
+          const employeeTasks =
+            employeeTaskRows.filter(
+              (task) =>
+                task.assignees.some(
+                  (assignee) =>
+                    assignee.userId ===
+                    employee.id,
+                ),
             );
 
-        const completedTasks =
-          groups.find(
-            (group) =>
-              group.status ===
-              "COMPLETED",
-          )?._count._all ?? 0;
+          const totalTasks =
+            employeeTasks.length;
 
-        const overdueTasksForEmployee =
-          selectedEmployee &&
-          selectedEmployee.id ===
-            employee.id
-            ? overdueTasks
-            : 0;
+          const activeTasks =
+            employeeTasks.filter(
+              (task) =>
+                task.status ===
+                  "TODO" ||
+                task.status ===
+                  "IN_PROGRESS",
+            ).length;
 
-        return {
-          id: employee.id,
-          name: employee.name,
-          email: employee.email,
-          totalTasks,
-          activeTasks,
-          completedTasks,
-          overdueTasks:
-            overdueTasksForEmployee,
-        };
-      })
-      .sort((a, b) => {
-        if (
-          b.activeTasks !==
-          a.activeTasks
-        ) {
-          return (
-            b.activeTasks -
+          const completedTasks =
+            employeeTasks.filter(
+              (task) =>
+                task.status ===
+                "COMPLETED",
+            ).length;
+
+          const overdueTasksForEmployee =
+            selectedEmployee &&
+            selectedEmployee.id ===
+              employee.id
+              ? employeeTasks.filter(
+                  (task) =>
+                    task.deadline <
+                      now &&
+                    task.status !==
+                      "COMPLETED" &&
+                    task.status !==
+                      "CANCELLED",
+                ).length
+              : 0;
+
+          return {
+            id:
+              employee.id,
+
+            name:
+              employee.name,
+
+            email:
+              employee.email,
+
+            totalTasks,
+
+            activeTasks,
+
+            completedTasks,
+
+            overdueTasks:
+              overdueTasksForEmployee,
+          };
+        },
+      )
+      .sort(
+        (a, b) => {
+          if (
+            b.activeTasks !==
             a.activeTasks
-          );
-        }
+          ) {
+            return (
+              b.activeTasks -
+              a.activeTasks
+            );
+          }
 
-        return (
-          b.totalTasks -
-          a.totalTasks
-        );
-      })
+          return (
+            b.totalTasks -
+            a.totalTasks
+          );
+        },
+      )
       .slice(0, 8);
 
   const overdueByEmployee =
@@ -476,34 +539,39 @@ export async function getAdminReportData(
     projectProgressRows.map(
       (project) => {
         const groups =
-          projectTasks.filter(
-            (group) =>
-              group.projectId ===
+          projectTaskRows.filter(
+            (task) =>
+              task.projectId ===
               project.id,
           );
 
         const totalTasks =
-          groups.reduce(
-            (sum, group) =>
-              sum + group._count._all,
-            0,
-          );
+          groups.length;
 
         const completedTasks =
-          groups.find(
-            (group) =>
-              group.status ===
+          groups.filter(
+            (task) =>
+              task.status ===
               "COMPLETED",
-          )?._count._all ?? 0;
+          ).length;
 
         return {
-          id: project.id,
-          title: project.title,
-          status: project.status,
+          id:
+            project.id,
+
+          title:
+            project.title,
+
+          status:
+            project.status,
+
           deadline:
             project.deadline.toISOString(),
+
           totalTasks,
+
           completedTasks,
+
           progress:
             totalTasks === 0
               ? 0
@@ -542,7 +610,8 @@ export async function getAdminReportData(
         new Date(now);
 
       date.setUTCDate(
-        date.getUTCDate() + 1,
+        date.getUTCDate() +
+          1,
       );
 
       date.setUTCHours(
@@ -555,14 +624,21 @@ export async function getAdminReportData(
       return date;
     })();
 
-  if (trendEnd <= trendStart) {
+  if (
+    trendEnd <=
+    trendStart
+  ) {
     trendStart =
       defaultTrendStart;
+
     trendEnd =
       new Date(now);
+
     trendEnd.setUTCDate(
-      trendEnd.getUTCDate() + 1,
+      trendEnd.getUTCDate() +
+        1,
     );
+
     trendEnd.setUTCHours(
       0,
       0,
@@ -571,20 +647,27 @@ export async function getAdminReportData(
     );
   }
 
-  const maxTrendDays = 90;
+  const maxTrendDays =
+    90;
 
   const trendDuration =
     Math.ceil(
       (trendEnd.getTime() -
         trendStart.getTime()) /
-        (24 * 60 * 60 * 1000),
+        (24 *
+          60 *
+          60 *
+          1000),
     );
 
   if (
-    trendDuration > maxTrendDays
+    trendDuration >
+    maxTrendDays
   ) {
     trendStart =
-      new Date(trendEnd);
+      new Date(
+        trendEnd,
+      );
 
     trendStart.setUTCDate(
       trendStart.getUTCDate() -
@@ -599,31 +682,37 @@ export async function getAdminReportData(
     );
   }
 
-  const trendMap = new Map<
-    string,
-    {
-      created: number;
-      completed: number;
-    }
-  >();
+  const trendMap =
+    new Map<
+      string,
+      {
+        created: number;
+        completed: number;
+      }
+    >();
 
-  const trendDays = Math.max(
-    1,
-    Math.ceil(
-      (trendEnd.getTime() -
-        trendStart.getTime()) /
-        (24 * 60 * 60 * 1000),
-    ),
-  );
+  const trendDays =
+    Math.max(
+      1,
+      Math.ceil(
+        (trendEnd.getTime() -
+          trendStart.getTime()) /
+          (24 *
+            60 *
+            60 *
+            1000),
+      ),
+    );
 
   for (
     let index = 0;
     index < trendDays;
     index += 1
   ) {
-    const date = new Date(
-      trendStart,
-    );
+    const date =
+      new Date(
+        trendStart,
+      );
 
     date.setUTCDate(
       date.getUTCDate() +
@@ -639,18 +728,27 @@ export async function getAdminReportData(
     );
   }
 
-  for (const task of trendTasks) {
+  for (
+    const task of trendTasks
+  ) {
     const createdKey =
-      getDateKey(task.createdAt);
+      getDateKey(
+        task.createdAt,
+      );
 
     const createdDay =
-      trendMap.get(createdKey);
+      trendMap.get(
+        createdKey,
+      );
 
     if (createdDay) {
-      createdDay.created += 1;
+      createdDay.created +=
+        1;
     }
 
-    if (task.completedAt) {
+    if (
+      task.completedAt
+    ) {
       const completedKey =
         getDateKey(
           task.completedAt,
@@ -668,19 +766,25 @@ export async function getAdminReportData(
     }
   }
 
-  const taskTrend = Array.from(
-    trendMap.entries(),
-  ).map(
-    ([date, values]) => ({
-      date,
-      label:
-        formatTrendDate(date),
-      created:
-        values.created,
-      completed:
-        values.completed,
-    }),
-  );
+  const taskTrend =
+    Array.from(
+      trendMap.entries(),
+    ).map(
+      ([date, values]) => ({
+        date,
+
+        label:
+          formatTrendDate(
+            date,
+          ),
+
+        created:
+          values.created,
+
+        completed:
+          values.completed,
+      }),
+    );
 
   let employeeDetail:
     | {
@@ -702,27 +806,38 @@ export async function getAdminReportData(
       }
     | null = null;
 
-  if (selectedEmployee) {
+  if (
+    selectedEmployee
+  ) {
     const employeeTaskRows =
-      await prisma.task.findMany({
-        where: {
-          ...taskWhere,
-          assignedToId:
-            selectedEmployee.id,
-        },
-        select: {
-          id: true,
-          status: true,
-          projectId: true,
-          project: {
-            select: {
-              id: true,
-              title: true,
+      await prisma.task.findMany(
+        {
+          where: {
+            ...taskWhere,
+
+            assignees: {
+              some: {
+                userId:
+                  selectedEmployee.id,
+              },
             },
           },
-          deadline: true,
+
+          select: {
+            id: true,
+            status: true,
+            projectId: true,
+            deadline: true,
+
+            project: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
+          },
         },
-      });
+      );
 
     const projectMap =
       new Map<
@@ -735,19 +850,26 @@ export async function getAdminReportData(
         }
       >();
 
-    for (const task of employeeTaskRows) {
+    for (
+      const task of employeeTaskRows
+    ) {
       const current =
         projectMap.get(
           task.projectId,
         ) ?? {
-          id: task.project.id,
+          id:
+            task.project.id,
+
           title:
             task.project.title,
+
           totalTasks: 0,
+
           completedTasks: 0,
         };
 
-      current.totalTasks += 1;
+      current.totalTasks +=
+        1;
 
       if (
         task.status ===
@@ -767,18 +889,21 @@ export async function getAdminReportData(
       Array.from(
         projectMap.values(),
       )
-        .map((project) => ({
-          ...project,
-          progress:
-            project.totalTasks ===
-            0
-              ? 0
-              : Math.round(
-                  (project.completedTasks /
-                    project.totalTasks) *
-                    100,
-                ),
-        }))
+        .map(
+          (project) => ({
+            ...project,
+
+            progress:
+              project.totalTasks ===
+              0
+                ? 0
+                : Math.round(
+                    (project.completedTasks /
+                      project.totalTasks) *
+                      100,
+                  ),
+          }),
+        )
         .sort(
           (a, b) =>
             b.totalTasks -
@@ -815,16 +940,27 @@ export async function getAdminReportData(
       ).length;
 
     employeeDetail = {
-      id: selectedEmployee.id,
-      name: selectedEmployee.name,
-      email: selectedEmployee.email,
+      id:
+        selectedEmployee.id,
+
+      name:
+        selectedEmployee.name,
+
+      email:
+        selectedEmployee.email,
+
       isActive:
         selectedEmployee.isActive,
+
       totalTasks,
+
       activeTasks,
+
       completedTasks,
+
       overdueTasks:
         overdueTasksForEmployee,
+
       projects:
         employeeProjects,
     };
@@ -853,25 +989,36 @@ export async function getAdminReportData(
       }
     | null = null;
 
-  if (selectedProject) {
+  if (
+    selectedProject
+  ) {
     const projectTaskRows =
-      await prisma.task.findMany({
-        where: {
-          ...taskWhere,
-          projectId:
-            selectedProject.id,
-        },
-        select: {
-          status: true,
-          assignedTo: {
-            select: {
-              id: true,
-              name: true,
+      await prisma.task.findMany(
+        {
+          where: {
+            ...taskWhere,
+
+            projectId:
+              selectedProject.id,
+          },
+
+          select: {
+            status: true,
+            deadline: true,
+
+            assignees: {
+              select: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
             },
           },
-          deadline: true,
         },
-      });
+      );
 
     const totalTasks =
       projectTaskRows.length;
@@ -879,7 +1026,8 @@ export async function getAdminReportData(
     const todoTasks =
       projectTaskRows.filter(
         (task) =>
-          task.status === "TODO",
+          task.status ===
+          "TODO",
       ).length;
 
     const inProgressTasks =
@@ -924,47 +1072,78 @@ export async function getAdminReportData(
         }
       >();
 
-    for (const task of projectTaskRows) {
-      const current =
-        employeeMap.get(
-          task.assignedTo.id,
-        ) ?? {
-          id: task.assignedTo.id,
-          name: task.assignedTo.name,
-          totalTasks: 0,
-          completedTasks: 0,
-        };
-
-      current.totalTasks += 1;
-
-      if (
-        task.status ===
-        "COMPLETED"
+    for (
+      const task of projectTaskRows
+    ) {
+      for (
+        const assignee of
+          task.assignees
       ) {
-        current.completedTasks +=
-          1;
-      }
+        const employee =
+          assignee.user;
 
-      employeeMap.set(
-        task.assignedTo.id,
-        current,
-      );
+        const current =
+          employeeMap.get(
+            employee.id,
+          ) ?? {
+            id:
+              employee.id,
+
+            name:
+              employee.name,
+
+            totalTasks: 0,
+
+            completedTasks: 0,
+          };
+
+        current.totalTasks +=
+          1;
+
+        if (
+          task.status ===
+          "COMPLETED"
+        ) {
+          current.completedTasks +=
+            1;
+        }
+
+        employeeMap.set(
+          employee.id,
+          current,
+        );
+      }
     }
 
     projectDetail = {
-      id: selectedProject.id,
-      title: selectedProject.title,
-      description: null,
-      status: selectedProject.status,
+      id:
+        selectedProject.id,
+
+      title:
+        selectedProject.title,
+
+      description:
+        null,
+
+      status:
+        selectedProject.status,
+
       deadline:
         selectedProject.deadline.toISOString(),
+
       totalTasks,
+
       todoTasks,
+
       inProgressTasks,
+
       completedTasks,
+
       cancelledTasks,
+
       overdueTasks:
         overdueTasksForProject,
+
       progress:
         totalTasks === 0
           ? 0
@@ -973,6 +1152,7 @@ export async function getAdminReportData(
                 totalTasks) *
                 100,
             ),
+
       employees:
         Array.from(
           employeeMap.values(),
@@ -1004,14 +1184,22 @@ export async function getAdminReportData(
   return {
     filters: {
       employeeId:
-        filters.employeeId ?? "",
+        filters.employeeId ??
+        "",
+
       projectId:
-        filters.projectId ?? "",
+        filters.projectId ??
+        "",
+
       status:
         taskStatus ?? "",
+
       from: filters.from
-        ? getDateKey(filters.from)
+        ? getDateKey(
+            filters.from,
+          )
         : "",
+
       to: filters.to
         ? getDateKey(
             new Date(
@@ -1026,9 +1214,15 @@ export async function getAdminReportData(
       employees:
         employeeRows.map(
           (employee) => ({
-            id: employee.id,
-            name: employee.name,
-            email: employee.email,
+            id:
+              employee.id,
+
+            name:
+              employee.name,
+
+            email:
+              employee.email,
+
             isActive:
               employee.isActive,
           }),
@@ -1037,9 +1231,14 @@ export async function getAdminReportData(
       projects:
         projectRows.map(
           (project) => ({
-            id: project.id,
-            title: project.title,
-            status: project.status,
+            id:
+              project.id,
+
+            title:
+              project.title,
+
+            status:
+              project.status,
           }),
         ),
     },
@@ -1047,18 +1246,26 @@ export async function getAdminReportData(
     overview: {
       employeeTotal:
         employeeRows.length,
+
       activeEmployeeCount:
         employeeRows.filter(
           (employee) =>
             employee.isActive,
         ).length,
+
       projectTotal,
+
       activeProjectCount,
+
       completedProjectCount,
+
       taskTotal,
+
       completedTaskCount,
+
       overdueTaskCount:
         overdueTasks,
+
       completionRate:
         taskTotal === 0
           ? 0
@@ -1077,6 +1284,7 @@ export async function getAdminReportData(
     projects: {
       statusData:
         projectStatusData,
+
       progress:
         projectProgress,
     },
@@ -1093,6 +1301,7 @@ export async function getAdminReportData(
     details: {
       employee:
         employeeDetail,
+
       project:
         projectDetail,
     },

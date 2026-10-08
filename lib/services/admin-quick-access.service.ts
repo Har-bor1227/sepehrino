@@ -6,46 +6,72 @@ import { isTaskScheduledForDate } from "@/lib/services/task.service";
 
 type DayKey = string;
 
+type QuickAccessAssignee = {
+  id: string;
+  name: string;
+};
+
 type QuickAccessTask = {
   id: string;
   title: string;
+
   project: {
     id: string;
     title: string;
   };
-  assignedTo: {
-    id: string;
-    name: string;
-  };
+
+  assignees: QuickAccessAssignee[];
+
+  /*
+   * برای سازگاری با بخش‌هایی از UI فعلی،
+   * اولین مسئول به‌عنوان assignedTo نیز برگردانده می‌شود.
+   */
+  assignedTo: QuickAccessAssignee;
+
   priority:
     | "LOW"
     | "MEDIUM"
     | "HIGH"
     | "URGENT";
+
   deadline: Date | null;
+
   completedAt: Date | null;
+
   completedBy: {
     id: string;
     name: string;
   } | null;
+
   isRecurring: boolean;
+
   occurrenceDate: Date | null;
+
   source:
     | "NORMAL"
     | "RECURRING";
+
   status:
     | "TODO"
     | "IN_PROGRESS"
     | "COMPLETED"
     | "CANCELLED";
+
   completed: boolean;
+
   overdue: boolean;
 };
 
 export type AdminQuickAccessDay = {
   key: DayKey;
-  label: "امروز" | "دیروز" | "روز قبلش";
+
+  label:
+    | "امروز"
+    | "دیروز"
+    | "روز قبلش";
+
   date: Date;
+
   dateKey: string;
 
   overview: {
@@ -57,7 +83,9 @@ export type AdminQuickAccessDay = {
   };
 
   completedTasks: QuickAccessTask[];
+
   plannedTasks: QuickAccessTask[];
+
   overdueTasks: QuickAccessTask[];
 };
 
@@ -68,6 +96,7 @@ type ActivityRow = {
   entityId: string | null;
   metadata: unknown;
   createdAt: Date;
+
   user: {
     id: string;
     name: string;
@@ -76,24 +105,28 @@ type ActivityRow = {
 
 type NormalTaskRow = {
   id: string;
+
   title: string;
+
   status:
     | "TODO"
     | "IN_PROGRESS"
     | "COMPLETED"
     | "CANCELLED";
+
   priority:
     | "LOW"
     | "MEDIUM"
     | "HIGH"
     | "URGENT";
+
   deadline: Date;
+
   completedAt: Date | null;
 
-  assignedTo: {
-    id: string;
-    name: string;
-  };
+  assignees: {
+    user: QuickAccessAssignee;
+  }[];
 
   project: {
     id: string;
@@ -103,17 +136,18 @@ type NormalTaskRow = {
 
 type RecurringTaskRow = {
   id: string;
+
   title: string;
+
   priority:
     | "LOW"
     | "MEDIUM"
     | "HIGH"
     | "URGENT";
 
-  assignedTo: {
-    id: string;
-    name: string;
-  };
+  assignees: {
+    user: QuickAccessAssignee;
+  }[];
 
   project: {
     id: string;
@@ -121,25 +155,37 @@ type RecurringTaskRow = {
   };
 
   isRecurring: boolean;
+
   recurrenceType:
     | "NONE"
     | "DAILY"
     | "WEEKLY"
     | "MONTHLY";
-  recurrenceStartDate: Date | null;
-  recurrenceEndDate: Date | null;
+
+  recurrenceStartDate:
+    Date | null;
+
+  recurrenceEndDate:
+    Date | null;
+
   recurrenceWeekdays: number[];
-  recurrenceDayOfMonth: number | null;
+
+  recurrenceDayOfMonth:
+    number | null;
+
   recurrenceActive: boolean;
 };
 
 type RecurringOccurrenceState = {
   completed: boolean;
+
   completedBy: {
     id: string;
     name: string;
   } | null;
+
   completedAt: Date | null;
+
   status:
     | "TODO"
     | "IN_PROGRESS"
@@ -147,7 +193,33 @@ type RecurringOccurrenceState = {
     | "CANCELLED";
 };
 
-function toDateOnly(date: Date) {
+function getPrimaryAssignee(
+  assignees: {
+    user: QuickAccessAssignee;
+  }[],
+): QuickAccessAssignee {
+  return (
+    assignees[0]?.user ?? {
+      id: "",
+      name: "بدون مسئول",
+    }
+  );
+}
+
+function getAssignees(
+  assignees: {
+    user: QuickAccessAssignee;
+  }[],
+) {
+  return assignees.map(
+    (assignee) =>
+      assignee.user,
+  );
+}
+
+function toDateOnly(
+  date: Date,
+) {
   return new Date(
     Date.UTC(
       date.getUTCFullYear(),
@@ -157,26 +229,34 @@ function toDateOnly(date: Date) {
   );
 }
 
-function getDateKey(date: Date) {
+function getDateKey(
+  date: Date,
+) {
   const normalized =
     toDateOnly(date);
 
   return [
     normalized.getUTCFullYear(),
+
     String(
       normalized.getUTCMonth() + 1,
     ).padStart(2, "0"),
+
     String(
       normalized.getUTCDate(),
     ).padStart(2, "0"),
   ].join("-");
 }
 
-function startOfDay(date: Date) {
+function startOfDay(
+  date: Date,
+) {
   return toDateOnly(date);
 }
 
-function endOfDay(date: Date) {
+function endOfDay(
+  date: Date,
+) {
   const start =
     startOfDay(date);
 
@@ -208,27 +288,58 @@ function addDays(
 
 function getRecentDays() {
   const today =
-    startOfDay(new Date());
+    startOfDay(
+      new Date(),
+    );
 
   return [
     {
-      key: getDateKey(today),
-      label: "امروز" as const,
-      date: today,
+      key:
+        getDateKey(today),
+
+      label:
+        "امروز" as const,
+
+      date:
+        today,
     },
+
     {
-      key: getDateKey(
-        addDays(today, -1),
-      ),
-      label: "دیروز" as const,
-      date: addDays(today, -1),
+      key:
+        getDateKey(
+          addDays(
+            today,
+            -1,
+          ),
+        ),
+
+      label:
+        "دیروز" as const,
+
+      date:
+        addDays(
+          today,
+          -1,
+        ),
     },
+
     {
-      key: getDateKey(
-        addDays(today, -2),
-      ),
-      label: "روز قبلش" as const,
-      date: addDays(today, -2),
+      key:
+        getDateKey(
+          addDays(
+            today,
+            -2,
+          ),
+        ),
+
+      label:
+        "روز قبلش" as const,
+
+      date:
+        addDays(
+          today,
+          -2,
+        ),
     },
   ];
 }
@@ -315,7 +426,11 @@ function getActivityStatus(
     return "COMPLETED";
   }
 
-  if (!isRecord(activity.metadata)) {
+  if (
+    !isRecord(
+      activity.metadata,
+    )
+  ) {
     return null;
   }
 
@@ -341,7 +456,8 @@ async function getActivityLogs(
   until: Date,
 ): Promise<ActivityRow[]> {
   if (
-    taskIds.length === 0
+    taskIds.length ===
+    0
   ) {
     return [];
   }
@@ -350,16 +466,20 @@ async function getActivityLogs(
     await prisma.activityLog.findMany(
       {
         where: {
-          entityType: "TASK",
+          entityType:
+            "TASK",
+
           entityId: {
             in: taskIds,
           },
+
           action: {
             in: [
               "TASK_COMPLETED",
               "TASK_STATUS_CHANGED",
             ],
           },
+
           createdAt: {
             lte: until,
           },
@@ -367,8 +487,10 @@ async function getActivityLogs(
 
         orderBy: [
           {
-            createdAt: "asc",
+            createdAt:
+              "asc",
           },
+
           {
             id: "asc",
           },
@@ -409,8 +531,12 @@ async function getRecentCompletionActivities(
     await prisma.activityLog.findMany(
       {
         where: {
-          entityType: "TASK",
-          action: "TASK_COMPLETED",
+          entityType:
+            "TASK",
+
+          action:
+            "TASK_COMPLETED",
+
           createdAt: {
             gte: from,
             lte: to,
@@ -419,8 +545,10 @@ async function getRecentCompletionActivities(
 
         orderBy: [
           {
-            createdAt: "asc",
+            createdAt:
+              "asc",
           },
+
           {
             id: "asc",
           },
@@ -474,7 +602,9 @@ function buildNormalTaskHistory(
       }
     | null = null;
 
-  for (const activity of activities) {
+  for (
+    const activity of activities
+  ) {
     if (
       activity.entityId !==
         task.id ||
@@ -555,7 +685,9 @@ function buildRecurringOccurrenceHistory(
 ):
   RecurringOccurrenceState {
   const targetKey =
-    getDateKey(targetDate);
+    getDateKey(
+      targetDate,
+    );
 
   let completed =
     false;
@@ -578,7 +710,9 @@ function buildRecurringOccurrenceHistory(
     | "CANCELLED" =
     "TODO";
 
-  for (const activity of activities) {
+  for (
+    const activity of activities
+  ) {
     if (
       activity.entityId !==
         task.id ||
@@ -675,7 +809,8 @@ function isRecurringScheduledOnDate(
       recurrenceDayOfMonth:
         task.recurrenceDayOfMonth,
 
-      recurrenceActive: true,
+      recurrenceActive:
+        true,
     },
     date,
   );
@@ -702,7 +837,10 @@ function sortTasks(
   tasks: QuickAccessTask[],
 ) {
   return [...tasks].sort(
-    (first, second) => {
+    (
+      first,
+      second,
+    ) => {
       if (
         first.completed !==
         second.completed
@@ -746,7 +884,9 @@ export async function getAdminQuickAccessData(): Promise<
     getRecentDays();
 
   const oldestDay =
-    days[days.length - 1];
+    days[
+      days.length - 1
+    ];
 
   const newestDay =
     days[0];
@@ -801,10 +941,13 @@ export async function getAdminQuickAccessData(): Promise<
         OR: [
           {
             deadline: {
-              gte: oldestStart,
-              lte: newestEnd,
+              gte:
+                oldestStart,
+              lte:
+                newestEnd,
             },
           },
+
           {
             id: {
               in:
@@ -815,7 +958,8 @@ export async function getAdminQuickAccessData(): Promise<
       },
 
       orderBy: {
-        deadline: "asc",
+        deadline:
+          "asc",
       },
 
       select: {
@@ -826,10 +970,19 @@ export async function getAdminQuickAccessData(): Promise<
         deadline: true,
         completedAt: true,
 
-        assignedTo: {
+        assignees: {
+          orderBy: {
+            assignedAt:
+              "asc",
+          },
+
           select: {
-            id: true,
-            name: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
 
@@ -845,28 +998,37 @@ export async function getAdminQuickAccessData(): Promise<
   const recurringTasks =
     await prisma.task.findMany({
       where: {
-        isRecurring: true,
+        isRecurring:
+          true,
+
         recurrenceType: {
-          not: "NONE",
+          not:
+            "NONE",
         },
+
         recurrenceStartDate: {
-          lte: newestEnd,
+          lte:
+            newestEnd,
         },
+
         OR: [
           {
             recurrenceEndDate:
               null,
           },
+
           {
             recurrenceEndDate: {
-              gte: oldestStart,
+              gte:
+                oldestStart,
             },
           },
         ],
       },
 
       orderBy: {
-        createdAt: "desc",
+        createdAt:
+          "desc",
       },
 
       select: {
@@ -874,10 +1036,19 @@ export async function getAdminQuickAccessData(): Promise<
         title: true,
         priority: true,
 
-        assignedTo: {
+        assignees: {
+          orderBy: {
+            assignedAt:
+              "asc",
+          },
+
           select: {
-            id: true,
-            name: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
 
@@ -888,22 +1059,38 @@ export async function getAdminQuickAccessData(): Promise<
           },
         },
 
-        isRecurring: true,
-        recurrenceType: true,
-        recurrenceStartDate: true,
-        recurrenceEndDate: true,
-        recurrenceWeekdays: true,
-        recurrenceDayOfMonth: true,
-        recurrenceActive: true,
+        isRecurring:
+          true,
+
+        recurrenceType:
+          true,
+
+        recurrenceStartDate:
+          true,
+
+        recurrenceEndDate:
+          true,
+
+        recurrenceWeekdays:
+          true,
+
+        recurrenceDayOfMonth:
+          true,
+
+        recurrenceActive:
+          true,
       },
     });
 
   const taskIds = [
     ...normalTasks.map(
-      (task) => task.id,
+      (task) =>
+        task.id,
     ),
+
     ...recurringTasks.map(
-      (task) => task.id,
+      (task) =>
+        task.id,
     ),
   ];
 
@@ -919,7 +1106,9 @@ export async function getAdminQuickAccessData(): Promise<
       ActivityRow[]
     >();
 
-  for (const activity of activities) {
+  for (
+    const activity of activities
+  ) {
     if (
       !activity.entityId
     ) {
@@ -941,323 +1130,458 @@ export async function getAdminQuickAccessData(): Promise<
     );
   }
 
-  return days.map((day) => {
-    const dayStart =
-      startOfDay(
-        day.date,
-      );
-
-    const dayEnd =
-      endOfDay(
-        day.date,
-      );
-
-    const plannedTasks: QuickAccessTask[] =
-      [];
-
-    /*
-     * Taskهای معمولی که Deadline آنها
-     * در روز انتخاب‌شده است.
-     */
-    for (const task of normalTasks) {
-      if (
-        task.deadline < dayStart ||
-        task.deadline >
-          dayEnd
-      ) {
-        continue;
-      }
-
-      const history =
-        buildNormalTaskHistory(
-          task,
-          activitiesByTask.get(
-            task.id,
-          ) ?? [],
-          dayEnd,
+  return days.map(
+    (day) => {
+      const dayStart =
+        startOfDay(
+          day.date,
         );
 
-      const overdue =
-        !history.completed &&
-        (
-          day.key !==
-            days[0].key ||
+      const dayEnd =
+        endOfDay(
+          day.date,
+        );
+
+      const plannedTasks:
+        QuickAccessTask[] =
+        [];
+
+      /*
+       * Taskهای معمولی که Deadline آنها
+       * در روز انتخاب‌شده است.
+       */
+      for (
+        const task of normalTasks
+      ) {
+        if (
           task.deadline <
-            new Date()
-        ) &&
-        history.currentStatus !==
-          "CANCELLED";
+            dayStart ||
+          task.deadline >
+            dayEnd
+        ) {
+          continue;
+        }
 
-      plannedTasks.push({
-        id: task.id,
-        title: task.title,
-        project:
-          task.project,
-        assignedTo:
-          task.assignedTo,
-        priority:
-          task.priority,
-        deadline:
-          task.deadline,
-        completedAt:
-          history.completedAt,
-        completedBy:
-          history.completedBy,
-        isRecurring:
-          false,
-        occurrenceDate:
-          null,
-        source:
-          "NORMAL",
-        status:
-          history.currentStatus,
-        completed:
-          history.completed,
-        overdue,
-      });
-    }
+        const history =
+          buildNormalTaskHistory(
+            task,
+            activitiesByTask.get(
+              task.id,
+            ) ?? [],
+            dayEnd,
+          );
 
-    /*
-     * Taskهای تکرارشونده‌ای که در همان روز
-     * طبق Schedule باید اجرا می‌شده‌اند.
-     */
-    for (const task of recurringTasks) {
-      if (
-        !isRecurringScheduledOnDate(
-          task,
-          day.date,
-        )
-      ) {
-        continue;
+        const assignees =
+          getAssignees(
+            task.assignees,
+          );
+
+        const assignedTo =
+          getPrimaryAssignee(
+            task.assignees,
+          );
+
+        const overdue =
+          !history.completed &&
+          (
+            day.key !==
+              days[0].key ||
+            task.deadline <
+              new Date()
+          ) &&
+          history.currentStatus !==
+            "CANCELLED";
+
+        plannedTasks.push({
+          id:
+            task.id,
+
+          title:
+            task.title,
+
+          project:
+            task.project,
+
+          assignees,
+
+          assignedTo,
+
+          priority:
+            task.priority,
+
+          deadline:
+            task.deadline,
+
+          completedAt:
+            history.completedAt,
+
+          completedBy:
+            history.completedBy,
+
+          isRecurring:
+            false,
+
+          occurrenceDate:
+            null,
+
+          source:
+            "NORMAL",
+
+          status:
+            history.currentStatus,
+
+          completed:
+            history.completed,
+
+          overdue,
+        });
       }
 
-      const history =
-        buildRecurringOccurrenceHistory(
-          task,
-          day.date,
-          activitiesByTask.get(
+      /*
+       * Taskهای تکرارشونده‌ای که در همان روز
+       * طبق Schedule باید اجرا می‌شده‌اند.
+       */
+      for (
+        const task of recurringTasks
+      ) {
+        if (
+          !isRecurringScheduledOnDate(
+            task,
+            day.date,
+          )
+        ) {
+          continue;
+        }
+
+        const history =
+          buildRecurringOccurrenceHistory(
+            task,
+            day.date,
+            activitiesByTask.get(
+              task.id,
+            ) ?? [],
+          );
+
+        const assignees =
+          getAssignees(
+            task.assignees,
+          );
+
+        const assignedTo =
+          getPrimaryAssignee(
+            task.assignees,
+          );
+
+        const overdue =
+          !history.completed &&
+          day.key !==
+            days[0].key;
+
+        plannedTasks.push({
+          id:
             task.id,
-          ) ?? [],
+
+          title:
+            task.title,
+
+          project:
+            task.project,
+
+          assignees,
+
+          assignedTo,
+
+          priority:
+            task.priority,
+
+          deadline:
+            null,
+
+          completedAt:
+            history.completedAt,
+
+          completedBy:
+            history.completedBy,
+
+          isRecurring:
+            true,
+
+          occurrenceDate:
+            day.date,
+
+          source:
+            "RECURRING",
+
+          status:
+            history.status,
+
+          completed:
+            history.completed,
+
+          overdue,
+        });
+      }
+
+      /*
+       * Taskهایی که واقعاً در همان روز
+       * تکمیل شده‌اند؛ چه موعدشان همان روز بوده
+       * چه نبوده باشد.
+       */
+      const completedTasks:
+        QuickAccessTask[] =
+        [];
+
+      for (
+        const task of normalTasks
+      ) {
+        const completionActivity =
+          (
+            activitiesByTask.get(
+              task.id,
+            ) ?? []
+          )
+            .filter(
+              (activity) =>
+                !isRecurringActivity(
+                  activity,
+                ) &&
+                activity.action ===
+                  "TASK_COMPLETED" &&
+                activity.createdAt >=
+                  dayStart &&
+                activity.createdAt <=
+                  dayEnd,
+            )
+            .at(-1);
+
+        if (
+          !completionActivity
+        ) {
+          continue;
+        }
+
+        const assignees =
+          getAssignees(
+            task.assignees,
+          );
+
+        const assignedTo =
+          getPrimaryAssignee(
+            task.assignees,
+          );
+
+        completedTasks.push({
+          id:
+            task.id,
+
+          title:
+            task.title,
+
+          project:
+            task.project,
+
+          assignees,
+
+          assignedTo,
+
+          priority:
+            task.priority,
+
+          deadline:
+            task.deadline,
+
+          completedAt:
+            completionActivity.createdAt,
+
+          completedBy:
+            completionActivity.user,
+
+          isRecurring:
+            false,
+
+          occurrenceDate:
+            null,
+
+          source:
+            "NORMAL",
+
+          status:
+            "COMPLETED",
+
+          completed:
+            true,
+
+          overdue:
+            false,
+        });
+      }
+
+      for (
+        const task of recurringTasks
+      ) {
+        const completionActivity =
+          (
+            activitiesByTask.get(
+              task.id,
+            ) ?? []
+          )
+            .filter(
+              (activity) =>
+                isRecurringActivity(
+                  activity,
+                ) &&
+                activity.action ===
+                  "TASK_COMPLETED" &&
+                getOccurrenceDateFromActivity(
+                  activity,
+                ) ===
+                  day.key &&
+                activity.createdAt >=
+                  dayStart &&
+                activity.createdAt <=
+                  dayEnd,
+            )
+            .at(-1);
+
+        if (
+          !completionActivity
+        ) {
+          continue;
+        }
+
+        const assignees =
+          getAssignees(
+            task.assignees,
+          );
+
+        const assignedTo =
+          getPrimaryAssignee(
+            task.assignees,
+          );
+
+        completedTasks.push({
+          id:
+            task.id,
+
+          title:
+            task.title,
+
+          project:
+            task.project,
+
+          assignees,
+
+          assignedTo,
+
+          priority:
+            task.priority,
+
+          deadline:
+            null,
+
+          completedAt:
+            completionActivity.createdAt,
+
+          completedBy:
+            completionActivity.user,
+
+          isRecurring:
+            true,
+
+          occurrenceDate:
+            day.date,
+
+          source:
+            "RECURRING",
+
+          status:
+            "COMPLETED",
+
+          completed:
+            true,
+
+          overdue:
+            false,
+        });
+      }
+
+      const uniqueCompletedTasks =
+        Array.from(
+          new Map(
+            completedTasks.map(
+              (task) => [
+                `${task.id}:${task.occurrenceDate ? getDateKey(task.occurrenceDate) : "normal"}`,
+                task,
+              ],
+            ),
+          ).values(),
         );
 
-      const overdue =
-        !history.completed &&
-        day.key !==
-          days[0].key;
+      const sortedPlannedTasks =
+        sortTasks(
+          plannedTasks,
+        );
 
-      plannedTasks.push({
-        id: task.id,
-        title: task.title,
-        project:
-          task.project,
-        assignedTo:
-          task.assignedTo,
-        priority:
-          task.priority,
-        deadline:
-          null,
-        completedAt:
-          history.completedAt,
-        completedBy:
-          history.completedBy,
-        isRecurring:
-          true,
-        occurrenceDate:
+      const sortedCompletedTasks =
+        sortTasks(
+          uniqueCompletedTasks,
+        );
+
+      const overdueTasks =
+        sortedPlannedTasks.filter(
+          (task) =>
+            task.overdue,
+        );
+
+      const completedPlanned =
+        sortedPlannedTasks.filter(
+          (task) =>
+            task.completed,
+        ).length;
+
+      return {
+        key:
+          day.key,
+
+        label:
+          day.label,
+
+        date:
           day.date,
-        source:
-          "RECURRING",
-        status:
-          history.status,
-        completed:
-          history.completed,
-        overdue,
-      });
-    }
 
-    /*
-     * Taskهایی که واقعاً در همان روز
-     * تکمیل شده‌اند؛ چه موعدشان همان روز بوده
-     * چه نبوده باشد.
-     */
-    const completedTasks: QuickAccessTask[] =
-      [];
+        dateKey:
+          day.key,
 
-    for (const task of normalTasks) {
-      const completionActivity =
-        (
-          activitiesByTask.get(
-            task.id,
-          ) ?? []
-        )
-          .filter(
-            (activity) =>
-              !isRecurringActivity(
-                activity,
-              ) &&
-              activity.action ===
-                "TASK_COMPLETED" &&
-              activity.createdAt >=
-                dayStart &&
-              activity.createdAt <=
-                dayEnd,
-          )
-          .at(-1);
-
-      if (!completionActivity) {
-        continue;
-      }
-
-      completedTasks.push({
-        id: task.id,
-        title: task.title,
-        project:
-          task.project,
-        assignedTo:
-          task.assignedTo,
-        priority:
-          task.priority,
-        deadline:
-          task.deadline,
-        completedAt:
-          completionActivity.createdAt,
-        completedBy:
-          completionActivity.user,
-        isRecurring:
-          false,
-        occurrenceDate:
-          null,
-        source:
-          "NORMAL",
-        status:
-          "COMPLETED",
-        completed:
-          true,
-        overdue: false,
-      });
-    }
-
-    for (const task of recurringTasks) {
-      const completionActivity =
-        (
-          activitiesByTask.get(
-            task.id,
-          ) ?? []
-        )
-          .filter(
-            (activity) =>
-              isRecurringActivity(
-                activity,
-              ) &&
-              activity.action ===
-                "TASK_COMPLETED" &&
-              getOccurrenceDateFromActivity(
-                activity,
-              ) === day.key &&
-              activity.createdAt >=
-                dayStart &&
-              activity.createdAt <=
-                dayEnd,
-          )
-          .at(-1);
-
-      if (!completionActivity) {
-        continue;
-      }
-
-      completedTasks.push({
-        id: task.id,
-        title: task.title,
-        project:
-          task.project,
-        assignedTo:
-          task.assignedTo,
-        priority:
-          task.priority,
-        deadline:
-          null,
-        completedAt:
-          completionActivity.createdAt,
-        completedBy:
-          completionActivity.user,
-        isRecurring:
-          true,
-        occurrenceDate:
-          day.date,
-        source:
-          "RECURRING",
-        status:
-          "COMPLETED",
-        completed:
-          true,
-        overdue: false,
-      });
-    }
-
-    const uniqueCompletedTasks =
-      Array.from(
-        new Map(
-          completedTasks.map(
-            (task) => [
-              `${task.id}:${task.occurrenceDate ? getDateKey(task.occurrenceDate) : "normal"}`,
-              task,
-            ],
-          ),
-        ).values(),
-      );
-
-    const sortedPlannedTasks =
-      sortTasks(
-        plannedTasks,
-      );
-
-    const sortedCompletedTasks =
-      sortTasks(
-        uniqueCompletedTasks,
-      );
-
-    const overdueTasks =
-      sortedPlannedTasks.filter(
-        (task) =>
-          task.overdue,
-      );
-
-    const completedPlanned =
-      sortedPlannedTasks.filter(
-        (task) =>
-          task.completed,
-      ).length;
-
-    return {
-      key: day.key,
-      label: day.label,
-      date: day.date,
-      dateKey: day.key,
-
-      overview: {
-        planned:
-          sortedPlannedTasks.length,
-        completed:
-          completedPlanned,
-        pending:
-          sortedPlannedTasks.length -
-          completedPlanned,
-        overdue:
-          overdueTasks.length,
-        completionRate:
-          getCompletionRate(
+        overview: {
+          planned:
             sortedPlannedTasks.length,
+
+          completed:
             completedPlanned,
-          ),
-      },
 
-      completedTasks:
-        sortedCompletedTasks,
+          pending:
+            sortedPlannedTasks.length -
+            completedPlanned,
 
-      plannedTasks:
-        sortedPlannedTasks,
+          overdue:
+            overdueTasks.length,
 
-      overdueTasks:
-        overdueTasks,
-    };
-  });
+          completionRate:
+            getCompletionRate(
+              sortedPlannedTasks.length,
+              completedPlanned,
+            ),
+        },
+
+        completedTasks:
+          sortedCompletedTasks,
+
+        plannedTasks:
+          sortedPlannedTasks,
+
+        overdueTasks:
+          overdueTasks,
+      };
+    },
+  );
 }

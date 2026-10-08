@@ -72,35 +72,28 @@ export async function canViewTask(taskId: string) {
     return true;
   }
 
-  const task = await prisma.task.findUnique({
+  const task = await prisma.task.findFirst({
     where: {
       id: taskId,
-    },
-    select: {
-      assignedToId: true,
+      assignees: {
+        some: {
+          userId: user.id,
+        },
+      },
       project: {
-        select: {
-          members: {
-            where: {
-              userId: user.id,
-            },
-            select: {
-              id: true,
-            },
+        members: {
+          some: {
+            userId: user.id,
           },
         },
       },
     },
+    select: {
+      id: true,
+    },
   });
 
-  if (!task) {
-    return false;
-  }
-
-  return (
-    task.assignedToId === user.id &&
-    task.project.members.length > 0
-  );
+  return Boolean(task);
 }
 
 export async function canEditTask(taskId: string) {
@@ -110,16 +103,21 @@ export async function canEditTask(taskId: string) {
     return true;
   }
 
-  const task = await prisma.task.findUnique({
+  const task = await prisma.task.findFirst({
     where: {
       id: taskId,
+      assignees: {
+        some: {
+          userId: user.id,
+        },
+      },
     },
     select: {
-      assignedToId: true,
+      id: true,
     },
   });
 
-  return task?.assignedToId === user.id;
+  return Boolean(task);
 }
 
 export async function canChangeTaskStatus(

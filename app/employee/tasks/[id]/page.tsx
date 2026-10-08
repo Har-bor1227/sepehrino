@@ -79,6 +79,22 @@ const WEEKDAY_LABELS: Record<
   7: "یکشنبه",
 };
 
+const SUB_PROJECT_LABELS = {
+  WEB_DESIGN: "طراحی سایت",
+  SEO: "سئو",
+  SOCIAL_MEDIA: "سوشال مدیا",
+  PHOTOGRAPHY: "عکاسی",
+  VIDEOGRAPHY: "فیلمبرداری",
+  TEASER_PRODUCTION: "تیزرسازی",
+  CATALOG: "کاتالوگ",
+  BRAND_IDENTITY_DESIGN:
+    "طراحی هویت بصری",
+  CRM_MANAGEMENT: "مدیریت CRM",
+  BOOTH_CONSTRUCTION:
+    "غرفه سازی",
+  PROGRAMMING: "برنامه نویسی",
+} as const;
+
 function getTodayDateKey() {
   const today = new Date();
 
@@ -274,7 +290,10 @@ export default async function EmployeeTaskPage({
       : "";
 
   return (
-    <main className="min-h-screen">
+    <main
+      className="min-h-screen"
+      dir="rtl"
+    >
       <div className="mx-auto max-w-[1250px] space-y-6 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
         <Link
           href="/employee/tasks"
@@ -290,9 +309,11 @@ export default async function EmployeeTaskPage({
               <>
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200/60 bg-violet-50/65 px-3 py-1.5 text-xs font-bold text-violet-700">
                   <Repeat2 className="size-3.5" />
-                  {RECURRENCE_LABELS[
-                    recurrenceType
-                  ]}
+                  {
+                    RECURRENCE_LABELS[
+                      recurrenceType
+                    ]
+                  }
                 </span>
 
                 {task.recurrenceActive ? (
@@ -366,15 +387,36 @@ export default async function EmployeeTaskPage({
             {task.title}
           </h1>
 
-          <p className="mt-3 text-sm text-slate-400">
-            پروژه:
-            <strong className="mr-1 text-slate-700">
+          <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-400">
+            <span>
+              پروژه:
+            </span>
+
+            <strong className="text-slate-700">
               {
                 task.project
                   .title
               }
             </strong>
-          </p>
+
+            <span className="text-slate-300">
+              /
+            </span>
+
+            <span>
+              زیرپروژه:
+            </span>
+
+            <strong className="text-slate-700">
+              {task.subProject
+                ? SUB_PROJECT_LABELS[
+                    task
+                      .subProject
+                      .type
+                  ]
+                : "انتخاب نشده"}
+            </strong>
+          </div>
 
           {recurring ? (
             <div className="mt-6 rounded-3xl border border-violet-200/45 bg-violet-50/35 p-5">
@@ -441,16 +483,47 @@ export default async function EmployeeTaskPage({
             <div className="rounded-3xl border border-white/45 bg-white/25 p-5">
               <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
                 <UserRound className="size-4" />
-                مسئول
+                مسئول‌های Task
               </div>
 
-              <p className="mt-3 font-bold text-slate-800">
-                {
-                  task
-                    .assignedTo
-                    .name
-                }
-              </p>
+              {task.assignees.length >
+              0 ? (
+                <div className="mt-3 space-y-2">
+                  {task.assignees.map(
+                    (assignee) => (
+                      <div
+                        key={
+                          assignee.user
+                            .id
+                        }
+                      >
+                        <p className="font-bold text-slate-800">
+                          {
+                            assignee
+                              .user
+                              .name
+                          }
+                        </p>
+
+                        <p
+                          dir="ltr"
+                          className="mt-1 text-xs text-slate-400"
+                        >
+                          {
+                            assignee
+                              .user
+                              .email
+                          }
+                        </p>
+                      </div>
+                    ),
+                  )}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm font-semibold text-slate-400">
+                  بدون مسئول
+                </p>
+              )}
             </div>
 
             <div className="rounded-3xl border border-white/45 bg-white/25 p-5">

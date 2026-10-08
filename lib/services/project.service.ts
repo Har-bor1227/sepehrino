@@ -8,6 +8,20 @@ import {
   updateProjectSchema,
 } from "@/lib/validations/project";
 
+export const PROJECT_SUB_PROJECT_TYPES = [
+  "WEB_DESIGN",
+  "SEO",
+  "SOCIAL_MEDIA",
+  "PHOTOGRAPHY",
+  "VIDEOGRAPHY",
+  "TEASER_PRODUCTION",
+  "CATALOG",
+  "BRAND_IDENTITY_DESIGN",
+  "CRM_MANAGEMENT",
+  "BOOTH_CONSTRUCTION",
+  "PROGRAMMING",
+] as const;
+
 export async function getAdminProjects() {
   await requireAdmin();
 
@@ -43,6 +57,23 @@ export async function getAdminProjects() {
             },
           },
           joinedAt: true,
+        },
+      },
+
+      subProjects: {
+        orderBy: {
+          createdAt: "asc",
+        },
+        select: {
+          id: true,
+          type: true,
+          createdAt: true,
+          updatedAt: true,
+          _count: {
+            select: {
+              tasks: true,
+            },
+          },
         },
       },
 
@@ -102,6 +133,7 @@ export async function getAdminProjects() {
       updatedAt: project.updatedAt,
       createdBy: project.createdBy,
       members: project.members,
+      subProjects: project.subProjects,
       stats: {
         totalTasks,
         completedTasks,
@@ -111,6 +143,7 @@ export async function getAdminProjects() {
         overdueTasks,
         progress,
         membersCount: project.members.length,
+        subProjectsCount: project.subProjects.length,
       },
     };
   });
@@ -161,6 +194,24 @@ export async function getAdminProjectById(
         },
       },
 
+      subProjects: {
+        orderBy: {
+          createdAt: "asc",
+        },
+        select: {
+          id: true,
+          type: true,
+          createdAt: true,
+          updatedAt: true,
+
+          _count: {
+            select: {
+              tasks: true,
+            },
+          },
+        },
+      },
+
       tasks: {
         orderBy: {
           createdAt: "desc",
@@ -175,10 +226,26 @@ export async function getAdminProjectById(
           completedAt: true,
           createdAt: true,
 
-          assignedTo: {
+          subProject: {
             select: {
               id: true,
-              name: true,
+              type: true,
+            },
+          },
+
+          assignees: {
+            select: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+              assignedAt: true,
+            },
+            orderBy: {
+              assignedAt: "asc",
             },
           },
         },
@@ -219,15 +286,40 @@ export async function getEmployeeProjects() {
         },
       },
 
+      subProjects: {
+        orderBy: {
+          createdAt: "asc",
+        },
+        select: {
+          id: true,
+          type: true,
+          _count: {
+            select: {
+              tasks: true,
+            },
+          },
+        },
+      },
+
       tasks: {
         where: {
-          assignedToId: session.user.id,
+          assignees: {
+            some: {
+              userId: session.user.id,
+            },
+          },
         },
         select: {
           id: true,
           status: true,
           deadline: true,
           completedAt: true,
+          subProject: {
+            select: {
+              id: true,
+              type: true,
+            },
+          },
         },
       },
     },
@@ -277,9 +369,28 @@ export async function getProjectById(
         },
       },
 
+      subProjects: {
+        orderBy: {
+          createdAt: "asc",
+        },
+        select: {
+          id: true,
+          type: true,
+          _count: {
+            select: {
+              tasks: true,
+            },
+          },
+        },
+      },
+
       tasks: {
         where: {
-          assignedToId: session.user.id,
+          assignees: {
+            some: {
+              userId: session.user.id,
+            },
+          },
         },
         orderBy: {
           createdAt: "desc",
@@ -292,6 +403,13 @@ export async function getProjectById(
           priority: true,
           deadline: true,
           completedAt: true,
+
+          subProject: {
+            select: {
+              id: true,
+              type: true,
+            },
+          },
         },
       },
     },
@@ -320,6 +438,14 @@ export async function createProject(input: {
       startDate: validated.startDate,
       deadline: validated.deadline,
       createdById: session.user.id,
+
+      subProjects: {
+        create: PROJECT_SUB_PROJECT_TYPES.map(
+          (type) => ({
+            type,
+          }),
+        ),
+      },
     },
     select: {
       id: true,
@@ -340,6 +466,8 @@ export async function createProject(input: {
       entityId: project.id,
       metadata: {
         title: project.title,
+        subProjectsCount:
+          PROJECT_SUB_PROJECT_TYPES.length,
       },
     },
   });
@@ -610,7 +738,11 @@ export async function removeProjectMember(
   const assignedTaskCount = await prisma.task.count({
     where: {
       projectId: validated.projectId,
-      assignedToId: validated.employeeId,
+      assignees: {
+        some: {
+          userId: validated.employeeId,
+        },
+      },
       status: {
         not: "CANCELLED",
       },

@@ -76,6 +76,7 @@ type EmployeeProfile = {
       | "TASK_UPDATED"
       | "TASK_DELETED"
       | "TASK_ASSIGNED"
+      | "TASK_ASSIGNEE_REMOVED"
       | "TASK_STATUS_CHANGED"
       | "TASK_PRIORITY_CHANGED"
       | "TASK_DEADLINE_CHANGED"
@@ -223,6 +224,8 @@ function getActivityLabel(
       "Task حذف شد",
     TASK_ASSIGNED:
       "Task اختصاص داده شد",
+    TASK_ASSIGNEE_REMOVED:
+      "مسئول Task حذف شد",
     TASK_STATUS_CHANGED:
       "وضعیت Task تغییر کرد",
     TASK_PRIORITY_CHANGED:

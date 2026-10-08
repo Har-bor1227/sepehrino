@@ -13,6 +13,7 @@ import {
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  Check,
   Loader2,
   Save,
 } from "lucide-react";
@@ -34,6 +35,19 @@ type FormOutput = z.output<
   typeof updateTaskSchema
 >;
 
+type ProjectSubProjectType =
+  | "WEB_DESIGN"
+  | "SEO"
+  | "SOCIAL_MEDIA"
+  | "PHOTOGRAPHY"
+  | "VIDEOGRAPHY"
+  | "TEASER_PRODUCTION"
+  | "CATALOG"
+  | "BRAND_IDENTITY_DESIGN"
+  | "CRM_MANAGEMENT"
+  | "BOOTH_CONSTRUCTION"
+  | "PROGRAMMING";
+
 type EmployeeOption = {
   id: string;
   name: string;
@@ -41,13 +55,20 @@ type EmployeeOption = {
   isActive: boolean;
 };
 
+type SubProjectOption = {
+  id: string;
+  type: ProjectSubProjectType;
+};
+
 type EditTaskFormProps = {
   taskId: string;
   projectId: string;
+
   defaultValues: {
+    subProjectId: string;
     title: string;
     description: string;
-    assignedToId: string;
+    assigneeIds: string[];
     priority:
       | "LOW"
       | "MEDIUM"
@@ -69,7 +90,10 @@ type EditTaskFormProps = {
       | null;
     recurrenceActive: boolean;
   };
+
   employees: EmployeeOption[];
+
+  subProjects: SubProjectOption[];
 };
 
 const priorityOptions = [
@@ -91,11 +115,32 @@ const priorityOptions = [
   },
 ] as const;
 
+const subProjectLabels: Record<
+  ProjectSubProjectType,
+  string
+> = {
+  WEB_DESIGN: "طراحی سایت",
+  SEO: "سئو",
+  SOCIAL_MEDIA: "سوشال مدیا",
+  PHOTOGRAPHY: "عکاسی",
+  VIDEOGRAPHY: "فیلمبرداری",
+  TEASER_PRODUCTION:
+    "تیزرسازی",
+  CATALOG: "کاتالوگ",
+  BRAND_IDENTITY_DESIGN:
+    "طراحی هویت بصری",
+  CRM_MANAGEMENT: "مدیریت CRM",
+  BOOTH_CONSTRUCTION:
+    "غرفه سازی",
+  PROGRAMMING: "برنامه نویسی",
+};
+
 export default function EditTaskForm({
   taskId,
   projectId,
   defaultValues,
   employees,
+  subProjects,
 }: EditTaskFormProps) {
   const router = useRouter();
 
@@ -117,56 +162,101 @@ export default function EditTaskForm({
     resolver: zodResolver(
       updateTaskSchema,
     ),
+
     defaultValues: {
+      subProjectId:
+        defaultValues.subProjectId,
+
       title:
         defaultValues.title,
+
       description:
         defaultValues.description,
-      assignedToId:
-        defaultValues.assignedToId,
+
+      assigneeIds:
+        defaultValues.assigneeIds,
+
       priority:
         defaultValues.priority,
+
       deadline:
         defaultValues.deadline,
 
       isRecurring:
         defaultValues.isRecurring,
+
       recurrenceType:
         defaultValues.recurrenceType,
+
       recurrenceStartDate:
         defaultValues.recurrenceStartDate,
+
       recurrenceEndDate: null,
+
       recurrenceWeekdays:
         defaultValues.recurrenceWeekdays,
+
       recurrenceDayOfMonth:
         defaultValues.recurrenceDayOfMonth,
+
       recurrenceActive:
         defaultValues.recurrenceActive,
     },
   });
 
-  const [
-    selectedEmployeeId,
-    deadline,
-    isRecurring,
-    recurrenceType,
-    recurrenceStartDate,
-    recurrenceWeekdays,
-    recurrenceDayOfMonth,
-    recurrenceActive,
-  ] = useWatch({
-    control,
-    name: [
-      "assignedToId",
-      "deadline",
-      "isRecurring",
-      "recurrenceType",
-      "recurrenceStartDate",
-      "recurrenceWeekdays",
-      "recurrenceDayOfMonth",
-      "recurrenceActive",
-    ],
-  });
+  const selectedSubProjectId =
+    useWatch({
+      control,
+      name: "subProjectId",
+    });
+
+  const assigneeIds =
+    useWatch({
+      control,
+      name: "assigneeIds",
+    }) ?? [];
+
+  const deadline =
+    useWatch({
+      control,
+      name: "deadline",
+    });
+
+  const isRecurring =
+    useWatch({
+      control,
+      name: "isRecurring",
+    });
+
+  const recurrenceType =
+    useWatch({
+      control,
+      name: "recurrenceType",
+    });
+
+  const recurrenceStartDate =
+    useWatch({
+      control,
+      name: "recurrenceStartDate",
+    });
+
+  const recurrenceWeekdays =
+    useWatch({
+      control,
+      name: "recurrenceWeekdays",
+    });
+
+  const recurrenceDayOfMonth =
+    useWatch({
+      control,
+      name: "recurrenceDayOfMonth",
+    });
+
+  const recurrenceActive =
+    useWatch({
+      control,
+      name: "recurrenceActive",
+    });
 
   const activeEmployees =
     useMemo(
@@ -178,26 +268,78 @@ export default function EditTaskForm({
       [employees],
     );
 
+  const selectedSubProject =
+    useMemo(
+      () =>
+        subProjects.find(
+          (subProject) =>
+            subProject.id ===
+            selectedSubProjectId,
+        ) ?? null,
+      [
+        subProjects,
+        selectedSubProjectId,
+      ],
+    );
+
   useEffect(() => {
-    const exists =
-      activeEmployees.some(
-        (employee) =>
-          employee.id ===
-          selectedEmployeeId,
+    const availableEmployeeIds =
+      new Set(
+        activeEmployees.map(
+          (employee) =>
+            employee.id,
+        ),
+      );
+
+    const validAssigneeIds =
+      assigneeIds.filter(
+        (id) =>
+          availableEmployeeIds.has(
+            id,
+          ),
       );
 
     if (
-      selectedEmployeeId &&
-      !exists
+      validAssigneeIds.length !==
+      assigneeIds.length
     ) {
       setValue(
-        "assignedToId",
-        "",
+        "assigneeIds",
+        validAssigneeIds,
+        {
+          shouldValidate: true,
+        },
       );
     }
   }, [
     activeEmployees,
-    selectedEmployeeId,
+    assigneeIds,
+    setValue,
+  ]);
+
+  useEffect(() => {
+    const subProjectExists =
+      subProjects.some(
+        (subProject) =>
+          subProject.id ===
+          selectedSubProjectId,
+      );
+
+    if (
+      selectedSubProjectId &&
+      !subProjectExists
+    ) {
+      setValue(
+        "subProjectId",
+        "",
+        {
+          shouldValidate: true,
+        },
+      );
+    }
+  }, [
+    subProjects,
+    selectedSubProjectId,
     setValue,
   ]);
 
@@ -227,6 +369,32 @@ export default function EditTaskForm({
     recurrenceStartDate,
     setValue,
   ]);
+
+  const toggleAssignee = (
+    employeeId: string,
+  ) => {
+    const next =
+      assigneeIds.includes(
+        employeeId,
+      )
+        ? assigneeIds.filter(
+            (id) =>
+              id !== employeeId,
+          )
+        : [
+            ...assigneeIds,
+            employeeId,
+          ];
+
+    setValue(
+      "assigneeIds",
+      next,
+      {
+        shouldValidate: true,
+        shouldDirty: true,
+      },
+    );
+  };
 
   const handleRecurrenceToggle = (
     enabled: boolean,
@@ -339,18 +507,30 @@ export default function EditTaskForm({
     );
 
     reset({
-      title: payload.title,
+      subProjectId:
+        payload.subProjectId ??
+        "",
+
+      title:
+        payload.title ?? "",
+
       description:
-        payload.description ?? "",
-      assignedToId:
-        payload.assignedToId,
+        payload.description ??
+        "",
+
+      assigneeIds:
+        payload.assigneeIds ?? [],
+
       priority:
-        payload.priority,
-      deadline: payload.deadline
-        ? payload.deadline
-            .toISOString()
-            .slice(0, 10)
-        : defaultValues.deadline,
+        payload.priority ??
+        "MEDIUM",
+
+      deadline:
+        payload.deadline
+          ? payload.deadline
+              .toISOString()
+              .slice(0, 10)
+          : defaultValues.deadline,
 
       isRecurring:
         payload.isRecurring ??
@@ -361,8 +541,7 @@ export default function EditTaskForm({
         "NONE",
 
       recurrenceStartDate:
-        payload
-          .recurrenceStartDate
+        payload.recurrenceStartDate
           ? payload
               .recurrenceStartDate
               .toISOString()
@@ -376,13 +555,11 @@ export default function EditTaskForm({
         [],
 
       recurrenceDayOfMonth:
-        payload
-          .recurrenceDayOfMonth ??
+        payload.recurrenceDayOfMonth ??
         null,
 
       recurrenceActive:
-        payload
-          .recurrenceActive ??
+        payload.recurrenceActive ??
         true,
     });
 
@@ -395,6 +572,7 @@ export default function EditTaskForm({
         onSubmit,
       )}
       className="space-y-6"
+      dir="rtl"
     >
       <input
         type="hidden"
@@ -414,7 +592,7 @@ export default function EditTaskForm({
           <input
             id="edit-task-title"
             {...register("title")}
-            className="glass-field h-11 w-full rounded-xl px-3.5 text-sm text-slate-800 outline-none"
+            className="glass-field h-11 w-full rounded-xl px-3.5 text-right text-sm text-slate-800 outline-none"
           />
 
           {errors.title ? (
@@ -429,45 +607,148 @@ export default function EditTaskForm({
 
         <div className="space-y-2">
           <label
-            htmlFor="edit-task-assignee"
+            htmlFor="edit-task-sub-project"
             className="text-sm font-semibold text-slate-700"
           >
-            مسئول Task
+            زیرپروژه
           </label>
 
           <select
-            id="edit-task-assignee"
+            id="edit-task-sub-project"
             {...register(
-              "assignedToId",
+              "subProjectId",
             )}
-            className="glass-field h-11 w-full rounded-xl px-3.5 text-sm font-medium text-slate-700 outline-none"
+            className="glass-field h-11 w-full rounded-xl px-3.5 text-right text-sm font-medium text-slate-700 outline-none"
           >
             <option value="">
-              انتخاب کارمند
+              انتخاب زیرپروژه
             </option>
 
-            {activeEmployees.map(
-              (employee) => (
+            {subProjects.map(
+              (subProject) => (
                 <option
-                  key={employee.id}
+                  key={
+                    subProject.id
+                  }
                   value={
-                    employee.id
+                    subProject.id
                   }
                 >
-                  {employee.name} —{" "}
                   {
-                    employee.email
+                    subProjectLabels[
+                      subProject.type
+                    ]
                   }
                 </option>
               ),
             )}
           </select>
 
-          {errors.assignedToId ? (
+          {errors.subProjectId ? (
             <p className="text-xs font-medium text-red-600">
               {
                 errors
-                  .assignedToId
+                  .subProjectId
+                  .message
+              }
+            </p>
+          ) : null}
+        </div>
+
+        <div className="space-y-2 lg:col-span-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label className="text-sm font-semibold text-slate-700">
+              مسئول‌های Task
+            </label>
+
+            <span className="text-xs font-medium text-slate-400">
+              {
+                assigneeIds.length.toLocaleString(
+                  "fa-IR",
+                )
+              }{" "}
+              نفر انتخاب شده
+            </span>
+          </div>
+
+          {activeEmployees.length ===
+          0 ? (
+            <div className="rounded-2xl border border-dashed border-red-200 bg-red-50/50 px-4 py-5 text-sm font-medium text-red-600">
+              این پروژه عضو فعال برای
+              واگذاری Task ندارد.
+            </div>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {activeEmployees.map(
+                (employee) => {
+                  const isSelected =
+                    assigneeIds.includes(
+                      employee.id,
+                    );
+
+                  return (
+                    <button
+                      key={
+                        employee.id
+                      }
+                      type="button"
+                      onClick={() =>
+                        toggleAssignee(
+                          employee.id,
+                        )
+                      }
+                      className={[
+                        "flex min-h-16 items-center gap-3 rounded-2xl border px-3.5 py-3 text-right transition",
+                        isSelected
+                          ? "border-slate-900 bg-slate-900 text-white shadow-[0_12px_24px_rgba(15,23,42,0.12)]"
+                          : "border-white/60 bg-white/30 text-slate-700 hover:bg-white/50",
+                      ].join(" ")}
+                    >
+                      <span
+                        className={[
+                          "flex size-5 shrink-0 items-center justify-center rounded-md border",
+                          isSelected
+                            ? "border-white/20 bg-white text-slate-900"
+                            : "border-slate-300 bg-white/50",
+                        ].join(" ")}
+                      >
+                        {isSelected ? (
+                          <Check className="size-3.5" />
+                        ) : null}
+                      </span>
+
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold">
+                          {
+                            employee.name
+                          }
+                        </span>
+
+                        <span
+                          className={[
+                            "mt-0.5 block truncate text-xs",
+                            isSelected
+                              ? "text-slate-300"
+                              : "text-slate-400",
+                          ].join(" ")}
+                        >
+                          {
+                            employee.email
+                          }
+                        </span>
+                      </span>
+                    </button>
+                  );
+                },
+              )}
+            </div>
+          )}
+
+          {errors.assigneeIds ? (
+            <p className="text-xs font-medium text-red-600">
+              {
+                errors
+                  .assigneeIds
                   .message
               }
             </p>
@@ -487,7 +768,7 @@ export default function EditTaskForm({
             {...register(
               "priority",
             )}
-            className="glass-field h-11 w-full rounded-xl px-3.5 text-sm font-medium text-slate-700 outline-none"
+            className="glass-field h-11 w-full rounded-xl px-3.5 text-right text-sm font-medium text-slate-700 outline-none"
           >
             {priorityOptions.map(
               (priority) => (
@@ -499,7 +780,9 @@ export default function EditTaskForm({
                     priority.value
                   }
                 >
-                  {priority.label}
+                  {
+                    priority.label
+                  }
                 </option>
               ),
             )}
@@ -573,7 +856,7 @@ export default function EditTaskForm({
               "description",
             )}
             rows={5}
-            className="glass-field min-h-32 w-full resize-none rounded-xl px-3.5 py-3 text-sm leading-7 text-slate-800 outline-none"
+            className="glass-field min-h-32 w-full resize-none rounded-xl px-3.5 py-3 text-right text-sm leading-7 text-slate-800 outline-none"
           />
 
           {errors.description ? (
@@ -607,7 +890,8 @@ export default function EditTaskForm({
             : ""
         }
         recurrenceWeekdays={
-          recurrenceWeekdays ?? []
+          recurrenceWeekdays ??
+          []
         }
         recurrenceDayOfMonth={
           recurrenceDayOfMonth ??
@@ -679,22 +963,61 @@ export default function EditTaskForm({
         showActiveToggle
         errors={{
           recurrenceType:
-            errors.recurrenceType
+            errors
+              .recurrenceType
               ?.message,
+
           recurrenceStartDate:
             errors
               .recurrenceStartDate
               ?.message,
+
           recurrenceWeekdays:
             errors
               .recurrenceWeekdays
               ?.message,
+
           recurrenceDayOfMonth:
             errors
               .recurrenceDayOfMonth
               ?.message,
         }}
       />
+
+      <div className="rounded-3xl border border-white/55 bg-white/24 p-4">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+          <span className="text-slate-400">
+            پروژه:
+            <strong className="mr-1 text-slate-700">
+              ثبت‌شده
+            </strong>
+          </span>
+
+          <span className="text-slate-400">
+            زیرپروژه:
+            <strong className="mr-1 text-slate-700">
+              {selectedSubProject
+                ? subProjectLabels[
+                    selectedSubProject
+                      .type
+                  ]
+                : "انتخاب نشده"}
+            </strong>
+          </span>
+
+          <span className="text-slate-400">
+            مسئول‌ها:
+            <strong className="mr-1 text-slate-700">
+              {
+                assigneeIds.length.toLocaleString(
+                  "fa-IR",
+                )
+              }{" "}
+              نفر
+            </strong>
+          </span>
+        </div>
+      </div>
 
       <div className="flex justify-end border-t border-white/40 pt-5">
         <button

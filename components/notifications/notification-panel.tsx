@@ -32,6 +32,7 @@ type NotificationItem = {
   entityType:
     | "USER"
     | "PROJECT"
+    | "SUB_PROJECT"
     | "TASK"
     | "COMMENT"
     | "ATTACHMENT"

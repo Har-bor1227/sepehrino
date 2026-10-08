@@ -14,6 +14,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   CalendarDays,
+  Check,
   Loader2,
   Plus,
 } from "lucide-react";
@@ -35,6 +36,19 @@ type FormOutput = z.output<
   typeof createTaskSchema
 >;
 
+type ProjectSubProjectType =
+  | "WEB_DESIGN"
+  | "SEO"
+  | "SOCIAL_MEDIA"
+  | "PHOTOGRAPHY"
+  | "VIDEOGRAPHY"
+  | "TEASER_PRODUCTION"
+  | "CATALOG"
+  | "BRAND_IDENTITY_DESIGN"
+  | "CRM_MANAGEMENT"
+  | "BOOTH_CONSTRUCTION"
+  | "PROGRAMMING";
+
 type ProjectOption = {
   id: string;
   title: string;
@@ -43,6 +57,12 @@ type ProjectOption = {
     | "IN_PROGRESS"
     | "COMPLETED"
     | "ARCHIVED";
+
+  subProjects: Array<{
+    id: string;
+    type: ProjectSubProjectType;
+  }>;
+
   members: Array<{
     user: {
       id: string;
@@ -76,6 +96,25 @@ const priorityOptions = [
   },
 ] as const;
 
+const subProjectLabels: Record<
+  ProjectSubProjectType,
+  string
+> = {
+  WEB_DESIGN: "طراحی سایت",
+  SEO: "سئو",
+  SOCIAL_MEDIA: "سوشال مدیا",
+  PHOTOGRAPHY: "عکاسی",
+  VIDEOGRAPHY: "فیلمبرداری",
+  TEASER_PRODUCTION: "تیزرسازی",
+  CATALOG: "کاتالوگ",
+  BRAND_IDENTITY_DESIGN:
+    "طراحی هویت بصری",
+  CRM_MANAGEMENT: "مدیریت CRM",
+  BOOTH_CONSTRUCTION:
+    "غرفه سازی",
+  PROGRAMMING: "برنامه نویسی",
+};
+
 export default function CreateTaskForm({
   projects,
 }: CreateTaskFormProps) {
@@ -99,11 +138,13 @@ export default function CreateTaskForm({
     resolver: zodResolver(
       createTaskSchema,
     ),
+
     defaultValues: {
       projectId: "",
+      subProjectId: "",
       title: "",
       description: "",
-      assignedToId: "",
+      assigneeIds: [],
       priority: "MEDIUM",
       deadline: "",
       isRecurring: false,
@@ -116,30 +157,65 @@ export default function CreateTaskForm({
     },
   });
 
-  const [
-    selectedProjectId,
-    selectedEmployeeId,
-    deadline,
-    isRecurring,
-    recurrenceType,
-    recurrenceStartDate,
-    recurrenceWeekdays,
-    recurrenceDayOfMonth,
-    recurrenceActive,
-  ] = useWatch({
-    control,
-    name: [
-      "projectId",
-      "assignedToId",
-      "deadline",
-      "isRecurring",
-      "recurrenceType",
-      "recurrenceStartDate",
-      "recurrenceWeekdays",
-      "recurrenceDayOfMonth",
-      "recurrenceActive",
-    ],
-  });
+  const selectedProjectId =
+    useWatch({
+      control,
+      name: "projectId",
+    });
+
+  const selectedSubProjectId =
+    useWatch({
+      control,
+      name: "subProjectId",
+    });
+
+  const assigneeIds =
+    useWatch({
+      control,
+      name: "assigneeIds",
+    }) ?? [];
+
+  const deadline =
+    useWatch({
+      control,
+      name: "deadline",
+    });
+
+  const isRecurring =
+    useWatch({
+      control,
+      name: "isRecurring",
+    });
+
+  const recurrenceType =
+    useWatch({
+      control,
+      name: "recurrenceType",
+    });
+
+  const recurrenceStartDate =
+    useWatch({
+      control,
+      name: "recurrenceStartDate",
+    });
+
+  const recurrenceWeekdays =
+    useWatch({
+      control,
+      name: "recurrenceWeekdays",
+    });
+
+  const recurrenceDayOfMonth =
+    useWatch({
+      control,
+      name: "recurrenceDayOfMonth",
+    });
+
+  const recurrenceActive =
+    useWatch({
+      control,
+      name: "recurrenceActive",
+    });
 
   const selectedProject =
     useMemo(
@@ -149,6 +225,7 @@ export default function CreateTaskForm({
             project.id ===
             selectedProjectId,
         ),
+
       [
         projects,
         selectedProjectId,
@@ -172,32 +249,95 @@ export default function CreateTaskForm({
         );
     }, [selectedProject]);
 
+  const selectedSubProject =
+    useMemo(
+      () =>
+        selectedProject?.subProjects.find(
+          (subProject) =>
+            subProject.id ===
+            selectedSubProjectId,
+        ) ?? null,
+
+      [
+        selectedProject,
+        selectedSubProjectId,
+      ],
+    );
+
   useEffect(() => {
     if (!selectedProjectId) {
       setValue(
-        "assignedToId",
+        "subProjectId",
         "",
+        {
+          shouldValidate: true,
+        },
       );
+
+      setValue(
+        "assigneeIds",
+        [],
+        {
+          shouldValidate: true,
+        },
+      );
+
       return;
     }
 
-    const stillValid =
-      availableEmployees.some(
-        (employee) =>
-          employee.id ===
-          selectedEmployeeId,
+    const selectedSubProjectStillValid =
+      selectedProject?.subProjects.some(
+        (subProject) =>
+          subProject.id ===
+          selectedSubProjectId,
+      ) ?? false;
+
+    if (
+      !selectedSubProjectStillValid
+    ) {
+      setValue(
+        "subProjectId",
+        "",
+        {
+          shouldValidate: true,
+        },
+      );
+    }
+
+    const availableEmployeeIds =
+      new Set(
+        availableEmployees.map(
+          (employee) =>
+            employee.id,
+        ),
       );
 
-    if (!stillValid) {
+    const validAssigneeIds =
+      assigneeIds.filter(
+        (id) =>
+          availableEmployeeIds.has(
+            id,
+          ),
+      );
+
+    if (
+      validAssigneeIds.length !==
+      assigneeIds.length
+    ) {
       setValue(
-        "assignedToId",
-        "",
+        "assigneeIds",
+        validAssigneeIds,
+        {
+          shouldValidate: true,
+        },
       );
     }
   }, [
     selectedProjectId,
-    selectedEmployeeId,
+    selectedProject,
+    selectedSubProjectId,
     availableEmployees,
+    assigneeIds,
     setValue,
   ]);
 
@@ -227,6 +367,69 @@ export default function CreateTaskForm({
     recurrenceStartDate,
     setValue,
   ]);
+
+  const handleProjectChange = (
+    event: React.ChangeEvent<HTMLSelectElement>,
+  ) => {
+    const nextProjectId =
+      event.target.value;
+
+    setValue(
+      "projectId",
+      nextProjectId,
+      {
+        shouldValidate: true,
+        shouldDirty: true,
+      },
+    );
+
+    setValue(
+      "subProjectId",
+      "",
+      {
+        shouldValidate: true,
+        shouldDirty: true,
+      },
+    );
+
+    setValue(
+      "assigneeIds",
+      [],
+      {
+        shouldValidate: true,
+        shouldDirty: true,
+      },
+    );
+  };
+
+  const toggleAssignee = (
+    employeeId: string,
+  ) => {
+    const current =
+      assigneeIds;
+
+    const next =
+      current.includes(
+        employeeId,
+      )
+        ? current.filter(
+            (id) =>
+              id !== employeeId,
+          )
+        : [
+            ...current,
+            employeeId,
+          ];
+
+    setValue(
+      "assigneeIds",
+      next,
+      {
+        shouldValidate: true,
+        shouldDirty: true,
+      },
+    );
+  };
 
   const handleRecurrenceToggle = (
     enabled: boolean,
@@ -340,19 +543,41 @@ export default function CreateTaskForm({
     reset({
       projectId:
         values.projectId,
+
+      subProjectId:
+        values.subProjectId,
+
       title: "",
+
       description: "",
-      assignedToId:
-        values.assignedToId,
-      priority: "MEDIUM",
+
+      assigneeIds:
+        values.assigneeIds,
+
+      priority:
+        "MEDIUM",
+
       deadline: "",
-      isRecurring: false,
-      recurrenceType: "NONE",
-      recurrenceStartDate: null,
-      recurrenceEndDate: null,
+
+      isRecurring:
+        false,
+
+      recurrenceType:
+        "NONE",
+
+      recurrenceStartDate:
+        null,
+
+      recurrenceEndDate:
+        null,
+
       recurrenceWeekdays: [],
-      recurrenceDayOfMonth: null,
-      recurrenceActive: true,
+
+      recurrenceDayOfMonth:
+        null,
+
+      recurrenceActive:
+        true,
     });
 
     router.refresh();
@@ -360,8 +585,11 @@ export default function CreateTaskForm({
 
   return (
     <form
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit(
+        onSubmit,
+      )}
       className="space-y-6"
+      dir="rtl"
     >
       <div className="grid gap-5 lg:grid-cols-2">
         <div className="space-y-2">
@@ -376,13 +604,14 @@ export default function CreateTaskForm({
             id="task-title"
             {...register("title")}
             placeholder="مثلاً طراحی صفحه داشبورد"
-            className="glass-field h-11 w-full rounded-xl px-3.5 text-sm text-slate-800 outline-none placeholder:text-slate-400"
+            className="glass-field h-11 w-full rounded-xl px-3.5 text-right text-sm text-slate-800 outline-none placeholder:text-slate-400"
           />
 
           {errors.title ? (
             <p className="text-xs font-medium text-red-600">
               {
-                errors.title.message
+                errors.title
+                  .message
               }
             </p>
           ) : null}
@@ -398,10 +627,14 @@ export default function CreateTaskForm({
 
           <select
             id="task-project"
-            {...register(
-              "projectId",
-            )}
-            className="glass-field h-11 w-full rounded-xl px-3.5 text-sm font-medium text-slate-700 outline-none"
+            value={
+              selectedProjectId ??
+              ""
+            }
+            onChange={
+              handleProjectChange
+            }
+            className="glass-field h-11 w-full rounded-xl px-3.5 text-right text-sm font-medium text-slate-700 outline-none"
           >
             <option value="">
               انتخاب پروژه
@@ -434,53 +667,54 @@ export default function CreateTaskForm({
 
         <div className="space-y-2">
           <label
-            htmlFor="task-assignee"
+            htmlFor="task-sub-project"
             className="text-sm font-semibold text-slate-700"
           >
-            مسئول Task
+            زیرپروژه
           </label>
 
           <select
-            id="task-assignee"
+            id="task-sub-project"
             {...register(
-              "assignedToId",
+              "subProjectId",
             )}
             disabled={
               !selectedProjectId
             }
-            className="glass-field h-11 w-full rounded-xl px-3.5 text-sm font-medium text-slate-700 outline-none disabled:cursor-not-allowed disabled:opacity-50"
+            className="glass-field h-11 w-full rounded-xl px-3.5 text-right text-sm font-medium text-slate-700 outline-none disabled:cursor-not-allowed disabled:opacity-50"
           >
             <option value="">
               {!selectedProjectId
                 ? "ابتدا پروژه را انتخاب کنید"
-                : availableEmployees.length ===
-                    0
-                  ? "این پروژه کارمند فعالی ندارد"
-                  : "انتخاب کارمند"}
+                : "انتخاب زیرپروژه"}
             </option>
 
-            {availableEmployees.map(
-              (employee) => (
+            {selectedProject?.subProjects.map(
+              (subProject) => (
                 <option
-                  key={employee.id}
+                  key={
+                    subProject.id
+                  }
                   value={
-                    employee.id
+                    subProject.id
                   }
                 >
-                  {employee.name} —{" "}
                   {
-                    employee.email
+                    subProjectLabels[
+                      subProject
+                        .type
+                    ]
                   }
                 </option>
               ),
             )}
           </select>
 
-          {errors.assignedToId ? (
+          {errors.subProjectId ? (
             <p className="text-xs font-medium text-red-600">
               {
                 errors
-                  .assignedToId
+                  .subProjectId
                   .message
               }
             </p>
@@ -500,7 +734,7 @@ export default function CreateTaskForm({
             {...register(
               "priority",
             )}
-            className="glass-field h-11 w-full rounded-xl px-3.5 text-sm font-medium text-slate-700 outline-none"
+            className="glass-field h-11 w-full rounded-xl px-3.5 text-right text-sm font-medium text-slate-700 outline-none"
           >
             {priorityOptions.map(
               (priority) => (
@@ -512,7 +746,9 @@ export default function CreateTaskForm({
                     priority.value
                   }
                 >
-                  {priority.label}
+                  {
+                    priority.label
+                  }
                 </option>
               ),
             )}
@@ -523,6 +759,112 @@ export default function CreateTaskForm({
               {
                 errors
                   .priority
+                  .message
+              }
+            </p>
+          ) : null}
+        </div>
+
+        <div className="space-y-3 lg:col-span-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label className="text-sm font-semibold text-slate-700">
+              مسئول‌های Task
+            </label>
+
+            {selectedProject ? (
+              <span className="text-xs font-medium text-slate-400">
+                {
+                  assigneeIds.length.toLocaleString(
+                    "fa-IR",
+                  )
+                }{" "}
+                نفر انتخاب شده
+              </span>
+            ) : null}
+          </div>
+
+          {!selectedProjectId ? (
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-white/20 px-4 py-5 text-sm text-slate-400">
+              ابتدا پروژه را انتخاب کنید.
+            </div>
+          ) : availableEmployees.length ===
+            0 ? (
+            <div className="rounded-2xl border border-dashed border-red-200 bg-red-50/50 px-4 py-5 text-sm font-medium text-red-600">
+              این پروژه عضو فعال برای
+              واگذاری Task ندارد.
+            </div>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {availableEmployees.map(
+                (employee) => {
+                  const isSelected =
+                    assigneeIds.includes(
+                      employee.id,
+                    );
+
+                  return (
+                    <button
+                      key={
+                        employee.id
+                      }
+                      type="button"
+                      onClick={() =>
+                        toggleAssignee(
+                          employee.id,
+                        )
+                      }
+                      className={[
+                        "flex min-h-16 items-center gap-3 rounded-2xl border px-3.5 py-3 text-right transition",
+                        isSelected
+                          ? "border-slate-900 bg-slate-900 text-white shadow-[0_12px_24px_rgba(15,23,42,0.12)]"
+                          : "border-white/60 bg-white/30 text-slate-700 hover:bg-white/50",
+                      ].join(" ")}
+                    >
+                      <span
+                        className={[
+                          "flex size-5 shrink-0 items-center justify-center rounded-md border",
+                          isSelected
+                            ? "border-white/20 bg-white text-slate-900"
+                            : "border-slate-300 bg-white/50",
+                        ].join(" ")}
+                      >
+                        {isSelected ? (
+                          <Check className="size-3.5" />
+                        ) : null}
+                      </span>
+
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold">
+                          {
+                            employee.name
+                          }
+                        </span>
+
+                        <span
+                          className={[
+                            "mt-0.5 block truncate text-xs",
+                            isSelected
+                              ? "text-slate-300"
+                              : "text-slate-400",
+                          ].join(" ")}
+                        >
+                          {
+                            employee.email
+                          }
+                        </span>
+                      </span>
+                    </button>
+                  );
+                },
+              )}
+            </div>
+          )}
+
+          {errors.assigneeIds ? (
+            <p className="text-xs font-medium text-red-600">
+              {
+                errors
+                  .assigneeIds
                   .message
               }
             </p>
@@ -587,7 +929,7 @@ export default function CreateTaskForm({
             )}
             rows={5}
             placeholder="توضیحات مربوط به Task..."
-            className="glass-field min-h-32 w-full resize-none rounded-xl px-3.5 py-3 text-sm leading-7 text-slate-800 outline-none placeholder:text-slate-400"
+            className="glass-field min-h-32 w-full resize-none rounded-xl px-3.5 py-3 text-right text-sm leading-7 text-slate-800 outline-none placeholder:text-slate-400"
           />
 
           {errors.description ? (
@@ -621,7 +963,8 @@ export default function CreateTaskForm({
             : ""
         }
         recurrenceWeekdays={
-          recurrenceWeekdays ?? []
+          recurrenceWeekdays ??
+          []
         }
         recurrenceDayOfMonth={
           recurrenceDayOfMonth ??
@@ -692,16 +1035,20 @@ export default function CreateTaskForm({
         }
         errors={{
           recurrenceType:
-            errors.recurrenceType
+            errors
+              .recurrenceType
               ?.message,
+
           recurrenceStartDate:
             errors
               .recurrenceStartDate
               ?.message,
+
           recurrenceWeekdays:
             errors
               .recurrenceWeekdays
               ?.message,
+
           recurrenceDayOfMonth:
             errors
               .recurrenceDayOfMonth
@@ -722,16 +1069,32 @@ export default function CreateTaskForm({
             </span>
 
             <span className="text-slate-400">
-              اعضای فعال:
+              زیرپروژه:
               <strong className="mr-1 text-slate-700">
-                {availableEmployees.length.toLocaleString(
-                  "fa-IR",
-                )}
+                {selectedSubProject
+                  ? subProjectLabels[
+                      selectedSubProject
+                        .type
+                    ]
+                  : "انتخاب نشده"}
+              </strong>
+            </span>
+
+            <span className="text-slate-400">
+              مسئول‌ها:
+              <strong className="mr-1 text-slate-700">
+                {
+                  assigneeIds.length.toLocaleString(
+                    "fa-IR",
+                  )
+                }{" "}
+                نفر
               </strong>
             </span>
 
             <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
               <CalendarDays className="size-3.5" />
+
               {isRecurring
                 ? "تاریخ شروع تکرار با تقویم شمسی"
                 : "Deadline با تقویم شمسی"}

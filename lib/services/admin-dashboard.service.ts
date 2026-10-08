@@ -1,4 +1,3 @@
-
 import "server-only";
 
 import { prisma } from "@/lib/db/prisma";
@@ -134,11 +133,15 @@ export async function getAdminDashboardData() {
         id: true,
         name: true,
         email: true,
-        assignedTasks: {
+        taskAssignments: {
           select: {
-            id: true,
-            status: true,
-            deadline: true,
+            task: {
+              select: {
+                id: true,
+                status: true,
+                deadline: true,
+              },
+            },
           },
         },
       },
@@ -197,25 +200,30 @@ export async function getAdminDashboardData() {
 
   const employees = employeeRows.map(
     (employee) => {
+      const tasks =
+        employee.taskAssignments.map(
+          (assignment) =>
+            assignment.task,
+        );
+
       const total =
-        employee.assignedTasks.length;
+        tasks.length;
 
       const active =
-        employee.assignedTasks.filter(
+        tasks.filter(
           (task) =>
             task.status === "TODO" ||
             task.status === "IN_PROGRESS",
         ).length;
 
       const completed =
-        employee.assignedTasks.filter(
+        tasks.filter(
           (task) =>
-            task.status ===
-            "COMPLETED",
+            task.status === "COMPLETED",
         ).length;
 
       const overdue =
-        employee.assignedTasks.filter(
+        tasks.filter(
           (task) =>
             task.deadline < now &&
             task.status !== "COMPLETED" &&
@@ -271,4 +279,3 @@ export async function getAdminDashboardData() {
     recentActivities,
   };
 }
-

@@ -44,6 +44,22 @@ const PRIORITY_LABELS = {
   URGENT: "فوری",
 } as const;
 
+const SUB_PROJECT_LABELS = {
+  WEB_DESIGN: "طراحی سایت",
+  SEO: "سئو",
+  SOCIAL_MEDIA: "سوشال مدیا",
+  PHOTOGRAPHY: "عکاسی",
+  VIDEOGRAPHY: "فیلمبرداری",
+  TEASER_PRODUCTION: "تیزرسازی",
+  CATALOG: "کاتالوگ",
+  BRAND_IDENTITY_DESIGN:
+    "طراحی هویت بصری",
+  CRM_MANAGEMENT: "مدیریت CRM",
+  BOOTH_CONSTRUCTION:
+    "غرفه سازی",
+  PROGRAMMING: "برنامه نویسی",
+} as const;
+
 function getStatusClass(
   status: keyof typeof STATUS_LABELS,
 ) {
@@ -84,8 +100,7 @@ function formatDate(
   return new Intl.DateTimeFormat(
     "fa-IR",
     {
-      calendar:
-        "persian",
+      calendar: "persian",
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
@@ -162,8 +177,14 @@ export default async function AdminTaskPage({
       task.status,
     );
 
+  const assigneeIds =
+    task.assignees.map(
+      (assignee) =>
+        assignee.user.id,
+    );
+
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen" dir="rtl">
       <div className="mx-auto max-w-[1400px] space-y-6 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Link
@@ -231,18 +252,39 @@ export default async function AdminTaskPage({
                 {task.title}
               </h1>
 
-              <Link
-                href={`/admin/projects/${task.project.id}`}
-                className="mt-3 inline-flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-slate-800"
-              >
-                پروژه:
-                <strong className="text-slate-700">
+              <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-400">
+                <span>
+                  پروژه:
+                </span>
+
+                <Link
+                  href={`/admin/projects/${task.project.id}`}
+                  className="font-bold text-slate-700 transition hover:text-slate-950"
+                >
                   {
                     task.project
                       .title
                   }
+                </Link>
+
+                <span className="text-slate-300">
+                  /
+                </span>
+
+                <span>
+                  زیرپروژه:
+                </span>
+
+                <strong className="text-slate-700">
+                  {task.subProject
+                    ? SUB_PROJECT_LABELS[
+                        task
+                          .subProject
+                          .type
+                      ]
+                    : "انتخاب نشده"}
                 </strong>
-              </Link>
+              </div>
             </div>
           </div>
 
@@ -250,27 +292,47 @@ export default async function AdminTaskPage({
             <div className="rounded-3xl border border-white/45 bg-white/25 p-5">
               <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
                 <UserRound className="size-4" />
-                مسئول
+                مسئول‌های Task
               </div>
 
-              <p className="mt-3 font-bold text-slate-800">
-                {
-                  task
-                    .assignedTo
-                    .name
-                }
-              </p>
+              {task.assignees.length >
+              0 ? (
+                <div className="mt-3 space-y-2">
+                  {task.assignees.map(
+                    (assignee) => (
+                      <div
+                        key={
+                          assignee.user
+                            .id
+                        }
+                      >
+                        <p className="font-bold text-slate-800">
+                          {
+                            assignee
+                              .user
+                              .name
+                          }
+                        </p>
 
-              <p
-                dir="ltr"
-                className="mt-1 text-xs text-slate-400"
-              >
-                {
-                  task
-                    .assignedTo
-                    .email
-                }
-              </p>
+                        <p
+                          dir="ltr"
+                          className="mt-0.5 text-xs text-slate-400"
+                        >
+                          {
+                            assignee
+                              .user
+                              .email
+                          }
+                        </p>
+                      </div>
+                    ),
+                  )}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm font-semibold text-slate-400">
+                  بدون مسئول
+                </p>
+              )}
             </div>
 
             <div className="rounded-3xl border border-white/45 bg-white/25 p-5">
@@ -380,64 +442,77 @@ export default async function AdminTaskPage({
             </h2>
 
             <p className="mt-1 text-sm leading-7 text-slate-400">
-              مشخصات، مسئول، اولویت و Deadline را ویرایش کنید.
+              مشخصات، زیرپروژه، مسئول‌ها، اولویت و Deadline را ویرایش کنید.
             </p>
           </div>
 
-      <EditTaskForm
-        taskId={task.id}
-        projectId={
-          task.project.id
-        }
-        defaultValues={{
-          title:
-            task.title,
-          description:
-            task.description ??
-            "",
-          assignedToId:
-            task.assignedTo.id,
-          priority:
-            task.priority,
-          deadline:
-            toDateInputValue(
-              task.deadline,
-            ),
+          <EditTaskForm
+            taskId={task.id}
+            projectId={
+              task.project.id
+            }
+            defaultValues={{
+              subProjectId:
+                task.subProject
+                  ?.id ?? "",
 
-          isRecurring:
-            task.isRecurring,
+              title:
+                task.title,
 
-          recurrenceType:
-            task.recurrenceType,
+              description:
+                task.description ??
+                "",
 
-          recurrenceStartDate:
-            task.recurrenceStartDate
-              ? toDateInputValue(
-                  task.recurrenceStartDate,
-                )
-              : toDateInputValue(
+              assigneeIds,
+
+              priority:
+                task.priority,
+
+              deadline:
+                toDateInputValue(
                   task.deadline,
                 ),
 
-          recurrenceEndDate:
-            null,
+              isRecurring:
+                task.isRecurring,
 
-          recurrenceWeekdays:
-            task.recurrenceWeekdays,
+              recurrenceType:
+                task.recurrenceType,
 
-          recurrenceDayOfMonth:
-            task.recurrenceDayOfMonth,
+              recurrenceStartDate:
+                task.recurrenceStartDate
+                  ? toDateInputValue(
+                      task.recurrenceStartDate,
+                    )
+                  : toDateInputValue(
+                      task.deadline,
+                    ),
 
-          recurrenceActive:
-            task.recurrenceActive,
-        }}
-        employees={
-          currentProject.members.map(
-            (member) =>
-              member.user,
-          )
-        }
-      />
+              recurrenceEndDate:
+                null,
+
+              recurrenceWeekdays:
+                task.recurrenceWeekdays,
+
+              recurrenceDayOfMonth:
+                task.recurrenceDayOfMonth,
+
+              recurrenceActive:
+                task.recurrenceActive,
+            }}
+            employees={currentProject.members.map(
+              (member) =>
+                member.user,
+            )}
+            subProjects={
+              currentProject.subProjects.map(
+                (subProject) => ({
+                  id: subProject.id,
+                  type: subProject.type,
+                }),
+              )
+            }
+          />
         </section>
 
         <TaskComments
@@ -502,7 +577,8 @@ export default async function AdminTaskPage({
               </p>
 
               <p className="mt-1 font-bold text-slate-800">
-                {task.project.status ===
+                {task.project
+                  .status ===
                 "PLANNED"
                   ? "برنامه‌ریزی شده"
                   : task.project

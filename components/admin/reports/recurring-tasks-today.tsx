@@ -16,7 +16,10 @@ type RecurrenceType =
   | "WEEKLY"
   | "MONTHLY";
 
-const RECURRENCE_LABELS: Record<RecurrenceType, string> = {
+const RECURRENCE_LABELS: Record<
+  RecurrenceType,
+  string
+> = {
   NONE: "عادی",
   DAILY: "روزانه",
   WEEKLY: "هفتگی",
@@ -24,26 +27,36 @@ const RECURRENCE_LABELS: Record<RecurrenceType, string> = {
 };
 
 function formatTime(date: Date) {
-  return new Intl.DateTimeFormat("fa-IR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
+  return new Intl.DateTimeFormat(
+    "fa-IR",
+    {
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+  ).format(date);
 }
 
 function formatDate(date: Date) {
-  return new Intl.DateTimeFormat("fa-IR", {
-    calendar: "persian",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(date);
+  return new Intl.DateTimeFormat(
+    "fa-IR",
+    {
+      calendar: "persian",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    },
+  ).format(date);
 }
 
 export default async function RecurringTasksToday() {
-  const tasks = await getAdminRecurringTasksToday();
+  const tasks =
+    await getAdminRecurringTasksToday();
 
   return (
-    <section className="mt-8 rounded-[2rem] border border-slate-200/70 bg-white/75 p-4 shadow-sm backdrop-blur-xl sm:p-6">
+    <section
+      className="mt-8 rounded-[2rem] border border-slate-200/70 bg-white/75 p-4 shadow-sm backdrop-blur-xl sm:p-6"
+      dir="rtl"
+    >
       <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
@@ -84,7 +97,10 @@ export default async function RecurringTasksToday() {
       ) : (
         <div className="mt-5 space-y-3">
           {tasks.map((task) => {
-            const completed = task.todayOccurrence?.completed ?? false;
+            const completed =
+              task.todayOccurrence
+                ?.completed ??
+              false;
 
             return (
               <div
@@ -104,16 +120,56 @@ export default async function RecurringTasksToday() {
 
                       <span className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2 py-1 text-[10px] font-bold text-violet-700">
                         <Repeat2 className="size-3" />
-                        {RECURRENCE_LABELS[task.recurrenceType]}
+
+                        {
+                          RECURRENCE_LABELS[
+                            task
+                              .recurrenceType
+                          ]
+                        }
                       </span>
                     </div>
 
                     <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500">
-                      <span>{task.project.title}</span>
+                      <span>
+                        {
+                          task.project
+                            .title
+                        }
+                      </span>
 
-                      <span className="inline-flex items-center gap-1">
-                        <UserRound className="size-3.5" />
-                        {task.assignedTo?.name || "بدون کارمند"}
+                      <span className="inline-flex items-start gap-1">
+                        <UserRound className="mt-0.5 size-3.5 shrink-0" />
+
+                        {task.assignees.length >
+                        0 ? (
+                          <span className="flex flex-wrap items-center gap-1.5">
+                            {task.assignees.map(
+                              (
+                                assignee,
+                              ) => (
+                                <span
+                                  key={
+                                    assignee
+                                      .user
+                                      .id
+                                  }
+                                  className="inline-flex rounded-full bg-white/65 px-2 py-1 font-semibold text-slate-600"
+                                >
+                                  {
+                                    assignee
+                                      .user
+                                      .name
+                                  }
+                                </span>
+                              ),
+                            )}
+                          </span>
+                        ) : (
+                          <span>
+                            بدون کارمند
+                          </span>
+                        )}
                       </span>
                     </div>
                   </div>
@@ -124,10 +180,17 @@ export default async function RecurringTasksToday() {
                         <CheckCircle2 className="size-4" />
                         انجام شده
 
-                        {task.todayOccurrence?.completedAt ? (
+                        {task
+                          .todayOccurrence
+                          ?.completedAt ? (
                           <span className="inline-flex items-center gap-1 border-r border-emerald-200 pr-2 font-medium">
                             <Clock3 className="size-3.5" />
-                            {formatTime(task.todayOccurrence.completedAt)}
+
+                            {formatTime(
+                              task
+                                .todayOccurrence
+                                .completedAt,
+                            )}
                           </span>
                         ) : null}
                       </div>
@@ -158,7 +221,11 @@ export default async function RecurringTasksToday() {
           </span>
 
           <span className="mr-auto font-medium">
-            مجموع: {tasks.length.toLocaleString("fa-IR")} تسک
+            مجموع:{" "}
+            {tasks.length.toLocaleString(
+              "fa-IR",
+            )}{" "}
+            تسک
           </span>
         </div>
       ) : null}

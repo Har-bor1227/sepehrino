@@ -61,7 +61,11 @@ export async function createComment(
       id: validated.taskId,
       ...(session.user.role === "EMPLOYEE"
         ? {
-            assignedToId: session.user.id,
+            assignees: {
+              some: {
+                userId: session.user.id,
+              },
+            },
             project: {
               members: {
                 some: {
@@ -74,7 +78,6 @@ export async function createComment(
     },
     select: {
       id: true,
-      assignedToId: true,
     },
   });
 

@@ -44,9 +44,19 @@ const recurrenceWeekdaysSchema = z
     "روزهای هفته نمی‌توانند تکراری باشند.",
   );
 
+const assigneeIdsSchema = z
+  .array(idSchema)
+  .min(1, "حداقل یک مسئول برای Task انتخاب کنید.")
+  .refine(
+    (ids) => new Set(ids).size === ids.length,
+    "مسئول‌های Task نمی‌توانند تکراری باشند.",
+  );
+
 export const createTaskSchema = z
   .object({
     projectId: idSchema,
+
+    subProjectId: idSchema,
 
     title: z
       .string()
@@ -69,7 +79,7 @@ export const createTaskSchema = z
       )
       .optional(),
 
-    assignedToId: idSchema,
+    assigneeIds: assigneeIdsSchema,
 
     priority: taskPrioritySchema.default(
       "MEDIUM",
@@ -203,6 +213,8 @@ export const createTaskSchema = z
   });
 
 export const updateTaskSchema = z.object({
+  subProjectId: idSchema.optional(),
+
   title: z
     .string()
     .trim()
@@ -226,11 +238,13 @@ export const updateTaskSchema = z.object({
     .nullable()
     .optional(),
 
-  assignedToId: idSchema.optional(),
+  assigneeIds: assigneeIdsSchema.optional(),
 
   priority: taskPrioritySchema.optional(),
 
-  deadline: dateSchema,
+  deadline: dateSchema
+    .nullable()
+    .optional(),
 
   isRecurring: z
     .boolean()

@@ -28,7 +28,8 @@ export async function getEmployees(
   const sort = filters.sort ?? "newest";
 
   const requestedPage =
-    Number.isInteger(filters.page) && (filters.page ?? 1) > 0
+    Number.isInteger(filters.page) &&
+    (filters.page ?? 1) > 0
       ? filters.page ?? 1
       : 1;
 
@@ -82,37 +83,44 @@ export async function getEmployees(
           ? { name: "desc" as const }
           : { createdAt: "desc" as const };
 
-  const [total, employees] = await prisma.$transaction([
-    prisma.user.count({
-      where,
-    }),
+  const select = {
+    id: true,
+    name: true,
+    email: true,
+    isActive: true,
+    createdAt: true,
+    updatedAt: true,
 
-    prisma.user.findMany({
-      where,
-      orderBy,
-      skip: (requestedPage - 1) * pageSize,
-      take: pageSize,
+    _count: {
       select: {
-        id: true,
-        name: true,
-        email: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-
-        _count: {
-          select: {
-            projectMembers: true,
-            assignedTasks: true,
-          },
-        },
+        projectMembers: true,
+        taskAssignments: true,
       },
-    }),
-  ]);
+    },
+  } as const;
+
+  const [total, rawEmployees] =
+    await prisma.$transaction([
+      prisma.user.count({
+        where,
+      }),
+
+      prisma.user.findMany({
+        where,
+        orderBy,
+        skip:
+          (requestedPage - 1) *
+          pageSize,
+        take: pageSize,
+        select,
+      }),
+    ]);
 
   const totalPages = Math.max(
     1,
-    Math.ceil(total / pageSize),
+    Math.ceil(
+      total / pageSize,
+    ),
   );
 
   const page = Math.min(
@@ -120,45 +128,78 @@ export async function getEmployees(
     totalPages,
   );
 
-  if (page !== requestedPage && total > 0) {
-    const [adjustedTotal, adjustedEmployees] =
-      await prisma.$transaction([
-        prisma.user.count({
-          where,
-        }),
+  const employees =
+    rawEmployees.map(
+      (employee) => ({
+        ...employee,
 
-        prisma.user.findMany({
-          where,
-          orderBy,
-          skip: (page - 1) * pageSize,
-          take: pageSize,
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            isActive: true,
-            createdAt: true,
-            updatedAt: true,
+        _count: {
+          projectMembers:
+            employee._count
+              .projectMembers,
 
-            _count: {
-              select: {
-                projectMembers: true,
-                assignedTasks: true,
-              },
-            },
+          assignedTasks:
+            employee._count
+              .taskAssignments,
+        },
+      }),
+    );
+
+  if (
+    page !== requestedPage &&
+    total > 0
+  ) {
+    const [
+      adjustedTotal,
+      rawAdjustedEmployees,
+    ] = await prisma.$transaction([
+      prisma.user.count({
+        where,
+      }),
+
+      prisma.user.findMany({
+        where,
+        orderBy,
+        skip:
+          (page - 1) *
+          pageSize,
+        take: pageSize,
+        select,
+      }),
+    ]);
+
+    const adjustedEmployees =
+      rawAdjustedEmployees.map(
+        (employee) => ({
+          ...employee,
+
+          _count: {
+            projectMembers:
+              employee._count
+                .projectMembers,
+
+            assignedTasks:
+              employee._count
+                .taskAssignments,
           },
         }),
-      ]);
+      );
 
     return {
-      employees: adjustedEmployees,
-      total: adjustedTotal,
+      employees:
+        adjustedEmployees,
+      total:
+        adjustedTotal,
       page,
       pageSize,
-      totalPages: Math.max(
-        1,
-        Math.ceil(adjustedTotal / pageSize),
-      ),
+      totalPages:
+        Math.max(
+          1,
+          Math.ceil(
+            adjustedTotal /
+              pageSize,
+          ),
+        ),
     };
   }
 
@@ -176,168 +217,232 @@ export async function getEmployeeById(
 ) {
   await requireAdmin();
 
-  const employee = await prisma.user.findFirst({
-    where: {
-      id: employeeId,
-      role: "EMPLOYEE",
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      isActive: true,
-      createdAt: true,
-      updatedAt: true,
-
-      _count: {
-        select: {
-          projectMembers: true,
-          assignedTasks: true,
-        },
+  const employee =
+    await prisma.user.findFirst({
+      where: {
+        id: employeeId,
+        role: "EMPLOYEE",
       },
 
-      projectMembers: {
-        orderBy: {
-          joinedAt: "desc",
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+
+        _count: {
+          select: {
+            projectMembers:
+              true,
+            taskAssignments:
+              true,
+          },
         },
-        select: {
-          joinedAt: true,
-          project: {
-            select: {
-              id: true,
-              title: true,
-              status: true,
-              startDate: true,
-              deadline: true,
 
-              _count: {
-                select: {
-                  tasks: true,
-                },
-              },
+        projectMembers: {
+          orderBy: {
+            joinedAt: "desc",
+          },
 
-              tasks: {
-                where: {
-                  assignedToId: employeeId,
+          select: {
+            joinedAt: true,
+
+            project: {
+              select: {
+                id: true,
+                title: true,
+                status: true,
+                startDate: true,
+                deadline: true,
+
+                _count: {
+                  select: {
+                    tasks: true,
+                  },
                 },
-                select: {
-                  id: true,
-                  status: true,
+
+                tasks: {
+                  where: {
+                    assignees: {
+                      some: {
+                        userId:
+                          employeeId,
+                      },
+                    },
+                  },
+
+                  select: {
+                    id: true,
+                    status: true,
+                  },
                 },
               },
             },
           },
         },
-      },
 
-      assignedTasks: {
-        orderBy: {
-          deadline: "asc",
-        },
-        select: {
-          id: true,
-          title: true,
-          status: true,
-          priority: true,
-          deadline: true,
-          completedAt: true,
+        taskAssignments: {
+          orderBy: {
+            task: {
+              deadline: "asc",
+            },
+          },
 
-          project: {
-            select: {
-              id: true,
-              title: true,
+          select: {
+            assignedAt: true,
+
+            task: {
+              select: {
+                id: true,
+                title: true,
+                status: true,
+                priority: true,
+                deadline: true,
+                completedAt: true,
+
+                project: {
+                  select: {
+                    id: true,
+                    title: true,
+                  },
+                },
+              },
             },
           },
         },
-      },
 
-      activityLogs: {
-        orderBy: {
-          createdAt: "desc",
-        },
-        take: 10,
-        select: {
-          id: true,
-          action: true,
-          entityType: true,
-          entityId: true,
-          metadata: true,
-          createdAt: true,
+        activityLogs: {
+          orderBy: {
+            createdAt: "desc",
+          },
+
+          take: 10,
+
+          select: {
+            id: true,
+            action: true,
+            entityType: true,
+            entityId: true,
+            metadata: true,
+            createdAt: true,
+          },
         },
       },
-    },
-  });
+    });
 
   if (!employee) {
     return null;
   }
 
+  const assignedTasks =
+    employee.taskAssignments.map(
+      (assignment) =>
+        assignment.task,
+    );
+
   const now = new Date();
 
-  const completedTasks = employee.assignedTasks.filter(
-    (task) => task.status === "COMPLETED",
-  ).length;
+  const completedTasks =
+    assignedTasks.filter(
+      (task) =>
+        task.status ===
+        "COMPLETED",
+    ).length;
 
-  const inProgressTasks = employee.assignedTasks.filter(
-    (task) => task.status === "IN_PROGRESS",
-  ).length;
+  const inProgressTasks =
+    assignedTasks.filter(
+      (task) =>
+        task.status ===
+        "IN_PROGRESS",
+    ).length;
 
-  const overdueTasks = employee.assignedTasks.filter(
-    (task) =>
-      task.deadline < now &&
-      task.status !== "COMPLETED" &&
-      task.status !== "CANCELLED",
-  ).length;
+  const overdueTasks =
+    assignedTasks.filter(
+      (task) =>
+        task.deadline < now &&
+        task.status !==
+          "COMPLETED" &&
+        task.status !==
+          "CANCELLED",
+    ).length;
 
   const completionRate =
-    employee.assignedTasks.length === 0
+    assignedTasks.length ===
+    0
       ? 0
       : Math.round(
           (completedTasks /
-            employee.assignedTasks.length) *
+            assignedTasks.length) *
             100,
         );
 
-  const projects = employee.projectMembers.map(
-    (membership) => {
-      const projectTasks = membership.project.tasks;
+  const projects =
+    employee.projectMembers.map(
+      (membership) => {
+        const projectTasks =
+          membership.project
+            .tasks;
 
-      const projectTotalTasks = projectTasks.length;
+        const projectTotalTasks =
+          projectTasks.length;
 
-      const projectCompletedTasks = projectTasks.filter(
-        (task) => task.status === "COMPLETED",
-      ).length;
+        const projectCompletedTasks =
+          projectTasks.filter(
+            (task) =>
+              task.status ===
+              "COMPLETED",
+          ).length;
 
-      const projectProgress =
-        projectTotalTasks === 0
-          ? 0
-          : Math.round(
-              (projectCompletedTasks /
-                projectTotalTasks) *
-                100,
-            );
+        const projectProgress =
+          projectTotalTasks ===
+          0
+            ? 0
+            : Math.round(
+                (projectCompletedTasks /
+                  projectTotalTasks) *
+                  100,
+              );
 
-      return {
-        ...membership.project,
-        joinedAt: membership.joinedAt,
-        employeeTaskCount: projectTotalTasks,
-        employeeCompletedTaskCount:
-          projectCompletedTasks,
-        progress: projectProgress,
-      };
-    },
-  );
+        return {
+          ...membership.project,
+
+          joinedAt:
+            membership.joinedAt,
+
+          employeeTaskCount:
+            projectTotalTasks,
+
+          employeeCompletedTaskCount:
+            projectCompletedTasks,
+
+          progress:
+            projectProgress,
+        };
+      },
+    );
 
   return {
     ...employee,
 
+    assignedTasks,
+
     stats: {
-      totalProjects: employee._count.projectMembers,
-      totalTasks: employee.assignedTasks.length,
+      totalProjects:
+        employee._count
+          .projectMembers,
+
+      totalTasks:
+        assignedTasks.length,
+
       completedTasks,
+
       inProgressTasks,
+
       overdueTasks,
+
       completionRate,
     },
 
@@ -345,62 +450,93 @@ export async function getEmployeeById(
   };
 }
 
-export async function createEmployee(input: {
-  name: string;
-  email: string;
-  password: string;
-  isActive?: boolean;
-}) {
-  const admin = await requireAdmin();
+export async function createEmployee(
+  input: {
+    name: string;
+    email: string;
+    password: string;
+    isActive?: boolean;
+  },
+) {
+  const admin =
+    await requireAdmin();
 
-  const validated = createEmployeeSchema.parse(input);
+  const validated =
+    createEmployeeSchema.parse(
+      input,
+    );
 
-  const email = validated.email;
+  const email =
+    validated.email;
 
-  const existingUser = await prisma.user.findUnique({
-    where: {
-      email,
-    },
-    select: {
-      id: true,
-    },
-  });
+  const existingUser =
+    await prisma.user.findUnique({
+      where: {
+        email,
+      },
+
+      select: {
+        id: true,
+      },
+    });
 
   if (existingUser) {
-    throw new Error("EMAIL_ALREADY_EXISTS");
+    throw new Error(
+      "EMAIL_ALREADY_EXISTS",
+    );
   }
 
-  const passwordHash = await hashPassword(
-    validated.password,
-  );
+  const passwordHash =
+    await hashPassword(
+      validated.password,
+    );
 
-  const employee = await prisma.user.create({
-    data: {
-      name: validated.name,
-      email,
-      passwordHash,
-      role: "EMPLOYEE",
-      isActive: validated.isActive,
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      isActive: true,
-      createdAt: true,
-    },
-  });
+  const employee =
+    await prisma.user.create({
+      data: {
+        name:
+          validated.name,
+
+        email,
+
+        passwordHash,
+
+        role: "EMPLOYEE",
+
+        isActive:
+          validated.isActive,
+      },
+
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+      },
+    });
 
   await prisma.activityLog.create({
     data: {
-      userId: admin.user.id,
-      action: "EMPLOYEE_CREATED",
-      entityType: "USER",
-      entityId: employee.id,
+      userId:
+        admin.user.id,
+
+      action:
+        "EMPLOYEE_CREATED",
+
+      entityType:
+        "USER",
+
+      entityId:
+        employee.id,
+
       metadata: {
-        name: employee.name,
-        email: employee.email,
+        name:
+          employee.name,
+
+        email:
+          employee.email,
       },
     },
   });
@@ -417,25 +553,33 @@ export async function updateEmployee(
     isActive?: boolean;
   },
 ) {
-  const admin = await requireAdmin();
+  const admin =
+    await requireAdmin();
 
-  const validated = updateEmployeeSchema.parse(input);
+  const validated =
+    updateEmployeeSchema.parse(
+      input,
+    );
 
-  const employee = await prisma.user.findFirst({
-    where: {
-      id: employeeId,
-      role: "EMPLOYEE",
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      isActive: true,
-    },
-  });
+  const employee =
+    await prisma.user.findFirst({
+      where: {
+        id: employeeId,
+        role: "EMPLOYEE",
+      },
+
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        isActive: true,
+      },
+    });
 
   if (!employee) {
-    throw new Error("EMPLOYEE_NOT_FOUND");
+    throw new Error(
+      "EMPLOYEE_NOT_FOUND",
+    );
   }
 
   const data: {
@@ -445,68 +589,107 @@ export async function updateEmployee(
     isActive?: boolean;
   } = {};
 
-  if (validated.name !== undefined) {
-    data.name = validated.name;
+  if (
+    validated.name !==
+    undefined
+  ) {
+    data.name =
+      validated.name;
   }
 
-  if (validated.email !== undefined) {
-    const email = validated.email;
+  if (
+    validated.email !==
+    undefined
+  ) {
+    const email =
+      validated.email;
 
-    if (email !== employee.email) {
-      const existingUser = await prisma.user.findUnique({
-        where: {
-          email,
-        },
-        select: {
-          id: true,
-        },
-      });
+    if (
+      email !==
+      employee.email
+    ) {
+      const existingUser =
+        await prisma.user.findUnique(
+          {
+            where: {
+              email,
+            },
+
+            select: {
+              id: true,
+            },
+          },
+        );
 
       if (
         existingUser &&
-        existingUser.id !== employeeId
+        existingUser.id !==
+          employeeId
       ) {
-        throw new Error("EMAIL_ALREADY_EXISTS");
+        throw new Error(
+          "EMAIL_ALREADY_EXISTS",
+        );
       }
     }
 
-    data.email = email;
+    data.email =
+      email;
   }
 
-  if (validated.password !== undefined) {
-    data.passwordHash = await hashPassword(
-      validated.password,
-    );
+  if (
+    validated.password !==
+    undefined
+  ) {
+    data.passwordHash =
+      await hashPassword(
+        validated.password,
+      );
   }
 
-  if (validated.isActive !== undefined) {
-    data.isActive = validated.isActive;
+  if (
+    validated.isActive !==
+    undefined
+  ) {
+    data.isActive =
+      validated.isActive;
   }
 
-  const updatedEmployee = await prisma.user.update({
-    where: {
-      id: employeeId,
-    },
-    data,
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      isActive: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
+  const updatedEmployee =
+    await prisma.user.update({
+      where: {
+        id: employeeId,
+      },
+
+      data,
+
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
   await prisma.activityLog.create({
     data: {
-      userId: admin.user.id,
-      action: "EMPLOYEE_UPDATED",
-      entityType: "USER",
-      entityId: employeeId,
+      userId:
+        admin.user.id,
+
+      action:
+        "EMPLOYEE_UPDATED",
+
+      entityType:
+        "USER",
+
+      entityId:
+        employeeId,
+
       metadata: {
-        fields: Object.keys(data),
+        fields:
+          Object.keys(data),
       },
     },
   });
@@ -517,48 +700,68 @@ export async function updateEmployee(
 export async function toggleEmployeeStatus(
   employeeId: string,
 ) {
-  const admin = await requireAdmin();
+  const admin =
+    await requireAdmin();
 
-  const employee = await prisma.user.findFirst({
-    where: {
-      id: employeeId,
-      role: "EMPLOYEE",
-    },
-    select: {
-      id: true,
-      isActive: true,
-    },
-  });
+  const employee =
+    await prisma.user.findFirst({
+      where: {
+        id: employeeId,
+        role: "EMPLOYEE",
+      },
+
+      select: {
+        id: true,
+        isActive: true,
+      },
+    });
 
   if (!employee) {
-    throw new Error("EMPLOYEE_NOT_FOUND");
+    throw new Error(
+      "EMPLOYEE_NOT_FOUND",
+    );
   }
 
-  const updatedEmployee = await prisma.user.update({
-    where: {
-      id: employeeId,
-    },
-    data: {
-      isActive: !employee.isActive,
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      isActive: true,
-    },
-  });
+  const updatedEmployee =
+    await prisma.user.update({
+      where: {
+        id: employeeId,
+      },
+
+      data: {
+        isActive:
+          !employee.isActive,
+      },
+
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        isActive: true,
+      },
+    });
 
   await prisma.activityLog.create({
     data: {
-      userId: admin.user.id,
-      action: "EMPLOYEE_STATUS_CHANGED",
-      entityType: "USER",
-      entityId: employeeId,
+      userId:
+        admin.user.id,
+
+      action:
+        "EMPLOYEE_STATUS_CHANGED",
+
+      entityType:
+        "USER",
+
+      entityId:
+        employeeId,
+
       metadata: {
-        oldStatus: employee.isActive,
-        newStatus: updatedEmployee.isActive,
+        oldStatus:
+          employee.isActive,
+
+        newStatus:
+          updatedEmployee.isActive,
       },
     },
   });
@@ -569,45 +772,75 @@ export async function toggleEmployeeStatus(
 export async function deleteEmployee(
   employeeId: string,
 ) {
-  const admin = await requireAdmin();
+  const admin =
+    await requireAdmin();
 
-  const employee = await prisma.user.findFirst({
-    where: {
-      id: employeeId,
-      role: "EMPLOYEE",
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
+  const employee =
+    await prisma.user.findFirst({
+      where: {
+        id: employeeId,
+        role: "EMPLOYEE",
+      },
 
-      _count: {
-        select: {
-          projectMembers: true,
-          assignedTasks: true,
-          createdTasks: true,
-          createdProjects: true,
-          comments: true,
-          uploadedAttachments: true,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+
+        _count: {
+          select: {
+            projectMembers:
+              true,
+
+            taskAssignments:
+              true,
+
+            createdTasks:
+              true,
+
+            createdProjects:
+              true,
+
+            comments:
+              true,
+
+            uploadedAttachments:
+              true,
+          },
         },
       },
-    },
-  });
+    });
 
   if (!employee) {
-    throw new Error("EMPLOYEE_NOT_FOUND");
+    throw new Error(
+      "EMPLOYEE_NOT_FOUND",
+    );
   }
 
   const hasDependencies =
-    employee._count.projectMembers > 0 ||
-    employee._count.assignedTasks > 0 ||
-    employee._count.createdTasks > 0 ||
-    employee._count.createdProjects > 0 ||
-    employee._count.comments > 0 ||
-    employee._count.uploadedAttachments > 0;
+    employee._count
+      .projectMembers >
+      0 ||
+    employee._count
+      .taskAssignments >
+      0 ||
+    employee._count
+      .createdTasks >
+      0 ||
+    employee._count
+      .createdProjects >
+      0 ||
+    employee._count
+      .comments >
+      0 ||
+    employee._count
+      .uploadedAttachments >
+      0;
 
   if (hasDependencies) {
-    throw new Error("EMPLOYEE_HAS_DEPENDENCIES");
+    throw new Error(
+      "EMPLOYEE_HAS_DEPENDENCIES",
+    );
   }
 
   await prisma.user.delete({
@@ -618,14 +851,27 @@ export async function deleteEmployee(
 
   await prisma.activityLog.create({
     data: {
-      userId: admin.user.id,
-      action: "EMPLOYEE_STATUS_CHANGED",
-      entityType: "USER",
-      entityId: employeeId,
+      userId:
+        admin.user.id,
+
+      action:
+        "EMPLOYEE_STATUS_CHANGED",
+
+      entityType:
+        "USER",
+
+      entityId:
+        employeeId,
+
       metadata: {
-        action: "DELETED",
-        employeeName: employee.name,
-        employeeEmail: employee.email,
+        action:
+          "DELETED",
+
+        employeeName:
+          employee.name,
+
+        employeeEmail:
+          employee.email,
       },
     },
   });

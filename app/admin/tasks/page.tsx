@@ -33,6 +33,22 @@ const PRIORITY_LABELS = {
   URGENT: "فوری",
 } as const;
 
+const SUB_PROJECT_LABELS = {
+  WEB_DESIGN: "طراحی سایت",
+  SEO: "سئو",
+  SOCIAL_MEDIA: "سوشال مدیا",
+  PHOTOGRAPHY: "عکاسی",
+  VIDEOGRAPHY: "فیلمبرداری",
+  TEASER_PRODUCTION: "تیزرسازی",
+  CATALOG: "کاتالوگ",
+  BRAND_IDENTITY_DESIGN:
+    "طراحی هویت بصری",
+  CRM_MANAGEMENT: "مدیریت CRM",
+  BOOTH_CONSTRUCTION:
+    "غرفه سازی",
+  PROGRAMMING: "برنامه نویسی",
+} as const;
+
 const PAGE_SIZE = 12;
 
 function getStatusClass(
@@ -245,6 +261,14 @@ function TaskCard({
         >
           {task.project.title}
         </Link>
+
+        {task.subProject ? (
+          <span className="mt-2 inline-flex max-w-full truncate rounded-full border border-slate-200/70 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-600">
+            {SUB_PROJECT_LABELS[
+              task.subProject.type
+            ]}
+          </span>
+        ) : null}
       </div>
 
       {task.description ? (
@@ -258,13 +282,55 @@ function TaskCard({
       <div className="mt-4 grid grid-cols-2 gap-2">
         <div className="min-w-0 rounded-2xl border border-white/55 bg-white/38 p-3">
           <p className="text-[10px] font-medium text-slate-400">
-            مسئول
+            مسئول‌ها
           </p>
 
-          <p className="mt-1 flex items-center gap-1.5 truncate text-xs font-bold text-slate-700">
-            <UserRound className="size-3.5 shrink-0 text-slate-400" />
-            {task.assignedTo.name}
-          </p>
+          {task.assignees.length >
+          0 ? (
+            <div className="mt-1 space-y-1">
+              {task.assignees
+                .slice(0, 3)
+                .map(
+                  (assignee) => (
+                    <p
+                      key={
+                        assignee.user
+                          .id
+                      }
+                      className="flex items-center gap-1.5 truncate text-xs font-bold text-slate-700"
+                    >
+                      <UserRound className="size-3.5 shrink-0 text-slate-400" />
+                      <span className="truncate">
+                        {
+                          assignee
+                            .user
+                            .name
+                        }
+                      </span>
+                    </p>
+                  ),
+                )}
+
+              {task.assignees.length >
+              3 ? (
+                <p className="text-[10px] font-semibold text-slate-400">
+                  +
+                  {(
+                    task
+                      .assignees
+                      .length - 3
+                  ).toLocaleString(
+                    "fa-IR",
+                  )}{" "}
+                  نفر دیگر
+                </p>
+              ) : null}
+            </div>
+          ) : (
+            <p className="mt-1 text-xs font-bold text-slate-400">
+              بدون مسئول
+            </p>
+          )}
         </div>
 
         <div className="min-w-0 rounded-2xl border border-white/55 bg-white/38 p-3">
@@ -572,7 +638,10 @@ export default async function AdminTasksPage({
     );
 
   return (
-    <main className="min-h-screen">
+    <main
+      className="min-h-screen"
+      dir="rtl"
+    >
       <div className="mx-auto max-w-[1500px] space-y-6 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
         <section className="glass-strong overflow-hidden rounded-[2rem] p-5 sm:p-6 lg:p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -729,6 +798,15 @@ export default async function AdminTasksPage({
                       title: project.title,
                       status:
                         project.status,
+                      subProjects:
+                        project.subProjects.map(
+                          (
+                            subProject,
+                          ) => ({
+                            id: subProject.id,
+                            type: subProject.type,
+                          }),
+                        ),
                       members:
                         project.members.map(
                           (

@@ -25,6 +25,22 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+const SUB_PROJECT_LABELS = {
+  WEB_DESIGN: "طراحی سایت",
+  SEO: "سئو",
+  SOCIAL_MEDIA: "سوشال مدیا",
+  PHOTOGRAPHY: "عکاسی",
+  VIDEOGRAPHY: "فیلمبرداری",
+  TEASER_PRODUCTION: "تیزرسازی",
+  CATALOG: "کاتالوگ",
+  BRAND_IDENTITY_DESIGN:
+    "طراحی هویت بصری",
+  CRM_MANAGEMENT: "مدیریت CRM",
+  BOOTH_CONSTRUCTION:
+    "غرفه سازی",
+  PROGRAMMING: "برنامه نویسی",
+} as const;
+
 function formatDate(date: Date) {
   return new Intl.DateTimeFormat(
     "fa-IR",
@@ -195,7 +211,10 @@ export default async function ProjectDetailsPage({
     project.members.length;
 
   return (
-    <main className="min-h-screen">
+    <main
+      className="min-h-screen"
+      dir="rtl"
+    >
       <div className="mx-auto max-w-7xl space-y-5 px-4 py-5 sm:px-6 lg:space-y-6 lg:px-8 lg:py-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
@@ -266,7 +285,9 @@ export default async function ProjectDetailsPage({
 
                     {project.description ? (
                       <p className="mt-2 max-w-4xl whitespace-pre-wrap text-sm leading-8 text-slate-600">
-                        {project.description}
+                        {
+                          project.description
+                        }
                       </p>
                     ) : (
                       <p className="mt-2 text-sm leading-7 text-slate-400">
@@ -559,7 +580,7 @@ export default async function ProjectDetailsPage({
               </div>
             ) : (
               <div className="thin-scrollbar overflow-x-auto">
-                <table className="w-full min-w-[820px] text-sm">
+                <table className="w-full min-w-[980px] text-sm">
                   <thead>
                     <tr className="border-y border-white/40 bg-white/25 text-right">
                       <th className="px-6 py-4 font-semibold text-slate-500">
@@ -567,7 +588,11 @@ export default async function ProjectDetailsPage({
                       </th>
 
                       <th className="px-6 py-4 font-semibold text-slate-500">
-                        مسئول
+                        زیرپروژه
+                      </th>
+
+                      <th className="px-6 py-4 font-semibold text-slate-500">
+                        مسئول‌ها
                       </th>
 
                       <th className="px-6 py-4 font-semibold text-slate-500">
@@ -588,27 +613,73 @@ export default async function ProjectDetailsPage({
                           className="border-b border-white/30 transition hover:bg-white/35 last:border-b-0"
                         >
                           <td className="px-6 py-5">
-                            <p className="max-w-[22rem] truncate font-bold text-slate-800">
+                            <Link
+                              href={`/admin/tasks/${task.id}`}
+                              className="block max-w-[22rem] truncate font-bold text-slate-800 transition hover:text-slate-950"
+                            >
                               {task.title}
-                            </p>
+                            </Link>
                           </td>
 
                           <td className="px-6 py-5">
-                            <div className="flex items-center gap-2">
-                              <span className="glass-icon flex size-8 shrink-0 items-center justify-center rounded-xl text-xs font-bold text-slate-500">
-                                {task.assignedTo.name
-                                  .trim()
-                                  .slice(0, 1)}
-                              </span>
-
-                              <span className="max-w-44 truncate font-medium text-slate-700">
+                            {task.subProject ? (
+                              <span className="inline-flex rounded-full border border-slate-200/60 bg-white/45 px-2.5 py-1 text-xs font-bold text-slate-600">
                                 {
-                                  task
-                                    .assignedTo
-                                    .name
+                                  SUB_PROJECT_LABELS[
+                                    task
+                                      .subProject
+                                      .type
+                                  ]
                                 }
                               </span>
-                            </div>
+                            ) : (
+                              <span className="text-xs font-medium text-slate-400">
+                                انتخاب نشده
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="px-6 py-5">
+                            {task.assignees.length >
+                            0 ? (
+                              <div className="max-w-72 space-y-1.5">
+                                {task.assignees.map(
+                                  (
+                                    assignee,
+                                  ) => (
+                                    <div
+                                      key={
+                                        assignee
+                                          .user
+                                          .id
+                                      }
+                                      className="flex items-center gap-2"
+                                    >
+                                      <span className="glass-icon flex size-7 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold text-slate-500">
+                                        {assignee.user.name
+                                          .trim()
+                                          .slice(
+                                            0,
+                                            1,
+                                          )}
+                                      </span>
+
+                                      <span className="truncate text-sm font-medium text-slate-700">
+                                        {
+                                          assignee
+                                            .user
+                                            .name
+                                        }
+                                      </span>
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-xs font-medium text-slate-400">
+                                بدون مسئول
+                              </span>
+                            )}
                           </td>
 
                           <td className="px-6 py-5">
