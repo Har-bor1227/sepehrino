@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   Bell,
+  CalendarDays,
   CheckCircle2,
   ChevronLeft,
   ClipboardList,
@@ -26,6 +27,11 @@ const navigationItems = [
     href: "/employee/dashboard",
     label: "داشبورد",
     icon: LayoutDashboard,
+  },
+  {
+    href: "/employee/attendance",
+    label: "حضور و غیاب من",
+    icon: CalendarDays,
   },
   {
     href: "/employee/projects",
@@ -144,7 +150,7 @@ export function EmployeeSidebar({
 
             {item.href ===
               "/employee/notifications" &&
-              unreadNotifications > 0 ? (
+            unreadNotifications > 0 ? (
               <span
                 className={`flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
                   active

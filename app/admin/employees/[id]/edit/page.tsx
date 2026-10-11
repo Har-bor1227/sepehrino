@@ -19,11 +19,9 @@ export default async function EditEmployeePage({
 }) {
   await requireAdmin();
 
-  const { id } =
-    await params;
+  const { id } = await params;
 
-  const employee =
-    await getEmployeeById(id);
+  const employee = await getEmployeeById(id);
 
   if (!employee) {
     notFound();
@@ -84,8 +82,8 @@ export default async function EditEmployeePage({
                 id: employee.id,
                 name: employee.name,
                 email: employee.email,
-                isActive:
-                  employee.isActive,
+                isActive: employee.isActive,
+                hozorinoUserId: employee.hozorinoUserId,
               }}
             />
           </div>
