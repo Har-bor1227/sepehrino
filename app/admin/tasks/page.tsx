@@ -179,23 +179,29 @@ function TaskCard({
 }: {
   task: Awaited<ReturnType<typeof getAdminTasks>>[number];
 }) {
-  const stages = task.stages ?? [];
-  const isStaged = stages.length > 0;
 
-  const completedStageCount = stages.filter(
-    (stage) => stage.status === "COMPLETED",
-  ).length;
+const taskStages = task.stages ?? [];
+const isStaged = taskStages.length > 0;
 
-  const activeStage = stages.find(
-    (stage) => stage.status === "IN_PROGRESS",
-  );
+const stages =
+  task.isRecurring && isStaged
+    ? task.todayOccurrence?.stages ?? []
+    : taskStages;
 
-  const progressPercent =
-    stages.length > 0
-      ? Math.round(
-          (completedStageCount / stages.length) * 100,
-        )
-      : 0;
+const completedStageCount = stages.filter(
+  (stage) => stage.status === "COMPLETED",
+).length;
+
+const activeStage = stages.find(
+  (stage) => stage.status === "IN_PROGRESS",
+);
+
+const progressPercent =
+  stages.length > 0
+    ? Math.round(
+        (completedStageCount / stages.length) * 100,
+      )
+    : 0;
 
   const overdue = isOverdue(task.deadline, task.status);
 

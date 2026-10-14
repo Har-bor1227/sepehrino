@@ -205,26 +205,30 @@ export default async function AdminTaskPage({
     notFound();
   }
 
-  const stages = task.stages ?? [];
-  const isStaged = stages.length > 0;
+const taskStages = task.stages ?? [];
+const isStaged = taskStages.length > 0;
 
-  const overdue = isTaskOverdue(
-    task.deadline,
-    task.status,
-  );
+const stages =
+  task.isRecurring && isStaged
+    ? task.todayOccurrence?.stages ?? []
+    : taskStages;
 
-  const assigneeIds = task.assignees.map(
-    (assignee) => assignee.user.id,
-  );
+const overdue = isTaskOverdue(
+  task.deadline,
+  task.status,
+);
 
-  const completedStageCount = stages.filter(
-    (stage) => stage.status === "COMPLETED",
-  ).length;
+const assigneeIds = task.assignees.map(
+  (assignee) => assignee.user.id,
+);
 
-  const activeStage = stages.find(
-    (stage) => stage.status === "IN_PROGRESS",
-  );
+const completedStageCount = stages.filter(
+  (stage) => stage.status === "COMPLETED",
+).length;
 
+const activeStage = stages.find(
+  (stage) => stage.status === "IN_PROGRESS",
+);
   return (
     <main className="min-h-screen" dir="rtl">
       <div className="mx-auto max-w-[1400px] space-y-6 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">

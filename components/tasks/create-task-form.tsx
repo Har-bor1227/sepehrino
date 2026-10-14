@@ -451,11 +451,6 @@ export default function CreateTaskForm({
   };
 
   const handleRecurrenceToggle = (enabled: boolean) => {
-    if (enabled && isStaged) {
-      toast.error("تسک چندمرحله‌ای نمی‌تواند تکرارشونده باشد.");
-      return;
-    }
-
     setValue("isRecurring", enabled, {
       shouldValidate: true,
     });
@@ -488,7 +483,6 @@ export default function CreateTaskForm({
 
   const handleTaskModeChange = (staged: boolean) => {
     if (staged) {
-      handleRecurrenceToggle(false);
 
       setValue("assigneeIds", [], {
         shouldValidate: true,
@@ -519,10 +513,6 @@ export default function CreateTaskForm({
       recurrenceEndDate: null,
     };
 
-    if (isStagedTask && payload.isRecurring) {
-      toast.error("تسک چندمرحله‌ای نمی‌تواند تکرارشونده باشد.");
-      return;
-    }
 
     if (payload.isRecurring && payload.recurrenceStartDate) {
       payload.deadline = payload.recurrenceStartDate;
@@ -1133,66 +1123,54 @@ export default function CreateTaskForm({
         </div>
       </div>
 
-      {!isStaged ? (
-        <TaskRecurrenceFields
-          isRecurring={isRecurring}
-          recurrenceType={
-            (recurrenceType ?? "NONE") as
-              | "NONE"
-              | "DAILY"
-              | "WEEKLY"
-              | "MONTHLY"
-          }
-          recurrenceStartDate={
-            typeof recurrenceStartDate === "string"
-              ? recurrenceStartDate
-              : ""
-          }
-          recurrenceWeekdays={recurrenceWeekdays ?? []}
-          recurrenceDayOfMonth={recurrenceDayOfMonth ?? null}
-          recurrenceActive={recurrenceActive ?? true}
-          onIsRecurringChange={handleRecurrenceToggle}
-          onRecurrenceTypeChange={(value) =>
-            setValue("recurrenceType", value, {
-              shouldValidate: true,
-            })
-          }
-          onRecurrenceStartDateChange={(value) =>
-            setValue("recurrenceStartDate", value, {
-              shouldValidate: true,
-            })
-          }
-          onRecurrenceWeekdaysChange={(value) =>
-            setValue("recurrenceWeekdays", value, {
-              shouldValidate: true,
-            })
-          }
-          onRecurrenceDayOfMonthChange={(value) =>
-            setValue("recurrenceDayOfMonth", value, {
-              shouldValidate: true,
-            })
-          }
-          onRecurrenceActiveChange={(value) =>
-            setValue("recurrenceActive", value)
-          }
-          errors={{
-            recurrenceType: errors.recurrenceType?.message,
-            recurrenceStartDate:
-              errors.recurrenceStartDate?.message,
-            recurrenceWeekdays:
-              errors.recurrenceWeekdays?.message,
-            recurrenceDayOfMonth:
-              errors.recurrenceDayOfMonth?.message,
-          }}
-        />
-      ) : (
-        <div className="rounded-2xl border border-slate-200/70 bg-white/30 px-4 py-3 text-sm leading-6 text-slate-600">
-          <span className="font-semibold text-slate-800">
-            تکرار غیرفعال است.
-          </span>{" "}
-          تسک‌های چندمرحله‌ای به‌ترتیب اجرا می‌شوند و قابلیت تکرار ندارند.
-        </div>
-      )}
+<TaskRecurrenceFields
+  isRecurring={isRecurring}
+  recurrenceType={
+    (recurrenceType ?? "NONE") as
+      | "NONE"
+      | "DAILY"
+      | "WEEKLY"
+      | "MONTHLY"
+  }
+  recurrenceStartDate={
+    typeof recurrenceStartDate === "string"
+      ? recurrenceStartDate
+      : ""
+  }
+  recurrenceWeekdays={recurrenceWeekdays ?? []}
+  recurrenceDayOfMonth={recurrenceDayOfMonth ?? null}
+  recurrenceActive={recurrenceActive ?? true}
+  onIsRecurringChange={handleRecurrenceToggle}
+  onRecurrenceTypeChange={(value) =>
+    setValue("recurrenceType", value, {
+      shouldValidate: true,
+    })
+  }
+  onRecurrenceStartDateChange={(value) =>
+    setValue("recurrenceStartDate", value, {
+      shouldValidate: true,
+    })
+  }
+  onRecurrenceWeekdaysChange={(value) =>
+    setValue("recurrenceWeekdays", value, {
+      shouldValidate: true,
+    })
+  }
+  onRecurrenceDayOfMonthChange={(value) =>
+    setValue("recurrenceDayOfMonth", value, {
+      shouldValidate: true,
+    })
+  }
+  onRecurrenceActiveChange={(value) =>
+    setValue("recurrenceActive", value)
+  }
+  errors={{
+    recurrenceType: errors.recurrenceType?.message,
+    recurrenceStartDate: errors.recurrenceStartDate?.message,
+    recurrenceWeekdays: errors.recurrenceWeekdays?.message,
+    recurrenceDayOfMonth: errors.recurrenceDayOfMonth?.message,
+  }}
+/>
 
       {selectedProject ? (
         <div className="rounded-3xl border border-white/55 bg-white/24 p-4">

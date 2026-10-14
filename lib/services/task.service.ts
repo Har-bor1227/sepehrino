@@ -770,30 +770,41 @@ export async function ensureTaskOccurrence(
   taskId: string,
   occurrenceDate: Date,
 ) {
-  const task =
-    await prisma.task.findUnique({
-      where: {
-        id: taskId,
-      },
+  const task = await prisma.task.findUnique({
+    where: {
+      id: taskId,
+    },
 
-      select: {
-        id: true,
-        isRecurring: true,
-        recurrenceType: true,
-        recurrenceStartDate: true,
-        recurrenceEndDate: true,
-        recurrenceWeekdays: true,
-        recurrenceDayOfMonth: true,
-        recurrenceActive: true,
+    select: {
+      id: true,
+      isRecurring: true,
+      recurrenceType: true,
+      recurrenceStartDate: true,
+      recurrenceEndDate: true,
+      recurrenceWeekdays: true,
+      recurrenceDayOfMonth: true,
+      recurrenceActive: true,
+
+      stages: {
+        orderBy: {
+          position: "asc",
+        },
+
+        select: {
+          title: true,
+          description: true,
+          position: true,
+          assigneeId: true,
+        },
       },
-    });
+    },
+  });
 
   if (!task || !task.isRecurring) {
     return null;
   }
 
-  const normalizedDate =
-    toDateOnly(occurrenceDate);
+  const normalizedDate = toDateOnly(occurrenceDate);
 
   const config: RecurrenceConfig = {
     isRecurring: task.isRecurring,
@@ -805,29 +816,123 @@ export async function ensureTaskOccurrence(
     recurrenceActive: task.recurrenceActive,
   };
 
-  if (
-    !isTaskScheduledForDate(
-      config,
-      normalizedDate,
-    )
-  ) {
+  if (!isTaskScheduledForDate(config, normalizedDate)) {
     return null;
   }
 
-  return prisma.taskOccurrence.upsert({
-    where: {
-      taskId_occurrenceDate: {
+  return prisma.$transaction(async (tx) => {
+    const occurrence = await tx.taskOccurrence.upsert({
+      where: {
+        taskId_occurrenceDate: {
+          taskId,
+          occurrenceDate: normalizedDate,
+        },
+      },
+
+      create: {
         taskId,
         occurrenceDate: normalizedDate,
       },
-    },
 
-    create: {
-      taskId,
-      occurrenceDate: normalizedDate,
-    },
+      update: {},
+    });
 
-    update: {},
+    if (task.stages.length > 0) {
+      const existingStageCount =
+        await tx.taskOccurrenceStage.count({
+          where: {
+            occurrenceId: occurrence.id,
+          },
+        });
+
+      if (existingStageCount === 0) {
+        const activatedAt = new Date();
+
+        await tx.taskOccurrenceStage.createMany({
+          data: task.stages.map((stage, index) => ({
+            occurrenceId: occurrence.id,
+            title: stage.title,
+            description: stage.description,
+            position: stage.position,
+            assigneeId: stage.assigneeId,
+
+            status:
+              index === 0 && !occurrence.completed
+                ? "IN_PROGRESS"
+                : occurrence.completed
+                  ? "COMPLETED"
+                  : "LOCKED",
+
+            activatedAt:
+              index === 0 && !occurrence.completed
+                ? activatedAt
+                : null,
+
+            completedAt: occurrence.completed
+              ? occurrence.completedAt
+              : null,
+
+            completedById: occurrence.completed
+              ? occurrence.completedById
+              : null,
+          })),
+
+          skipDuplicates: true,
+        });
+      }
+    }
+
+    return tx.taskOccurrence.findUniqueOrThrow({
+      where: {
+        id: occurrence.id,
+      },
+
+      select: {
+        id: true,
+        taskId: true,
+        occurrenceDate: true,
+        completed: true,
+        completedAt: true,
+        completedById: true,
+        createdAt: true,
+        updatedAt: true,
+
+        stages: {
+          orderBy: {
+            position: "asc",
+          },
+
+          select: {
+            id: true,
+            occurrenceId: true,
+            title: true,
+            description: true,
+            position: true,
+            status: true,
+            assigneeId: true,
+            activatedAt: true,
+            completedAt: true,
+            completedById: true,
+
+            assignee: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+
+            completedBy: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    });
   });
 }
 
@@ -1354,11 +1459,6 @@ export async function createTask(
     );
   }
 
-  if (hasStages && validated.isRecurring) {
-    throw new Error(
-      "STAGED_TASK_CANNOT_BE_RECURRING",
-    );
-  }
 
   const project =
     await prisma.project.findUnique({
@@ -1734,11 +1834,6 @@ export async function updateTask(
     validated.isRecurring ??
     existingTask.isRecurring;
 
-  if (isStagedTask && effectiveRecurring) {
-    throw new Error(
-      "STAGED_TASK_CANNOT_BE_RECURRING",
-    );
-  }
 
   if (validated.subProjectId !== undefined) {
     const subProject =
@@ -2334,6 +2429,19 @@ export async function completeTaskStage(
       "TASK_STAGE_NOT_FOUND",
     );
   }
+  const occurrenceStage =
+  await prisma.taskOccurrenceStage.findUnique({
+    where: {
+      id: stageId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+if (occurrenceStage) {
+  return completeTaskOccurrenceStage(stageId);
+}
 
   const stage =
     await prisma.taskStage.findUnique({
@@ -2682,7 +2790,354 @@ export async function completeTaskStage(
     taskCompleted: transition.taskCompleted,
   };
 }
+async function completeTaskOccurrenceStage(
+  stageId: string,
+) {
+  const session = await requireUser();
 
+  if (!stageId.trim()) {
+    throw new Error("TASK_STAGE_NOT_FOUND");
+  }
+
+  const stage =
+    await prisma.taskOccurrenceStage.findUnique({
+      where: {
+        id: stageId,
+      },
+      select: {
+        id: true,
+        occurrenceId: true,
+        title: true,
+        position: true,
+        status: true,
+        assigneeId: true,
+
+        occurrence: {
+          select: {
+            id: true,
+            taskId: true,
+            occurrenceDate: true,
+            completed: true,
+
+            task: {
+              select: {
+                id: true,
+                title: true,
+                createdById: true,
+                isRecurring: true,
+                recurrenceActive: true,
+                recurrenceType: true,
+                recurrenceStartDate: true,
+                recurrenceEndDate: true,
+                recurrenceWeekdays: true,
+                recurrenceDayOfMonth: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+  if (!stage) {
+    throw new Error("TASK_STAGE_NOT_FOUND");
+  }
+
+  if (stage.assigneeId !== session.user.id) {
+    throw new Error("TASK_STAGE_FORBIDDEN");
+  }
+
+  const task = stage.occurrence.task;
+  const occurrenceDate = toDateOnly(
+    stage.occurrence.occurrenceDate,
+  );
+
+  if (!task.isRecurring) {
+    throw new Error("RECURRING_TASK_REQUIRED");
+  }
+
+  if (!task.recurrenceActive) {
+    throw new Error("RECURRENCE_INACTIVE");
+  }
+
+  const recurrence: RecurrenceConfig = {
+    isRecurring: task.isRecurring,
+    recurrenceType: task.recurrenceType,
+    recurrenceStartDate: task.recurrenceStartDate,
+    recurrenceEndDate: task.recurrenceEndDate,
+    recurrenceWeekdays: task.recurrenceWeekdays,
+    recurrenceDayOfMonth: task.recurrenceDayOfMonth,
+    recurrenceActive: task.recurrenceActive,
+  };
+
+  if (!isTaskScheduledForDate(recurrence, occurrenceDate)) {
+    throw new Error("OCCURRENCE_NOT_SCHEDULED");
+  }
+
+  if (stage.occurrence.completed) {
+    throw new Error("TASK_OCCURRENCE_ALREADY_COMPLETED");
+  }
+
+  if (stage.status === "LOCKED") {
+    throw new Error("TASK_STAGE_LOCKED");
+  }
+
+  if (stage.status === "COMPLETED") {
+    throw new Error("TASK_STAGE_ALREADY_COMPLETED");
+  }
+
+  if (stage.status !== "IN_PROGRESS") {
+    throw new Error("TASK_STAGE_NOT_ACTIVE");
+  }
+
+  const now = new Date();
+
+  const transition = await prisma.$transaction(
+    async (tx) => {
+      const occurrenceGuard =
+        await tx.taskOccurrence.updateMany({
+          where: {
+            id: stage.occurrenceId,
+            completed: false,
+          },
+          data: {
+            updatedAt: now,
+          },
+        });
+
+      if (occurrenceGuard.count !== 1) {
+        throw new Error(
+          "TASK_OCCURRENCE_ALREADY_COMPLETED",
+        );
+      }
+
+      const currentStage =
+        await tx.taskOccurrenceStage.findUnique({
+          where: {
+            id: stage.id,
+          },
+          select: {
+            id: true,
+            occurrenceId: true,
+            title: true,
+            position: true,
+            status: true,
+            assigneeId: true,
+          },
+        });
+
+      if (!currentStage) {
+        throw new Error("TASK_STAGE_NOT_FOUND");
+      }
+
+      if (currentStage.assigneeId !== session.user.id) {
+        throw new Error("TASK_STAGE_FORBIDDEN");
+      }
+
+      if (currentStage.status === "LOCKED") {
+        throw new Error("TASK_STAGE_LOCKED");
+      }
+
+      if (currentStage.status === "COMPLETED") {
+        throw new Error("TASK_STAGE_ALREADY_COMPLETED");
+      }
+
+      if (currentStage.status !== "IN_PROGRESS") {
+        throw new Error("TASK_STAGE_NOT_ACTIVE");
+      }
+
+      const unfinishedPreviousStages =
+        await tx.taskOccurrenceStage.count({
+          where: {
+            occurrenceId: currentStage.occurrenceId,
+            position: {
+              lt: currentStage.position,
+            },
+            status: {
+              not: "COMPLETED",
+            },
+          },
+        });
+
+      if (unfinishedPreviousStages > 0) {
+        throw new Error("TASK_STAGE_LOCKED");
+      }
+
+      const completed =
+        await tx.taskOccurrenceStage.updateMany({
+          where: {
+            id: currentStage.id,
+            status: "IN_PROGRESS",
+            assigneeId: session.user.id,
+          },
+          data: {
+            status: "COMPLETED",
+            completedAt: now,
+            completedById: session.user.id,
+          },
+        });
+
+      if (completed.count !== 1) {
+        throw new Error("TASK_STAGE_NOT_ACTIVE");
+      }
+
+      const nextStage =
+        await tx.taskOccurrenceStage.findFirst({
+          where: {
+            occurrenceId: currentStage.occurrenceId,
+            position: {
+              gt: currentStage.position,
+            },
+          },
+          orderBy: {
+            position: "asc",
+          },
+          select: {
+            id: true,
+            title: true,
+            position: true,
+            status: true,
+            assigneeId: true,
+          },
+        });
+
+      if (nextStage) {
+        if (nextStage.status !== "LOCKED") {
+          throw new Error(
+            "TASK_STAGE_SEQUENCE_INVALID",
+          );
+        }
+
+        const activated =
+          await tx.taskOccurrenceStage.updateMany({
+            where: {
+              id: nextStage.id,
+              status: "LOCKED",
+            },
+            data: {
+              status: "IN_PROGRESS",
+              activatedAt: now,
+            },
+          });
+
+        if (activated.count !== 1) {
+          throw new Error(
+            "TASK_STAGE_NEXT_ALREADY_ACTIVE",
+          );
+        }
+
+        return {
+          nextStage,
+          taskCompleted: false,
+        };
+      }
+
+      const unfinishedStages =
+        await tx.taskOccurrenceStage.count({
+          where: {
+            occurrenceId: currentStage.occurrenceId,
+            status: {
+              not: "COMPLETED",
+            },
+          },
+        });
+
+      if (unfinishedStages !== 0) {
+        throw new Error(
+          "TASK_STAGE_SEQUENCE_INVALID",
+        );
+      }
+
+      const completedOccurrence =
+        await tx.taskOccurrence.updateMany({
+          where: {
+            id: currentStage.occurrenceId,
+            completed: false,
+          },
+          data: {
+            completed: true,
+            completedAt: now,
+            completedById: session.user.id,
+          },
+        });
+
+      if (completedOccurrence.count !== 1) {
+        throw new Error(
+          "TASK_OCCURRENCE_ALREADY_COMPLETED",
+        );
+      }
+
+      return {
+        nextStage: null,
+        taskCompleted: true,
+      };
+    },
+  );
+
+  const occurrenceDateKey = getDateKey(occurrenceDate);
+
+  await prisma.activityLog.create({
+    data: {
+      userId: session.user.id,
+      action: transition.taskCompleted
+        ? "TASK_COMPLETED"
+        : "TASK_STATUS_CHANGED",
+      entityType: "TASK",
+      entityId: stage.occurrence.taskId,
+      metadata: {
+        occurrenceId: stage.occurrenceId,
+        occurrenceDate: occurrenceDateKey,
+        stageId: stage.id,
+        stageTitle: stage.title,
+        stagePosition: stage.position,
+        stageStatus: "COMPLETED",
+        nextStageId: transition.nextStage?.id ?? null,
+        taskCompleted: transition.taskCompleted,
+      },
+    },
+  });
+
+  if (transition.nextStage) {
+    try {
+      await createNotification({
+        userId: transition.nextStage.assigneeId,
+        type: "TASK_ASSIGNED",
+        title: "مرحله جدید فعال شد",
+        message:
+          `مرحله «${transition.nextStage.title}» از تسک «${task.title}» برای تاریخ ${occurrenceDateKey} اکنون فعال است.`,
+        entityType: "TASK",
+        entityId: stage.occurrence.taskId,
+      });
+    } catch (error) {
+      console.error(
+        "Failed to notify the next recurring task stage assignee:",
+        error,
+      );
+    }
+  } else if (task.createdById !== session.user.id) {
+    try {
+      await notifyTaskCompleted({
+        userId: task.createdById,
+        taskId: stage.occurrence.taskId,
+        taskTitle: task.title,
+      });
+    } catch (error) {
+      console.error(
+        "Failed to notify the task creator about recurring occurrence completion:",
+        error,
+      );
+    }
+  }
+
+  return {
+    success: true,
+    taskId: stage.occurrence.taskId,
+    occurrenceId: stage.occurrenceId,
+    occurrenceDate: occurrenceDateKey,
+    stageId: stage.id,
+    nextStageId: transition.nextStage?.id ?? null,
+    taskCompleted: transition.taskCompleted,
+  };
+}
 /* -------------------------------------------------------------------------- */
 /* Recurring occurrence                                                       */
 /* -------------------------------------------------------------------------- */
@@ -2838,6 +3293,17 @@ export async function setTaskOccurrenceStatus(
       "RECURRING_TASK_REQUIRED",
     );
   }
+  const stageCount = await prisma.taskStage.count({
+  where: {
+    taskId: task.id,
+  },
+});
+
+if (stageCount > 0) {
+  throw new Error(
+    "STAGED_TASK_STATUS_MANAGED_BY_STAGES",
+  );
+}
 
   const normalizedDate =
     toDateOnly(validated.occurrenceDate);

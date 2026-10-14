@@ -132,8 +132,10 @@ model User {
 
   taskAssignments TaskAssignee[]
 
-  assignedTaskStages  TaskStage[] @relation("TaskStageAssignee")
-  completedTaskStages TaskStage[] @relation("TaskStageCompletedBy")
+  assignedTaskStages            TaskStage[]           @relation("TaskStageAssignee")
+  completedTaskStages           TaskStage[]           @relation("TaskStageCompletedBy")
+  assignedTaskOccurrenceStages  TaskOccurrenceStage[] @relation("TaskOccurrenceStageAssignee")
+  completedTaskOccurrenceStages TaskOccurrenceStage[] @relation("TaskOccurrenceStageCompletedBy")
 
   comments TaskComment[]
 
@@ -372,7 +374,8 @@ model TaskOccurrence {
 
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
-  completedBy User? @relation("TaskOccurrenceCompletedBy", fields: [completedById], references: [id], onDelete: SetNull)
+  completedBy User?                 @relation("TaskOccurrenceCompletedBy", fields: [completedById], references: [id], onDelete: SetNull)
+  stages      TaskOccurrenceStage[]
 
   @@unique([taskId, occurrenceDate])
   @@index([taskId])
@@ -380,6 +383,41 @@ model TaskOccurrence {
   @@index([completedById])
   @@index([taskId, occurrenceDate])
   @@map("task_occurrences")
+}
+
+model TaskOccurrenceStage {
+  id String @id @default(uuid()) @db.Uuid
+
+  occurrenceId String @db.Uuid
+
+  title       String  @db.VarChar(255)
+  description String? @db.Text
+
+  position Int
+
+  status TaskStageStatus @default(LOCKED)
+
+  assigneeId String @db.Uuid
+
+  activatedAt DateTime? @db.Timestamptz(3)
+  completedAt DateTime? @db.Timestamptz(3)
+
+  completedById String? @db.Uuid
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  occurrence TaskOccurrence @relation(fields: [occurrenceId], references: [id], onDelete: Cascade)
+
+  assignee User @relation("TaskOccurrenceStageAssignee", fields: [assigneeId], references: [id], onDelete: Restrict)
+
+  completedBy User? @relation("TaskOccurrenceStageCompletedBy", fields: [completedById], references: [id], onDelete: SetNull)
+
+  @@unique([occurrenceId, position])
+  @@index([occurrenceId, status])
+  @@index([assigneeId, status])
+  @@index([completedById])
+  @@map("task_occurrence_stages")
 }
 
 model TaskComment {

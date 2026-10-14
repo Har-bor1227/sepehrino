@@ -276,12 +276,16 @@ export default async function EmployeeTaskPage({
   const recurrenceType =
     task.recurrenceType as RecurrenceType;
 
-  const stages = task.stages ?? [];
-  const isStaged = stages.length > 0;
+const taskStages = task.stages ?? [];
+const isStaged = taskStages.length > 0;
 
-  const completedStageCount = stages.filter(
-    (stage) => stage.status === "COMPLETED",
-  ).length;
+const stages = recurring
+  ? task.todayOccurrence?.stages ?? []
+  : taskStages;
+
+const completedStageCount = stages.filter(
+  (stage) => stage.status === "COMPLETED",
+).length;
 
   const overdue =
     !recurring &&
@@ -850,16 +854,23 @@ export default async function EmployeeTaskPage({
                   </p>
                 </div>
 
-                <div className="flex justify-start">
-                  <TaskOccurrenceStatusActions
-                    taskId={task.id}
-                    occurrenceDate={getDateKey(
-                      task.todayOccurrence.occurrenceDate,
-                    )}
-                    completed={task.todayOccurrence.completed}
-                    disabled={!task.recurrenceActive}
-                  />
-                </div>
+{isStaged ? (
+  <p className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-4 text-sm leading-7 text-indigo-800">
+    برای تکمیل نوبت امروز، مراحل بالا را به‌ترتیب انجام دهید. پس از
+    تکمیل آخرین مرحله، نوبت امروز به‌صورت خودکار تکمیل می‌شود.
+  </p>
+) : (
+  <div className="flex justify-start">
+    <TaskOccurrenceStatusActions
+      taskId={task.id}
+      occurrenceDate={getDateKey(
+        task.todayOccurrence.occurrenceDate,
+      )}
+      completed={task.todayOccurrence.completed}
+      disabled={!task.recurrenceActive}
+    />
+  </div>
+)}
 
                 {!task.recurrenceActive ? (
                   <p className="text-xs leading-6 text-slate-400">

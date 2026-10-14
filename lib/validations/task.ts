@@ -180,16 +180,6 @@ export const createTaskSchema = z
           "برای Task معمولی حداقل یک مسئول انتخاب کنید.",
       });
     }
-
-    if (hasStages && data.isRecurring) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["isRecurring"],
-        message:
-          "Task چندمرحله‌ای نمی‌تواند تکرارشونده باشد.",
-      });
-    }
-
     if (!data.isRecurring) {
       if (data.recurrenceType !== "NONE") {
         ctx.addIssue({

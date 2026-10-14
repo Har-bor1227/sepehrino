@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   ArrowLeft,
   CalendarDays,
-  Check,
   CheckCircle2,
   ChevronDown,
   ChevronLeft,
@@ -40,11 +39,6 @@ type RecurrenceType =
   | "DAILY"
   | "WEEKLY"
   | "MONTHLY";
-
-type StageStatus =
-  | "LOCKED"
-  | "IN_PROGRESS"
-  | "COMPLETED";
 
 type SearchParams = {
   q?: string;
@@ -131,16 +125,6 @@ function getPriorityClass(priority: TaskPriority) {
   };
 
   return classes[priority];
-}
-
-function getStageStatusClass(status: StageStatus) {
-  const classes: Record<StageStatus, string> = {
-    LOCKED: "border-slate-200 bg-slate-50 text-slate-500",
-    IN_PROGRESS: "border-blue-200 bg-blue-50 text-blue-700",
-    COMPLETED: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  };
-
-  return classes[status];
 }
 
 function formatDate(date: Date) {
@@ -331,12 +315,19 @@ function TaskCard({
 }: {
   task: Awaited<ReturnType<typeof getEmployeeTasks>>[number];
 }) {
+  const taskStages = task.stages ?? [];
+  const isStaged = taskStages.length > 0;
+
+  const todayOccurrence = task.todayOccurrence;
+
   /*
-   * این relation باید در خروجی getEmployeeTasks نیز انتخاب شده باشد.
-   * اگر TypeScript خطای نبودن stages داد، مرحله بعد همان سرویس را اصلاح می‌کنیم.
+   * برای تسک تکرارشونده، پیشرفت باید از نوبت امروز خوانده شود.
+   * برای تسک چندمرحله‌ای معمولی، از مراحل اصلی خود تسک استفاده می‌کنیم.
    */
-  const stages = task.stages ?? [];
-  const isStaged = stages.length > 0;
+  const stages =
+    task.isRecurring && isStaged
+      ? todayOccurrence?.stages ?? []
+      : taskStages;
 
   const completedStageCount = stages.filter(
     (stage) => stage.status === "COMPLETED",
@@ -345,6 +336,11 @@ function TaskCard({
   const activeStage = stages.find(
     (stage) => stage.status === "IN_PROGRESS",
   );
+
+  const stageProgress =
+    stages.length > 0
+      ? Math.round((completedStageCount / stages.length) * 100)
+      : 0;
 
   const overdue =
     !task.isRecurring &&
@@ -366,8 +362,6 @@ function TaskCard({
       )
     : "";
 
-  const todayOccurrence = task.todayOccurrence;
-
   const isTodayCompleted = Boolean(
     task.isRecurring && todayOccurrence?.completed,
   );
@@ -375,7 +369,7 @@ function TaskCard({
   return (
     <article
       className={`group relative flex h-full min-w-0 flex-col overflow-hidden rounded-[2rem] border p-5 text-center backdrop-blur-2xl transition duration-300 ease-out [perspective:1200px] sm:p-6 ${
-        isTodayCompleted || task.status === "COMPLETED"
+        isTodayCompleted || (!task.isRecurring && task.status === "COMPLETED")
           ? "border-emerald-200/60 bg-emerald-50/45 shadow-[0_20px_45px_rgba(16,185,129,0.09),inset_0_1px_0_rgba(255,255,255,0.9)]"
           : overdue
             ? "border-red-200/65 bg-red-50/40 shadow-[0_20px_45px_rgba(239,68,68,0.08),inset_0_1px_0_rgba(255,255,255,0.9)]"
@@ -386,7 +380,16 @@ function TaskCard({
 
       <div className="flex min-h-[34px] flex-wrap items-center justify-center gap-2">
         {task.isRecurring ? (
-          <RecurrenceBadge type={recurrenceType} />
+          <>
+            <RecurrenceBadge type={recurrenceType} />
+
+            {isStaged ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200/70 bg-indigo-50/80 px-3 py-1.5 text-[11px] font-bold text-indigo-700">
+                <ListOrdered className="size-3.5" />
+                چندمرحله‌ای
+              </span>
+            ) : null}
+          </>
         ) : isStaged ? (
           <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200/70 bg-indigo-50/80 px-3 py-1.5 text-[11px] font-bold text-indigo-700">
             <ListOrdered className="size-3.5" />
@@ -448,56 +451,88 @@ function TaskCard({
 
       {isStaged ? (
         <div className="mx-auto mt-5 w-full max-w-md rounded-2xl border border-indigo-100/80 bg-indigo-50/40 p-4 text-right">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-xs font-bold text-indigo-900">
-              پیشرفت مراحل
-            </span>
+          {task.isRecurring && !todayOccurrence ? (
+            <div className="flex items-start gap-2 text-sm leading-7 text-slate-600">
+              <CalendarDays className="mt-1 size-4 shrink-0 text-indigo-600" />
 
-            <span className="text-xs font-extrabold text-indigo-800">
-              {completedStageCount.toLocaleString("fa-IR")} از{" "}
-              {stages.length.toLocaleString("fa-IR")}
-            </span>
-          </div>
-
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/90">
-            <div
-              className="h-full rounded-full bg-indigo-600 transition-all"
-              style={{
-                width: `${
-                  (completedStageCount / stages.length) * 100
-                }%`,
-              }}
-            />
-          </div>
-
-          {activeStage ? (
-            <div className="mt-3 flex items-start gap-2">
-              <Clock3 className="mt-0.5 size-4 shrink-0 text-blue-700" />
-
-              <div className="min-w-0">
-                <p className="text-[10px] font-medium text-slate-500">
-                  مرحله فعال
-                </p>
-
-                <p className="mt-1 break-words text-xs font-bold text-slate-800">
-                  {activeStage.title}
-                </p>
-
-                <p className="mt-1 text-[10px] text-slate-500">
-                  مسئول: {activeStage.assignee.name}
-                </p>
-              </div>
+              <p>
+                امروز طبق برنامه، نوبتی برای انجام این تسک وجود ندارد.
+              </p>
             </div>
-          ) : task.status === "COMPLETED" ? (
-            <p className="mt-3 flex items-center gap-2 text-xs font-bold text-emerald-700">
-              <CheckCircle2 className="size-4" />
-              همه مراحل تکمیل شده‌اند.
-            </p>
           ) : (
-            <p className="mt-3 flex items-center gap-2 text-xs text-slate-500">
-              <LockKeyhole className="size-4" />
-              مرحله فعالی برای نمایش وجود ندارد.
-            </p>
+            <>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs font-bold text-indigo-900">
+                  پیشرفت مراحل
+                </span>
+
+                <span className="text-xs font-extrabold text-indigo-800">
+                  {completedStageCount.toLocaleString("fa-IR")} از{" "}
+                  {stages.length.toLocaleString("fa-IR")}
+                </span>
+              </div>
+
+              <div
+                className="mt-3 h-2 overflow-hidden rounded-full bg-white/90"
+                role="progressbar"
+                aria-label="درصد پیشرفت مراحل"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={stageProgress}
+              >
+                <div
+                  className="h-full rounded-full bg-indigo-600 transition-all"
+                  style={{
+                    width: `${stageProgress}%`,
+                  }}
+                />
+              </div>
+
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <span className="text-[10px] font-semibold text-slate-500">
+                  {stageProgress.toLocaleString("fa-IR")}٪ تکمیل شده
+                </span>
+
+                <span className="text-[10px] text-slate-400">
+                  {stages.length.toLocaleString("fa-IR")} مرحله
+                </span>
+              </div>
+
+              {activeStage ? (
+                <div className="mt-3 flex items-start gap-2">
+                  <Clock3 className="mt-0.5 size-4 shrink-0 text-blue-700" />
+
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-medium text-slate-500">
+                      مرحله فعال
+                    </p>
+
+                    <p className="mt-1 break-words text-xs font-bold text-slate-800">
+                      {activeStage.title}
+                    </p>
+
+                    <p className="mt-1 text-[10px] text-slate-500">
+                      مسئول: {activeStage.assignee.name}
+                    </p>
+                  </div>
+                </div>
+              ) : task.isRecurring && todayOccurrence?.completed ? (
+                <p className="mt-3 flex items-center gap-2 text-xs font-bold text-emerald-700">
+                  <CheckCircle2 className="size-4" />
+                  تمام مراحل نوبت امروز تکمیل شده‌اند.
+                </p>
+              ) : !task.isRecurring && task.status === "COMPLETED" ? (
+                <p className="mt-3 flex items-center gap-2 text-xs font-bold text-emerald-700">
+                  <CheckCircle2 className="size-4" />
+                  همه مراحل تکمیل شده‌اند.
+                </p>
+              ) : (
+                <p className="mt-3 flex items-center gap-2 text-xs text-slate-500">
+                  <LockKeyhole className="size-4" />
+                  مرحله فعالی برای نمایش وجود ندارد.
+                </p>
+              )}
+            </>
           )}
         </div>
       ) : null}
@@ -620,7 +655,7 @@ function TaskCard({
 
           <p className="mt-1 text-xs font-bold text-slate-700">
             {task.isRecurring
-              ? RECURRENCE_LABELS[recurrenceType]
+              ? `${RECURRENCE_LABELS[recurrenceType]}${isStaged ? " · چندمرحله‌ای" : ""}`
               : isStaged
                 ? "چندمرحله‌ای"
                 : "تسک عادی"}
@@ -648,7 +683,15 @@ function TaskCard({
         </Link>
 
         <div className="flex w-full max-w-md justify-center">
-          {task.isRecurring ? (
+          {task.isRecurring && isStaged ? (
+            <p className="w-full rounded-xl border border-indigo-100 bg-indigo-50/40 px-4 py-3 text-center text-xs leading-6 text-indigo-800">
+              {!todayOccurrence
+                ? "امروز نوبتی طبق برنامه برای انجام این تسک وجود ندارد."
+                : todayOccurrence.completed
+                  ? "تمام مراحل نوبت امروز تکمیل شده‌اند."
+                  : "برای تکمیل نوبت امروز، مراحل را به‌ترتیب انجام دهید."}
+            </p>
+          ) : task.isRecurring ? (
             <TaskOccurrenceStatusActions
               taskId={task.id}
               occurrenceDate={
