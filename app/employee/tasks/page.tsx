@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   ArrowLeft,
   CalendarDays,
+  Check,
   CheckCircle2,
   ChevronDown,
   ChevronLeft,
@@ -9,6 +10,8 @@ import {
   Circle,
   Clock3,
   ListChecks,
+  ListOrdered,
+  LockKeyhole,
   Repeat2,
   Search,
   Timer,
@@ -38,6 +41,11 @@ type RecurrenceType =
   | "WEEKLY"
   | "MONTHLY";
 
+type StageStatus =
+  | "LOCKED"
+  | "IN_PROGRESS"
+  | "COMPLETED";
+
 type SearchParams = {
   q?: string;
   status?: string;
@@ -48,40 +56,28 @@ type SearchParams = {
 
 const PAGE_SIZE = 12;
 
-const STATUS_LABELS: Record<
-  TaskStatus,
-  string
-> = {
+const STATUS_LABELS: Record<TaskStatus, string> = {
   TODO: "در انتظار",
   IN_PROGRESS: "در حال انجام",
   COMPLETED: "تکمیل شده",
   CANCELLED: "لغو شده",
 };
 
-const PRIORITY_LABELS: Record<
-  TaskPriority,
-  string
-> = {
+const PRIORITY_LABELS: Record<TaskPriority, string> = {
   LOW: "کم",
   MEDIUM: "متوسط",
   HIGH: "زیاد",
   URGENT: "فوری",
 };
 
-const RECURRENCE_LABELS: Record<
-  RecurrenceType,
-  string
-> = {
+const RECURRENCE_LABELS: Record<RecurrenceType, string> = {
   NONE: "",
   DAILY: "روزانه",
   WEEKLY: "هفتگی",
   MONTHLY: "ماهانه",
 };
 
-const WEEKDAY_LABELS: Record<
-  number,
-  string
-> = {
+const WEEKDAY_LABELS: Record<number, string> = {
   1: "دوشنبه",
   2: "سه‌شنبه",
   3: "چهارشنبه",
@@ -92,111 +88,82 @@ const WEEKDAY_LABELS: Record<
 };
 
 const SORT_LABELS = {
-  deadline_asc:
-    "نزدیک‌ترین Deadline",
-  deadline_desc:
-    "دورترین Deadline",
+  deadline_asc: "نزدیک‌ترین Deadline",
+  deadline_desc: "دورترین Deadline",
   newest: "جدیدترین",
 } as const;
 
 function getTodayDateKey() {
   const today = new Date();
 
-  const year =
-    today.getUTCFullYear();
-
-  const month = String(
-    today.getUTCMonth() + 1,
-  ).padStart(2, "0");
-
-  const day = String(
-    today.getUTCDate(),
-  ).padStart(2, "0");
+  const year = today.getUTCFullYear();
+  const month = String(today.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(today.getUTCDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
 }
 
 function getDateKey(date: Date) {
-  const year =
-    date.getUTCFullYear();
-
-  const month = String(
-    date.getUTCMonth() + 1,
-  ).padStart(2, "0");
-
-  const day = String(
-    date.getUTCDate(),
-  ).padStart(2, "0");
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
 }
 
-function getStatusClass(
-  status: TaskStatus,
-) {
-  const classes = {
-    TODO:
-      "border-slate-200/70 bg-slate-50 text-slate-700",
-    IN_PROGRESS:
-      "border-blue-200/70 bg-blue-50 text-blue-700",
-    COMPLETED:
-      "border-emerald-200/70 bg-emerald-50 text-emerald-700",
-    CANCELLED:
-      "border-red-200/70 bg-red-50 text-red-700",
+function getStatusClass(status: TaskStatus) {
+  const classes: Record<TaskStatus, string> = {
+    TODO: "border-slate-200/70 bg-slate-50 text-slate-700",
+    IN_PROGRESS: "border-blue-200/70 bg-blue-50 text-blue-700",
+    COMPLETED: "border-emerald-200/70 bg-emerald-50 text-emerald-700",
+    CANCELLED: "border-red-200/70 bg-red-50 text-red-700",
   };
 
   return classes[status];
 }
 
-function getPriorityClass(
-  priority: TaskPriority,
-) {
-  const classes = {
-    LOW:
-      "border-slate-200/70 bg-slate-50 text-slate-600",
-    MEDIUM:
-      "border-amber-200/70 bg-amber-50 text-amber-700",
-    HIGH:
-      "border-orange-200/70 bg-orange-50 text-orange-700",
-    URGENT:
-      "border-red-200/70 bg-red-50 text-red-700",
+function getPriorityClass(priority: TaskPriority) {
+  const classes: Record<TaskPriority, string> = {
+    LOW: "border-slate-200/70 bg-slate-50 text-slate-600",
+    MEDIUM: "border-amber-200/70 bg-amber-50 text-amber-700",
+    HIGH: "border-orange-200/70 bg-orange-50 text-orange-700",
+    URGENT: "border-red-200/70 bg-red-50 text-red-700",
   };
 
   return classes[priority];
 }
 
+function getStageStatusClass(status: StageStatus) {
+  const classes: Record<StageStatus, string> = {
+    LOCKED: "border-slate-200 bg-slate-50 text-slate-500",
+    IN_PROGRESS: "border-blue-200 bg-blue-50 text-blue-700",
+    COMPLETED: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  };
+
+  return classes[status];
+}
+
 function formatDate(date: Date) {
-  return new Intl.DateTimeFormat(
-    "fa-IR",
-    {
-      calendar: "persian",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    },
-  ).format(date);
+  return new Intl.DateTimeFormat("fa-IR", {
+    calendar: "persian",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
 }
 
-function formatDateTime(
-  date: Date,
-) {
-  return new Intl.DateTimeFormat(
-    "fa-IR",
-    {
-      calendar: "persian",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    },
-  ).format(date);
+function formatDateTime(date: Date) {
+  return new Intl.DateTimeFormat("fa-IR", {
+    calendar: "persian",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }
 
-function isOverdue(
-  deadline: Date,
-  status: TaskStatus,
-) {
+function isOverdue(deadline: Date, status: TaskStatus) {
   return (
     deadline < new Date() &&
     status !== "COMPLETED" &&
@@ -204,40 +171,24 @@ function isOverdue(
   );
 }
 
-function isDueSoon(
-  deadline: Date,
-  status: TaskStatus,
-) {
-  if (
-    status === "COMPLETED" ||
-    status === "CANCELLED"
-  ) {
+function isDueSoon(deadline: Date, status: TaskStatus) {
+  if (status === "COMPLETED" || status === "CANCELLED") {
     return false;
   }
 
-  const diff =
-    deadline.getTime() -
-    Date.now();
+  const diff = deadline.getTime() - Date.now();
 
-  return (
-    diff > 0 &&
-    diff <=
-      48 * 60 * 60 * 1000
-  );
+  return diff > 0 && diff <= 48 * 60 * 60 * 1000;
 }
 
-function normalizeParam(
-  value: string | undefined,
-) {
+function normalizeParam(value: string | undefined) {
   return value?.trim() ?? "";
 }
 
 function getRecurrenceDescription(
   type: RecurrenceType,
   weekdays: number[],
-  dayOfMonth:
-    | number
-    | null,
+  dayOfMonth: number | null,
 ) {
   if (type === "DAILY") {
     return "هر روز";
@@ -250,12 +201,7 @@ function getRecurrenceDescription(
 
     return [...weekdays]
       .sort((a, b) => a - b)
-      .map(
-        (weekday) =>
-          WEEKDAY_LABELS[
-            weekday
-          ],
-      )
+      .map((weekday) => WEEKDAY_LABELS[weekday])
       .filter(Boolean)
       .join("، ");
   }
@@ -265,9 +211,7 @@ function getRecurrenceDescription(
       return "برنامه ماهانه";
     }
 
-    return `روز ${dayOfMonth.toLocaleString(
-      "fa-IR",
-    )} هر ماه`;
+    return `روز ${dayOfMonth.toLocaleString("fa-IR")} هر ماه`;
   }
 
   return "";
@@ -282,47 +226,31 @@ function buildPageHref(
     sort: keyof typeof SORT_LABELS;
   },
 ) {
-  const search =
-    new URLSearchParams();
+  const search = new URLSearchParams();
 
   if (params.q) {
     search.set("q", params.q);
   }
 
   if (params.status) {
-    search.set(
-      "status",
-      params.status,
-    );
+    search.set("status", params.status);
   }
 
   if (params.priority) {
-    search.set(
-      "priority",
-      params.priority,
-    );
+    search.set("priority", params.priority);
   }
 
   if (params.sort) {
-    search.set(
-      "sort",
-      params.sort,
-    );
+    search.set("sort", params.sort);
   }
 
   if (page > 1) {
-    search.set(
-      "page",
-      String(page),
-    );
+    search.set("page", String(page));
   }
 
-  const query =
-    search.toString();
+  const query = search.toString();
 
-  return query
-    ? `/employee/tasks?${query}`
-    : "/employee/tasks";
+  return query ? `/employee/tasks?${query}` : "/employee/tasks";
 }
 
 function SummaryCard({
@@ -335,25 +263,15 @@ function SummaryCard({
   label: string;
   value: number;
   icon: typeof ListChecks;
-  tone:
-    | "slate"
-    | "blue"
-    | "emerald"
-    | "amber"
-    | "red";
+  tone: "slate" | "blue" | "emerald" | "amber" | "red";
   href?: string;
 }) {
   const toneClasses = {
-    slate:
-      "bg-slate-900/7 text-slate-600",
-    blue:
-      "bg-blue-500/8 text-blue-600",
-    emerald:
-      "bg-emerald-500/8 text-emerald-600",
-    amber:
-      "bg-amber-500/8 text-amber-600",
-    red:
-      "bg-red-500/8 text-red-600",
+    slate: "bg-slate-900/7 text-slate-600",
+    blue: "bg-blue-500/8 text-blue-600",
+    emerald: "bg-emerald-500/8 text-emerald-600",
+    amber: "bg-amber-500/8 text-amber-600",
+    red: "bg-red-500/8 text-red-600",
   };
 
   const content = (
@@ -375,9 +293,7 @@ function SummaryCard({
       </p>
 
       <p className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900">
-        {value.toLocaleString(
-          "fa-IR",
-        )}
+        {value.toLocaleString("fa-IR")}
       </p>
     </div>
   );
@@ -387,10 +303,7 @@ function SummaryCard({
   }
 
   return (
-    <Link
-      href={href}
-      className="block"
-    >
+    <Link href={href} className="block">
       {content}
     </Link>
   );
@@ -416,53 +329,53 @@ function RecurrenceBadge({
 function TaskCard({
   task,
 }: {
-  task: Awaited<
-    ReturnType<
-      typeof getEmployeeTasks
-    >
-  >[number];
+  task: Awaited<ReturnType<typeof getEmployeeTasks>>[number];
 }) {
+  /*
+   * این relation باید در خروجی getEmployeeTasks نیز انتخاب شده باشد.
+   * اگر TypeScript خطای نبودن stages داد، مرحله بعد همان سرویس را اصلاح می‌کنیم.
+   */
+  const stages = task.stages ?? [];
+  const isStaged = stages.length > 0;
+
+  const completedStageCount = stages.filter(
+    (stage) => stage.status === "COMPLETED",
+  ).length;
+
+  const activeStage = stages.find(
+    (stage) => stage.status === "IN_PROGRESS",
+  );
+
   const overdue =
     !task.isRecurring &&
-    isOverdue(
-      task.deadline,
-      task.status,
-    );
+    !isStaged &&
+    isOverdue(task.deadline, task.status);
 
   const dueSoon =
     !task.isRecurring &&
-    isDueSoon(
-      task.deadline,
-      task.status,
-    );
+    !isStaged &&
+    isDueSoon(task.deadline, task.status);
 
-  const recurrenceType =
-    task.recurrenceType as RecurrenceType;
+  const recurrenceType = task.recurrenceType as RecurrenceType;
 
-  const recurrenceDescription =
-    task.isRecurring
-      ? getRecurrenceDescription(
-          recurrenceType,
-          task.recurrenceWeekdays,
-          task.recurrenceDayOfMonth,
-        )
-      : "";
+  const recurrenceDescription = task.isRecurring
+    ? getRecurrenceDescription(
+        recurrenceType,
+        task.recurrenceWeekdays,
+        task.recurrenceDayOfMonth,
+      )
+    : "";
 
-  const todayOccurrence =
-    task.todayOccurrence;
+  const todayOccurrence = task.todayOccurrence;
 
-  const isTodayCompleted =
-    Boolean(
-      task.isRecurring &&
-        todayOccurrence?.completed,
-    );
+  const isTodayCompleted = Boolean(
+    task.isRecurring && todayOccurrence?.completed,
+  );
 
   return (
     <article
       className={`group relative flex h-full min-w-0 flex-col overflow-hidden rounded-[2rem] border p-5 text-center backdrop-blur-2xl transition duration-300 ease-out [perspective:1200px] sm:p-6 ${
-        isTodayCompleted ||
-        task.status ===
-          "COMPLETED"
+        isTodayCompleted || task.status === "COMPLETED"
           ? "border-emerald-200/60 bg-emerald-50/45 shadow-[0_20px_45px_rgba(16,185,129,0.09),inset_0_1px_0_rgba(255,255,255,0.9)]"
           : overdue
             ? "border-red-200/65 bg-red-50/40 shadow-[0_20px_45px_rgba(239,68,68,0.08),inset_0_1px_0_rgba(255,255,255,0.9)]"
@@ -473,15 +386,16 @@ function TaskCard({
 
       <div className="flex min-h-[34px] flex-wrap items-center justify-center gap-2">
         {task.isRecurring ? (
-          <RecurrenceBadge
-            type={
-              recurrenceType
-            }
-          />
+          <RecurrenceBadge type={recurrenceType} />
+        ) : isStaged ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200/70 bg-indigo-50/80 px-3 py-1.5 text-[11px] font-bold text-indigo-700">
+            <ListOrdered className="size-3.5" />
+            تسک چندمرحله‌ای
+          </span>
         ) : (
           <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/70 bg-slate-50/80 px-3 py-1.5 text-[11px] font-bold text-slate-600">
             <ListChecks className="size-3.5" />
-            Task معمولی
+            تسک معمولی
           </span>
         )}
 
@@ -490,17 +404,16 @@ function TaskCard({
             task.priority,
           )}`}
         >
-          {PRIORITY_LABELS[
-            task.priority
-          ]}
+          {PRIORITY_LABELS[task.priority]}
         </span>
       </div>
 
       <div className="mx-auto mt-5 flex size-16 items-center justify-center rounded-[1.35rem] border border-white/75 bg-white/55 text-slate-700 shadow-[0_12px_24px_rgba(15,23,42,0.07),inset_0_1px_0_rgba(255,255,255,0.95)] transition duration-300 group-hover:-translate-y-0.5 group-hover:rotate-1">
         {task.isRecurring ? (
           <Repeat2 className="size-7 text-violet-600" />
-        ) : task.status ===
-          "COMPLETED" ? (
+        ) : isStaged ? (
+          <ListOrdered className="size-7 text-indigo-600" />
+        ) : task.status === "COMPLETED" ? (
           <CheckCircle2 className="size-7 text-emerald-600" />
         ) : overdue ? (
           <Clock3 className="size-7 text-red-600" />
@@ -532,6 +445,62 @@ function TaskCard({
       ) : (
         <div className="h-6" />
       )}
+
+      {isStaged ? (
+        <div className="mx-auto mt-5 w-full max-w-md rounded-2xl border border-indigo-100/80 bg-indigo-50/40 p-4 text-right">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs font-bold text-indigo-900">
+              پیشرفت مراحل
+            </span>
+
+            <span className="text-xs font-extrabold text-indigo-800">
+              {completedStageCount.toLocaleString("fa-IR")} از{" "}
+              {stages.length.toLocaleString("fa-IR")}
+            </span>
+          </div>
+
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/90">
+            <div
+              className="h-full rounded-full bg-indigo-600 transition-all"
+              style={{
+                width: `${
+                  (completedStageCount / stages.length) * 100
+                }%`,
+              }}
+            />
+          </div>
+
+          {activeStage ? (
+            <div className="mt-3 flex items-start gap-2">
+              <Clock3 className="mt-0.5 size-4 shrink-0 text-blue-700" />
+
+              <div className="min-w-0">
+                <p className="text-[10px] font-medium text-slate-500">
+                  مرحله فعال
+                </p>
+
+                <p className="mt-1 break-words text-xs font-bold text-slate-800">
+                  {activeStage.title}
+                </p>
+
+                <p className="mt-1 text-[10px] text-slate-500">
+                  مسئول: {activeStage.assignee.name}
+                </p>
+              </div>
+            </div>
+          ) : task.status === "COMPLETED" ? (
+            <p className="mt-3 flex items-center gap-2 text-xs font-bold text-emerald-700">
+              <CheckCircle2 className="size-4" />
+              همه مراحل تکمیل شده‌اند.
+            </p>
+          ) : (
+            <p className="mt-3 flex items-center gap-2 text-xs text-slate-500">
+              <LockKeyhole className="size-4" />
+              مرحله فعالی برای نمایش وجود ندارد.
+            </p>
+          )}
+        </div>
+      ) : null}
 
       <div className="mx-auto mt-5 grid w-full max-w-md gap-3 sm:grid-cols-2">
         <div className="rounded-2xl border border-white/65 bg-white/38 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
@@ -568,18 +537,13 @@ function TaskCard({
                   task.status,
                 )}`}
               >
-                {task.status ===
-                "COMPLETED" ? (
+                {task.status === "COMPLETED" ? (
                   <CheckCircle2 className="size-3.5" />
                 ) : (
                   <Circle className="size-3.5" />
                 )}
 
-                {
-                  STATUS_LABELS[
-                    task.status
-                  ]
-                }
+                {STATUS_LABELS[task.status]}
               </span>
             )}
           </div>
@@ -595,9 +559,7 @@ function TaskCard({
           }`}
         >
           <p className="text-[10px] font-semibold text-slate-400">
-            {task.isRecurring
-              ? "برنامه"
-              : "Deadline"}
+            {task.isRecurring ? "برنامه" : "Deadline"}
           </p>
 
           <div className="mt-2 flex items-center justify-center gap-1.5">
@@ -621,11 +583,8 @@ function TaskCard({
               }`}
             >
               {task.isRecurring
-                ? recurrenceDescription ||
-                  "برنامه تکرارشونده"
-                : formatDate(
-                    task.deadline,
-                  )}
+                ? recurrenceDescription || "برنامه تکرارشونده"
+                : formatDate(task.deadline)}
             </span>
           </div>
 
@@ -643,16 +602,11 @@ function TaskCard({
                 ? "عقب‌افتاده"
                 : dueSoon
                   ? "Deadline نزدیک"
-                  : formatDateTime(
-                      task.deadline,
-                    )}
+                  : formatDateTime(task.deadline)}
             </p>
           ) : task.recurrenceStartDate ? (
             <p className="mt-1 text-[10px] text-slate-400">
-              شروع از{" "}
-              {formatDate(
-                task.recurrenceStartDate,
-              )}
+              شروع از {formatDate(task.recurrenceStartDate)}
             </p>
           ) : null}
         </div>
@@ -666,10 +620,10 @@ function TaskCard({
 
           <p className="mt-1 text-xs font-bold text-slate-700">
             {task.isRecurring
-              ? RECURRENCE_LABELS[
-                  recurrenceType
-                ]
-              : "Task عادی"}
+              ? RECURRENCE_LABELS[recurrenceType]
+              : isStaged
+                ? "چندمرحله‌ای"
+                : "تسک عادی"}
           </p>
         </div>
 
@@ -679,9 +633,7 @@ function TaskCard({
           </p>
 
           <p className="mt-1 text-xs font-bold text-slate-700">
-            {formatDate(
-              task.createdAt,
-            )}
+            {formatDate(task.createdAt)}
           </p>
         </div>
       </div>
@@ -691,39 +643,30 @@ function TaskCard({
           href={`/employee/tasks/${task.id}`}
           className="inline-flex min-h-11 w-full max-w-md items-center justify-center gap-2 rounded-2xl border border-white/70 bg-white/58 px-4 text-sm font-bold text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition hover:bg-white/80 hover:shadow-[0_14px_28px_rgba(15,23,42,0.08)]"
         >
-          مشاهده جزئیات
+          {isStaged ? "مشاهده مراحل و ادامه کار" : "مشاهده جزئیات"}
           <ArrowLeft className="size-4" />
         </Link>
 
         <div className="flex w-full max-w-md justify-center">
           {task.isRecurring ? (
             <TaskOccurrenceStatusActions
-              taskId={
-                task.id
-              }
+              taskId={task.id}
               occurrenceDate={
                 todayOccurrence
-                  ? getDateKey(
-                      todayOccurrence.occurrenceDate,
-                    )
+                  ? getDateKey(todayOccurrence.occurrenceDate)
                   : getTodayDateKey()
               }
-              completed={
-                todayOccurrence?.completed ??
-                false
-              }
-              disabled={
-                !todayOccurrence
-              }
+              completed={todayOccurrence?.completed ?? false}
+              disabled={!todayOccurrence}
             />
+          ) : isStaged ? (
+            <p className="w-full rounded-xl border border-indigo-100 bg-indigo-50/40 px-4 py-3 text-center text-xs leading-6 text-indigo-800">
+              تکمیل این تسک از داخل مرحله فعال انجام می‌شود.
+            </p>
           ) : (
             <EmployeeTaskStatusActions
-              taskId={
-                task.id
-              }
-              currentStatus={
-                task.status
-              }
+              taskId={task.id}
+              currentStatus={task.status}
             />
           )}
         </div>
@@ -744,13 +687,13 @@ function EmptyState({
       </div>
 
       <h3 className="mt-5 font-extrabold text-slate-800">
-        Taskی پیدا نشد
+        تسکی پیدا نشد
       </h3>
 
       <p className="mt-2 max-w-md text-sm leading-7 text-slate-400">
         {hasFilters
           ? "فیلترهای جست‌وجو را تغییر دهید یا همه فیلترها را پاک کنید."
-          : "هنوز Taskی برای نمایش وجود ندارد."}
+          : "هنوز تسکی برای نمایش وجود ندارد."}
       </p>
 
       {hasFilters ? (
@@ -758,7 +701,7 @@ function EmptyState({
           href="/employee/tasks"
           className="mt-5 inline-flex h-10 items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white"
         >
-          نمایش همه Taskها
+          نمایش همه تسک‌ها
         </Link>
       ) : null}
     </div>
@@ -785,45 +728,24 @@ function Pagination({
     return null;
   }
 
-  const startItem =
-    (currentPage - 1) *
-      PAGE_SIZE +
-    1;
-
-  const endItem = Math.min(
-    currentPage *
-      PAGE_SIZE,
-    totalItems,
-  );
+  const startItem = (currentPage - 1) * PAGE_SIZE + 1;
+  const endItem = Math.min(currentPage * PAGE_SIZE, totalItems);
 
   return (
     <nav
-      aria-label="صفحه‌بندی Taskها"
+      aria-label="صفحه‌بندی تسک‌ها"
       className="flex flex-col gap-4 rounded-[2rem] border border-white/60 bg-white/35 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:p-5"
     >
       <div className="text-center text-xs font-semibold text-slate-400 sm:text-right">
-        نمایش{" "}
-        {startItem.toLocaleString(
-          "fa-IR",
-        )}{" "}
-        تا{" "}
-        {endItem.toLocaleString(
-          "fa-IR",
-        )}{" "}
-        از{" "}
-        {totalItems.toLocaleString(
-          "fa-IR",
-        )}{" "}
-        Task
+        نمایش {startItem.toLocaleString("fa-IR")} تا{" "}
+        {endItem.toLocaleString("fa-IR")} از{" "}
+        {totalItems.toLocaleString("fa-IR")} تسک
       </div>
 
       <div className="flex items-center justify-center gap-2">
         {currentPage > 1 ? (
           <Link
-            href={buildPageHref(
-              currentPage - 1,
-              params,
-            )}
+            href={buildPageHref(currentPage - 1, params)}
             className="inline-flex size-10 items-center justify-center rounded-xl border border-white/70 bg-white/55 text-slate-600 shadow-sm transition hover:bg-white/80 hover:text-slate-900"
             aria-label="صفحه قبل"
           >
@@ -836,50 +758,31 @@ function Pagination({
         )}
 
         <div className="flex items-center gap-1.5">
-          {Array.from(
-            {
-              length: totalPages,
-            },
-            (_, index) =>
-              index + 1,
-          ).map((page) => {
-            const active =
-              page ===
-              currentPage;
+          {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+            (page) => {
+              const active = page === currentPage;
 
-            return (
-              <Link
-                key={page}
-                href={buildPageHref(
-                  page,
-                  params,
-                )}
-                aria-current={
-                  active
-                    ? "page"
-                    : undefined
-                }
-                className={`inline-flex size-10 items-center justify-center rounded-xl border text-xs font-extrabold transition ${
-                  active
-                    ? "border-slate-900 bg-slate-900 text-white shadow-[0_9px_20px_rgba(15,23,42,0.14)]"
-                    : "border-white/70 bg-white/50 text-slate-600 hover:bg-white/80 hover:text-slate-900"
-                }`}
-              >
-                {page.toLocaleString(
-                  "fa-IR",
-                )}
-              </Link>
-            );
-          })}
+              return (
+                <Link
+                  key={page}
+                  href={buildPageHref(page, params)}
+                  aria-current={active ? "page" : undefined}
+                  className={`inline-flex size-10 items-center justify-center rounded-xl border text-xs font-extrabold transition ${
+                    active
+                      ? "border-slate-900 bg-slate-900 text-white shadow-[0_9px_20px_rgba(15,23,42,0.14)]"
+                      : "border-white/70 bg-white/50 text-slate-600 hover:bg-white/80 hover:text-slate-900"
+                  }`}
+                >
+                  {page.toLocaleString("fa-IR")}
+                </Link>
+              );
+            },
+          )}
         </div>
 
-        {currentPage <
-        totalPages ? (
+        {currentPage < totalPages ? (
           <Link
-            href={buildPageHref(
-              currentPage + 1,
-              params,
-            )}
+            href={buildPageHref(currentPage + 1, params)}
             className="inline-flex size-10 items-center justify-center rounded-xl border border-white/70 bg-white/55 text-slate-600 shadow-sm transition hover:bg-white/80 hover:text-slate-900"
             aria-label="صفحه بعد"
           >
@@ -902,202 +805,108 @@ export default async function EmployeeTasksPage({
 }) {
   await requireEmployee();
 
-  const params =
-    await searchParams;
+  const params = await searchParams;
 
-  const query =
-    normalizeParam(
-      params.q,
-    );
+  const query = normalizeParam(params.q);
 
-  const status =
-    normalizeParam(
-      params.status,
-    ) as TaskStatus | "";
-
-  const priority =
-    normalizeParam(
-      params.priority,
-    ) as TaskPriority | "";
+  const status = normalizeParam(params.status) as TaskStatus | "";
+  const priority = normalizeParam(params.priority) as TaskPriority | "";
 
   const sort =
-    params.sort &&
-    params.sort in
-      SORT_LABELS
+    params.sort && params.sort in SORT_LABELS
       ? (params.sort as keyof typeof SORT_LABELS)
       : "deadline_asc";
 
-  const rawPage =
-    Number.parseInt(
-      params.page ?? "1",
-      10,
-    );
+  const rawPage = Number.parseInt(params.page ?? "1", 10);
 
   const requestedPage =
-    Number.isFinite(rawPage) &&
-    rawPage > 0
-      ? rawPage
-      : 1;
+    Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
 
-  const tasks =
-    await getEmployeeTasks();
+  const tasks = await getEmployeeTasks();
 
-  const todayDateKey =
-    getTodayDateKey();
+  let filteredTasks = tasks.filter((task) => {
+    const normalizedQuery = query.toLocaleLowerCase("fa");
 
-  let filteredTasks =
-    tasks.filter(
-      (task) => {
-        const normalizedQuery =
-          query.toLocaleLowerCase(
-            "fa",
-          );
+    const matchesQuery =
+      query.length === 0 ||
+      task.title.toLocaleLowerCase("fa").includes(normalizedQuery) ||
+      task.project.title.toLocaleLowerCase("fa").includes(normalizedQuery);
 
-        const matchesQuery =
-          query.length === 0 ||
-          task.title
-            .toLocaleLowerCase(
-              "fa",
-            )
-            .includes(
-              normalizedQuery,
-            ) ||
-          task.project.title
-            .toLocaleLowerCase(
-              "fa",
-            )
-            .includes(
-              normalizedQuery,
-            );
+    const matchesStatus =
+      status.length === 0 || task.status === status;
 
-        const matchesStatus =
-          status.length === 0 ||
-          task.status ===
-            status;
+    const matchesPriority =
+      priority.length === 0 || task.priority === priority;
 
-        const matchesPriority =
-          priority.length === 0 ||
-          task.priority ===
-            priority;
-
-        return (
-          matchesQuery &&
-          matchesStatus &&
-          matchesPriority
-        );
-      },
-    );
-
-  filteredTasks = [
-    ...filteredTasks,
-  ].sort((a, b) => {
-    if (
-      sort === "newest"
-    ) {
-      return (
-        b.createdAt.getTime() -
-        a.createdAt.getTime()
-      );
-    }
-
-    if (
-      sort ===
-      "deadline_desc"
-    ) {
-      return (
-        b.deadline.getTime() -
-        a.deadline.getTime()
-      );
-    }
-
-    return (
-      a.deadline.getTime() -
-      b.deadline.getTime()
-    );
+    return matchesQuery && matchesStatus && matchesPriority;
   });
 
-  const totalTasks =
-    tasks.length;
+  filteredTasks = [...filteredTasks].sort((a, b) => {
+    if (sort === "newest") {
+      return b.createdAt.getTime() - a.createdAt.getTime();
+    }
 
-  const todoCount =
-    tasks.filter(
-      (task) =>
-        task.status ===
-        "TODO",
-    ).length;
+    if (sort === "deadline_desc") {
+      return b.deadline.getTime() - a.deadline.getTime();
+    }
 
-  const inProgressCount =
-    tasks.filter(
-      (task) =>
-        task.status ===
-        "IN_PROGRESS",
-    ).length;
+    return a.deadline.getTime() - b.deadline.getTime();
+  });
 
-  const completedCount =
-    tasks.filter(
-      (task) =>
-        task.status ===
-        "COMPLETED",
-    ).length;
+  const totalTasks = tasks.length;
 
-  const overdueCount =
-    tasks.filter((task) =>
-      isOverdue(
-        task.deadline,
-        task.status,
-      ),
-    ).length;
+  const todoCount = tasks.filter(
+    (task) => task.status === "TODO",
+  ).length;
 
-  const dueSoonCount =
-    tasks.filter((task) =>
-      isDueSoon(
-        task.deadline,
-        task.status,
-      ),
-    ).length;
+  const inProgressCount = tasks.filter(
+    (task) => task.status === "IN_PROGRESS",
+  ).length;
 
-  const recurringCount =
-    tasks.filter(
-      (task) =>
-        task.isRecurring,
-    ).length;
+  const completedCount = tasks.filter(
+    (task) => task.status === "COMPLETED",
+  ).length;
 
-  const activeCount =
-    todoCount +
-    inProgressCount;
+  const overdueCount = tasks.filter(
+    (task) =>
+      !task.isRecurring &&
+      !task.stages?.length &&
+      isOverdue(task.deadline, task.status),
+  ).length;
+
+  const dueSoonCount = tasks.filter(
+    (task) =>
+      !task.isRecurring &&
+      !task.stages?.length &&
+      isDueSoon(task.deadline, task.status),
+  ).length;
+
+  const recurringCount = tasks.filter(
+    (task) => task.isRecurring,
+  ).length;
+
+  const activeCount = todoCount + inProgressCount;
 
   const hasFilters =
     query.length > 0 ||
     status.length > 0 ||
     priority.length > 0;
 
-  const totalFilteredTasks =
-    filteredTasks.length;
+  const totalFilteredTasks = filteredTasks.length;
 
-  const totalPages =
-    Math.max(
-      1,
-      Math.ceil(
-        totalFilteredTasks /
-          PAGE_SIZE,
-      ),
-    );
+  const totalPages = Math.max(
+    1,
+    Math.ceil(totalFilteredTasks / PAGE_SIZE),
+  );
 
-  const currentPage =
-    Math.min(
-      requestedPage,
-      totalPages,
-    );
+  const currentPage = Math.min(requestedPage, totalPages);
 
-  const pageStart =
-    (currentPage - 1) *
-    PAGE_SIZE;
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
 
-  const paginatedTasks =
-    filteredTasks.slice(
-      pageStart,
-      pageStart + PAGE_SIZE,
-    );
+  const paginatedTasks = filteredTasks.slice(
+    pageStart,
+    pageStart + PAGE_SIZE,
+  );
 
   return (
     <main className="min-h-screen">
@@ -1111,7 +920,7 @@ export default async function EmployeeTasksPage({
                 </div>
 
                 <span className="text-xs font-bold text-slate-400">
-                  Taskهای من
+                  تسک‌های من
                 </span>
               </div>
 
@@ -1120,33 +929,25 @@ export default async function EmployeeTasksPage({
               </h1>
 
               <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-500">
-                تمام Taskهای اختصاص‌یافته به شما، همراه با
-                برنامه تکرار، Deadline، اولویت و وضعیت.
+                تمام تسک‌های اختصاص‌یافته به شما، همراه با برنامه تکرار،
+                Deadline، اولویت و وضعیت.
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
               <div className="glass-chip rounded-2xl px-4 py-3">
-                <p className="text-xs text-slate-400">
-                  کل
-                </p>
+                <p className="text-xs text-slate-400">کل</p>
 
                 <p className="mt-1 text-xl font-extrabold text-slate-900">
-                  {totalTasks.toLocaleString(
-                    "fa-IR",
-                  )}
+                  {totalTasks.toLocaleString("fa-IR")}
                 </p>
               </div>
 
               <div className="rounded-2xl border border-blue-200/40 bg-blue-50/40 px-4 py-3">
-                <p className="text-xs text-blue-700">
-                  فعال
-                </p>
+                <p className="text-xs text-blue-700">فعال</p>
 
                 <p className="mt-1 text-xl font-extrabold text-blue-800">
-                  {activeCount.toLocaleString(
-                    "fa-IR",
-                  )}
+                  {activeCount.toLocaleString("fa-IR")}
                 </p>
               </div>
 
@@ -1156,21 +957,15 @@ export default async function EmployeeTasksPage({
                 </p>
 
                 <p className="mt-1 text-xl font-extrabold text-emerald-800">
-                  {completedCount.toLocaleString(
-                    "fa-IR",
-                  )}
+                  {completedCount.toLocaleString("fa-IR")}
                 </p>
               </div>
 
               <div className="rounded-2xl border border-red-200/40 bg-red-50/40 px-4 py-3">
-                <p className="text-xs text-red-700">
-                  عقب‌افتاده
-                </p>
+                <p className="text-xs text-red-700">عقب‌افتاده</p>
 
                 <p className="mt-1 text-xl font-extrabold text-red-800">
-                  {overdueCount.toLocaleString(
-                    "fa-IR",
-                  )}
+                  {overdueCount.toLocaleString("fa-IR")}
                 </p>
               </div>
 
@@ -1180,9 +975,7 @@ export default async function EmployeeTasksPage({
                 </p>
 
                 <p className="mt-1 text-xl font-extrabold text-violet-800">
-                  {recurringCount.toLocaleString(
-                    "fa-IR",
-                  )}
+                  {recurringCount.toLocaleString("fa-IR")}
                 </p>
               </div>
             </div>
@@ -1191,7 +984,7 @@ export default async function EmployeeTasksPage({
 
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <SummaryCard
-            label="همه Taskها"
+            label="همه تسک‌ها"
             value={totalTasks}
             icon={ListChecks}
             tone="slate"
@@ -1228,151 +1021,79 @@ export default async function EmployeeTasksPage({
             className="grid gap-3 xl:grid-cols-[minmax(260px,1fr)_180px_180px_210px_auto]"
           >
             <label className="relative block">
-              <span className="sr-only">
-                جست‌وجوی Task
-              </span>
+              <span className="sr-only">جست‌وجوی تسک</span>
 
               <Search className="pointer-events-none absolute right-3 top-1/2 size-4.5 -translate-y-1/2 text-slate-400" />
 
               <input
                 type="search"
                 name="q"
-                defaultValue={
-                  query
-                }
-                placeholder="جست‌وجوی Task یا پروژه..."
+                defaultValue={query}
+                placeholder="جست‌وجوی تسک یا پروژه..."
                 className="glass-field h-11 w-full rounded-xl pr-10 pl-4 text-sm text-slate-800 outline-none"
               />
             </label>
 
             <label className="relative">
-              <span className="sr-only">
-                فیلتر وضعیت
-              </span>
+              <span className="sr-only">فیلتر وضعیت</span>
 
               <select
                 name="status"
-                defaultValue={
-                  status
-                }
+                defaultValue={status}
                 className="glass-field h-11 w-full appearance-none rounded-xl px-4 pl-10 text-sm font-medium text-slate-700 outline-none"
               >
-                <option value="">
-                  همه وضعیت‌ها
-                </option>
+                <option value="">همه وضعیت‌ها</option>
 
-                {Object.entries(
-                  STATUS_LABELS,
-                ).map(
-                  ([
-                    value,
-                    label,
-                  ]) => (
-                    <option
-                      key={
-                        value
-                      }
-                      value={
-                        value
-                      }
-                    >
-                      {
-                        label
-                      }
-                    </option>
-                  ),
-                )}
+                {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
               </select>
 
               <ChevronDown className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
             </label>
 
             <label className="relative">
-              <span className="sr-only">
-                فیلتر اولویت
-              </span>
+              <span className="sr-only">فیلتر اولویت</span>
 
               <select
                 name="priority"
-                defaultValue={
-                  priority
-                }
+                defaultValue={priority}
                 className="glass-field h-11 w-full appearance-none rounded-xl px-4 pl-10 text-sm font-medium text-slate-700 outline-none"
               >
-                <option value="">
-                  همه اولویت‌ها
-                </option>
+                <option value="">همه اولویت‌ها</option>
 
-                {Object.entries(
-                  PRIORITY_LABELS,
-                ).map(
-                  ([
-                    value,
-                    label,
-                  ]) => (
-                    <option
-                      key={
-                        value
-                      }
-                      value={
-                        value
-                      }
-                    >
-                      {
-                        label
-                      }
-                    </option>
-                  ),
-                )}
+                {Object.entries(PRIORITY_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
               </select>
 
               <ChevronDown className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
             </label>
 
             <label className="relative">
-              <span className="sr-only">
-                مرتب‌سازی
-              </span>
+              <span className="sr-only">مرتب‌سازی</span>
 
               <select
                 name="sort"
-                defaultValue={
-                  sort
-                }
+                defaultValue={sort}
                 className="glass-field h-11 w-full appearance-none rounded-xl px-4 pl-10 text-sm font-medium text-slate-700 outline-none"
               >
-                {Object.entries(
-                  SORT_LABELS,
-                ).map(
-                  ([
-                    value,
-                    label,
-                  ]) => (
-                    <option
-                      key={
-                        value
-                      }
-                      value={
-                        value
-                      }
-                    >
-                      {
-                        label
-                      }
-                    </option>
-                  ),
-                )}
+                {Object.entries(SORT_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
               </select>
 
               <ChevronDown className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
             </label>
 
             <div className="flex flex-col gap-2 sm:flex-row xl:flex-col">
-              <input
-                type="hidden"
-                name="page"
-                value="1"
-              />
+              <input type="hidden" name="page" value="1" />
 
               <button
                 type="submit"
@@ -1397,14 +1118,12 @@ export default async function EmployeeTasksPage({
           <div className="flex flex-col gap-3 border-b border-white/40 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div>
               <h2 className="text-xl font-extrabold tracking-tight text-slate-900">
-                Taskهای من
+                تسک‌های من
               </h2>
 
               <p className="mt-1 text-sm leading-6 text-slate-400">
-                {totalFilteredTasks.toLocaleString(
-                  "fa-IR",
-                )}{" "}
-                Task با فیلترهای فعلی پیدا شد.
+                {totalFilteredTasks.toLocaleString("fa-IR")} تسک با فیلترهای
+                فعلی پیدا شد.
               </p>
             </div>
 
@@ -1413,51 +1132,27 @@ export default async function EmployeeTasksPage({
                 <ListChecks className="size-3.5" />
               </span>
 
-              هر صفحه{" "}
-              {PAGE_SIZE.toLocaleString(
-                "fa-IR",
-              )}{" "}
-              Task
+              هر صفحه {PAGE_SIZE.toLocaleString("fa-IR")} تسک
             </div>
           </div>
 
-          {totalFilteredTasks ===
-          0 ? (
+          {totalFilteredTasks === 0 ? (
             <div className="p-5 sm:p-6">
-              <EmptyState
-                hasFilters={
-                  hasFilters
-                }
-              />
+              <EmptyState hasFilters={hasFilters} />
             </div>
           ) : (
             <>
               <div className="grid gap-5 p-5 sm:grid-cols-2 sm:p-6 xl:grid-cols-3">
-                {paginatedTasks.map(
-                  (task) => (
-                    <TaskCard
-                      key={
-                        task.id
-                      }
-                      task={
-                        task
-                      }
-                    />
-                  ),
-                )}
+                {paginatedTasks.map((task) => (
+                  <TaskCard key={task.id} task={task} />
+                ))}
               </div>
 
               <div className="px-5 pb-5 sm:px-6 sm:pb-6">
                 <Pagination
-                  currentPage={
-                    currentPage
-                  }
-                  totalPages={
-                    totalPages
-                  }
-                  totalItems={
-                    totalFilteredTasks
-                  }
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalFilteredTasks}
                   params={{
                     q: query,
                     status,

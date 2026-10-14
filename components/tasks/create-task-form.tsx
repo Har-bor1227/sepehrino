@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useMemo,
-} from "react";
+import { useEffect, useMemo } from "react";
 
 import {
   Controller,
@@ -15,8 +12,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   CalendarDays,
   Check,
+  ChevronDown,
+  ListOrdered,
   Loader2,
   Plus,
+  Trash2,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -28,13 +29,12 @@ import { createTaskSchema } from "@/lib/validations/task";
 import { PersianDatePicker } from "@/components/ui/persian-date-picker";
 import TaskRecurrenceFields from "@/components/tasks/task-recurrence-fields";
 
-type FormInput = z.input<
-  typeof createTaskSchema
->;
+type FormInput = z.input<typeof createTaskSchema>;
+type FormOutput = z.output<typeof createTaskSchema>;
 
-type FormOutput = z.output<
-  typeof createTaskSchema
->;
+type TaskStageFormValue = NonNullable<
+  FormInput["stages"]
+>[number];
 
 type ProjectSubProjectType =
   | "WEB_DESIGN"
@@ -96,10 +96,7 @@ const priorityOptions = [
   },
 ] as const;
 
-const subProjectLabels: Record<
-  ProjectSubProjectType,
-  string
-> = {
+const subProjectLabels: Record<ProjectSubProjectType, string> = {
   WEB_DESIGN: "طراحی سایت",
   SEO: "سئو",
   SOCIAL_MEDIA: "سوشال مدیا",
@@ -107,13 +104,23 @@ const subProjectLabels: Record<
   VIDEOGRAPHY: "فیلمبرداری",
   TEASER_PRODUCTION: "تیزرسازی",
   CATALOG: "کاتالوگ",
-  BRAND_IDENTITY_DESIGN:
-    "طراحی هویت بصری",
+  BRAND_IDENTITY_DESIGN: "طراحی هویت بصری",
   CRM_MANAGEMENT: "مدیریت CRM",
-  BOOTH_CONSTRUCTION:
-    "غرفه سازی",
+  BOOTH_CONSTRUCTION: "غرفه سازی",
   PROGRAMMING: "برنامه نویسی",
 };
+
+function createEmptyStage(): TaskStageFormValue {
+  return {
+    title: "",
+    description: "",
+    assigneeId: "",
+  };
+}
+
+function getInitialStages(): TaskStageFormValue[] {
+  return [createEmptyStage(), createEmptyStage()];
+}
 
 export default function CreateTaskForm({
   projects,
@@ -130,14 +137,8 @@ export default function CreateTaskForm({
       errors,
       isSubmitting,
     },
-  } = useForm<
-    FormInput,
-    unknown,
-    FormOutput
-  >({
-    resolver: zodResolver(
-      createTaskSchema,
-    ),
+  } = useForm<FormInput, unknown, FormOutput>({
+    resolver: zodResolver(createTaskSchema),
 
     defaultValues: {
       projectId: "",
@@ -154,6 +155,7 @@ export default function CreateTaskForm({
       recurrenceWeekdays: [],
       recurrenceDayOfMonth: null,
       recurrenceActive: true,
+      stages: [],
     },
   });
 
@@ -161,13 +163,13 @@ export default function CreateTaskForm({
     useWatch({
       control,
       name: "projectId",
-    });
+    }) ?? "";
 
   const selectedSubProjectId =
     useWatch({
       control,
       name: "subProjectId",
-    });
+    }) ?? "";
 
   const assigneeIds =
     useWatch({
@@ -185,7 +187,7 @@ export default function CreateTaskForm({
     useWatch({
       control,
       name: "isRecurring",
-    });
+    }) ?? false;
 
   const recurrenceType =
     useWatch({
@@ -217,70 +219,71 @@ export default function CreateTaskForm({
       name: "recurrenceActive",
     });
 
-  const selectedProject =
-    useMemo(
-      () =>
-        projects.find(
-          (project) =>
-            project.id ===
-            selectedProjectId,
-        ),
+  const watchedStages =
+    useWatch({
+      control,
+      name: "stages",
+    });
 
-      [
-        projects,
-        selectedProjectId,
-      ],
-    );
+  const stages = (
+    watchedStages ?? []
+  ) as TaskStageFormValue[];
 
-  const availableEmployees =
-    useMemo(() => {
-      if (!selectedProject) {
-        return [];
-      }
+  const isStaged = stages.length > 0;
 
-      return selectedProject.members
-        .filter(
-          (member) =>
-            member.user.isActive,
-        )
-        .map(
-          (member) =>
-            member.user,
-        );
-    }, [selectedProject]);
+  const selectedProject = useMemo(
+    () =>
+      projects.find(
+        (project) => project.id === selectedProjectId,
+      ),
+    [projects, selectedProjectId],
+  );
 
-  const selectedSubProject =
-    useMemo(
-      () =>
-        selectedProject?.subProjects.find(
-          (subProject) =>
-            subProject.id ===
-            selectedSubProjectId,
-        ) ?? null,
+  const availableEmployees = useMemo(() => {
+    if (!selectedProject) {
+      return [];
+    }
 
-      [
-        selectedProject,
-        selectedSubProjectId,
-      ],
-    );
+    return selectedProject.members
+      .filter((member) => member.user.isActive)
+      .map((member) => member.user);
+  }, [selectedProject]);
+
+  const selectedSubProject = useMemo(
+    () =>
+      selectedProject?.subProjects.find(
+        (subProject) =>
+          subProject.id === selectedSubProjectId,
+      ) ?? null,
+    [selectedProject, selectedSubProjectId],
+  );
 
   useEffect(() => {
     if (!selectedProjectId) {
-      setValue(
-        "subProjectId",
-        "",
-        {
-          shouldValidate: true,
-        },
+      setValue("subProjectId", "", {
+        shouldValidate: true,
+      });
+
+      setValue("assigneeIds", [], {
+        shouldValidate: true,
+      });
+
+      const hasAssignedStages = stages.some(
+        (stage) => Boolean(stage.assigneeId),
       );
 
-      setValue(
-        "assigneeIds",
-        [],
-        {
-          shouldValidate: true,
-        },
-      );
+      if (hasAssignedStages) {
+        setValue(
+          "stages",
+          stages.map((stage) => ({
+            ...stage,
+            assigneeId: "",
+          })),
+          {
+            shouldValidate: true,
+          },
+        );
+      }
 
       return;
     }
@@ -288,49 +291,47 @@ export default function CreateTaskForm({
     const selectedSubProjectStillValid =
       selectedProject?.subProjects.some(
         (subProject) =>
-          subProject.id ===
-          selectedSubProjectId,
+          subProject.id === selectedSubProjectId,
       ) ?? false;
 
-    if (
-      !selectedSubProjectStillValid
-    ) {
-      setValue(
-        "subProjectId",
-        "",
-        {
-          shouldValidate: true,
-        },
-      );
+    if (!selectedSubProjectStillValid) {
+      setValue("subProjectId", "", {
+        shouldValidate: true,
+      });
     }
 
-    const availableEmployeeIds =
-      new Set(
-        availableEmployees.map(
-          (employee) =>
-            employee.id,
-        ),
-      );
+    const availableEmployeeIds = new Set(
+      availableEmployees.map((employee) => employee.id),
+    );
 
-    const validAssigneeIds =
-      assigneeIds.filter(
-        (id) =>
-          availableEmployeeIds.has(
-            id,
-          ),
-      );
+    const validAssigneeIds = assigneeIds.filter((id) =>
+      availableEmployeeIds.has(id),
+    );
 
-    if (
-      validAssigneeIds.length !==
-      assigneeIds.length
-    ) {
-      setValue(
-        "assigneeIds",
-        validAssigneeIds,
-        {
-          shouldValidate: true,
-        },
-      );
+    if (validAssigneeIds.length !== assigneeIds.length) {
+      setValue("assigneeIds", validAssigneeIds, {
+        shouldValidate: true,
+      });
+    }
+
+    const nextStages = stages.map((stage) => ({
+      ...stage,
+      assigneeId:
+        stage.assigneeId &&
+        availableEmployeeIds.has(stage.assigneeId)
+          ? stage.assigneeId
+          : "",
+    }));
+
+    const stageAssignmentsChanged = nextStages.some(
+      (stage, index) =>
+        stage.assigneeId !== stages[index]?.assigneeId,
+    );
+
+    if (stageAssignmentsChanged) {
+      setValue("stages", nextStages, {
+        shouldValidate: true,
+      });
     }
   }, [
     selectedProjectId,
@@ -338,28 +339,19 @@ export default function CreateTaskForm({
     selectedSubProjectId,
     availableEmployees,
     assigneeIds,
+    stages,
     setValue,
   ]);
 
   useEffect(() => {
-    if (
-      !isRecurring ||
-      !recurrenceStartDate
-    ) {
+    if (!isRecurring || !recurrenceStartDate) {
       return;
     }
 
-    if (
-      deadline !==
-      recurrenceStartDate
-    ) {
-      setValue(
-        "deadline",
-        recurrenceStartDate,
-        {
-          shouldValidate: true,
-        },
-      );
+    if (deadline !== recurrenceStartDate) {
+      setValue("deadline", recurrenceStartDate, {
+        shouldValidate: true,
+      });
     }
   }, [
     deadline,
@@ -371,213 +363,208 @@ export default function CreateTaskForm({
   const handleProjectChange = (
     event: React.ChangeEvent<HTMLSelectElement>,
   ) => {
-    const nextProjectId =
-      event.target.value;
+    const nextProjectId = event.target.value;
 
-    setValue(
-      "projectId",
-      nextProjectId,
-      {
-        shouldValidate: true,
-        shouldDirty: true,
-      },
-    );
+    setValue("projectId", nextProjectId, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
 
-    setValue(
-      "subProjectId",
-      "",
-      {
-        shouldValidate: true,
-        shouldDirty: true,
-      },
-    );
+    setValue("subProjectId", "", {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
 
-    setValue(
-      "assigneeIds",
-      [],
-      {
-        shouldValidate: true,
-        shouldDirty: true,
-      },
-    );
-  };
+    setValue("assigneeIds", [], {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
 
-  const toggleAssignee = (
-    employeeId: string,
-  ) => {
-    const current =
-      assigneeIds;
-
-    const next =
-      current.includes(
-        employeeId,
-      )
-        ? current.filter(
-            (id) =>
-              id !== employeeId,
-          )
-        : [
-            ...current,
-            employeeId,
-          ];
-
-    setValue(
-      "assigneeIds",
-      next,
-      {
-        shouldValidate: true,
-        shouldDirty: true,
-      },
-    );
-  };
-
-  const handleRecurrenceToggle = (
-    enabled: boolean,
-  ) => {
-    setValue(
-      "isRecurring",
-      enabled,
-      {
-        shouldValidate: true,
-      },
-    );
-
-    if (enabled) {
+    if (stages.length > 0) {
       setValue(
-        "recurrenceType",
-        "DAILY",
+        "stages",
+        stages.map((stage) => ({
+          ...stage,
+          assigneeId: "",
+        })),
         {
           shouldValidate: true,
+          shouldDirty: true,
         },
       );
+    }
+  };
 
-      if (
-        typeof deadline ===
-          "string" &&
-        deadline
-      ) {
-        setValue(
-          "recurrenceStartDate",
-          deadline,
-          {
-            shouldValidate: true,
-          },
-        );
-      }
+  const toggleAssignee = (employeeId: string) => {
+    const next = assigneeIds.includes(employeeId)
+      ? assigneeIds.filter((id) => id !== employeeId)
+      : [...assigneeIds, employeeId];
 
-      setValue(
-        "recurrenceActive",
-        true,
-      );
+    setValue("assigneeIds", next, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  };
 
+  const updateStage = (
+    index: number,
+    changes: Partial<TaskStageFormValue>,
+  ) => {
+    const nextStages = [...stages];
+
+    if (!nextStages[index]) {
+      return;
+    }
+
+    nextStages[index] = {
+      ...nextStages[index],
+      ...changes,
+    };
+
+    setValue("stages", nextStages, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  };
+
+  const handleAddStage = () => {
+    setValue("stages", [...stages, createEmptyStage()], {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  };
+
+  const handleRemoveStage = (index: number) => {
+    if (stages.length <= 2) {
+      toast.error("تسک چندمرحله‌ای باید حداقل دو مرحله داشته باشد.");
       return;
     }
 
     setValue(
-      "recurrenceType",
-      "NONE",
+      "stages",
+      stages.filter((_, stageIndex) => stageIndex !== index),
       {
         shouldValidate: true,
+        shouldDirty: true,
       },
-    );
-
-    setValue(
-      "recurrenceStartDate",
-      null,
-    );
-
-    setValue(
-      "recurrenceEndDate",
-      null,
-    );
-
-    setValue(
-      "recurrenceWeekdays",
-      [],
-    );
-
-    setValue(
-      "recurrenceDayOfMonth",
-      null,
-    );
-
-    setValue(
-      "recurrenceActive",
-      true,
     );
   };
 
-  const onSubmit = async (
-    values: FormOutput,
-  ) => {
-    const payload: FormOutput = {
-      ...values,
-      recurrenceEndDate:
-        null,
-    };
-
-    if (
-      payload.isRecurring &&
-      payload.recurrenceStartDate
-    ) {
-      payload.deadline =
-        payload.recurrenceStartDate;
+  const handleRecurrenceToggle = (enabled: boolean) => {
+    if (enabled && isStaged) {
+      toast.error("تسک چندمرحله‌ای نمی‌تواند تکرارشونده باشد.");
+      return;
     }
 
-    const result =
-      await createTaskAction(
-        payload,
-      );
+    setValue("isRecurring", enabled, {
+      shouldValidate: true,
+    });
+
+    if (enabled) {
+      setValue("recurrenceType", "DAILY", {
+        shouldValidate: true,
+      });
+
+      if (typeof deadline === "string" && deadline) {
+        setValue("recurrenceStartDate", deadline, {
+          shouldValidate: true,
+        });
+      }
+
+      setValue("recurrenceActive", true);
+      return;
+    }
+
+    setValue("recurrenceType", "NONE", {
+      shouldValidate: true,
+    });
+
+    setValue("recurrenceStartDate", null);
+    setValue("recurrenceEndDate", null);
+    setValue("recurrenceWeekdays", []);
+    setValue("recurrenceDayOfMonth", null);
+    setValue("recurrenceActive", true);
+  };
+
+  const handleTaskModeChange = (staged: boolean) => {
+    if (staged) {
+      handleRecurrenceToggle(false);
+
+      setValue("assigneeIds", [], {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+
+      setValue("stages", getInitialStages(), {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+
+      return;
+    }
+
+    setValue("stages", [], {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  };
+
+  const onSubmit = async (values: FormOutput) => {
+    const submittedStages = values.stages ?? [];
+    const isStagedTask = submittedStages.length > 0;
+
+    const payload: FormOutput = {
+      ...values,
+      stages: submittedStages,
+      recurrenceEndDate: null,
+    };
+
+    if (isStagedTask && payload.isRecurring) {
+      toast.error("تسک چندمرحله‌ای نمی‌تواند تکرارشونده باشد.");
+      return;
+    }
+
+    if (payload.isRecurring && payload.recurrenceStartDate) {
+      payload.deadline = payload.recurrenceStartDate;
+    }
+
+    const result = await createTaskAction(payload);
 
     if (!result.success) {
-      toast.error(
-        result.message,
-      );
+      toast.error(result.message);
       return;
     }
 
     toast.success(
-      "Task با موفقیت ایجاد شد.",
+      isStagedTask
+        ? "تسک چندمرحله‌ای با موفقیت ایجاد شد."
+        : "تسک با موفقیت ایجاد شد.",
     );
 
     reset({
-      projectId:
-        values.projectId,
-
-      subProjectId:
-        values.subProjectId,
-
+      projectId: values.projectId,
+      subProjectId: values.subProjectId,
       title: "",
-
       description: "",
-
-      assigneeIds:
-        values.assigneeIds,
-
-      priority:
-        "MEDIUM",
-
+      assigneeIds: isStagedTask
+        ? []
+        : values.assigneeIds,
+      priority: "MEDIUM",
       deadline: "",
-
-      isRecurring:
-        false,
-
-      recurrenceType:
-        "NONE",
-
-      recurrenceStartDate:
-        null,
-
-      recurrenceEndDate:
-        null,
-
+      isRecurring: false,
+      recurrenceType: "NONE",
+      recurrenceStartDate: null,
+      recurrenceEndDate: null,
       recurrenceWeekdays: [],
-
-      recurrenceDayOfMonth:
-        null,
-
-      recurrenceActive:
-        true,
+      recurrenceDayOfMonth: null,
+      recurrenceActive: true,
+      stages: isStagedTask
+        ? submittedStages.map((stage) => ({
+            ...stage,
+            title: "",
+            description: "",
+          }))
+        : [],
     });
 
     router.refresh();
@@ -585,9 +572,7 @@ export default function CreateTaskForm({
 
   return (
     <form
-      onSubmit={handleSubmit(
-        onSubmit,
-      )}
+      onSubmit={handleSubmit(onSubmit)}
       className="space-y-6"
       dir="rtl"
     >
@@ -597,22 +582,19 @@ export default function CreateTaskForm({
             htmlFor="task-title"
             className="text-sm font-semibold text-slate-700"
           >
-            عنوان Task
+            عنوان تسک
           </label>
 
           <input
             id="task-title"
             {...register("title")}
-            placeholder="مثلاً طراحی صفحه داشبورد"
+            placeholder="مثلاً تولید ریلز نپال"
             className="glass-field h-11 w-full rounded-xl px-3.5 text-right text-sm text-slate-800 outline-none placeholder:text-slate-400"
           />
 
           {errors.title ? (
             <p className="text-xs font-medium text-red-600">
-              {
-                errors.title
-                  .message
-              }
+              {errors.title.message}
             </p>
           ) : null}
         </div>
@@ -627,40 +609,22 @@ export default function CreateTaskForm({
 
           <select
             id="task-project"
-            value={
-              selectedProjectId ??
-              ""
-            }
-            onChange={
-              handleProjectChange
-            }
+            value={selectedProjectId}
+            onChange={handleProjectChange}
             className="glass-field h-11 w-full rounded-xl px-3.5 text-right text-sm font-medium text-slate-700 outline-none"
           >
-            <option value="">
-              انتخاب پروژه
-            </option>
+            <option value="">انتخاب پروژه</option>
 
-            {projects.map(
-              (project) => (
-                <option
-                  key={project.id}
-                  value={
-                    project.id
-                  }
-                >
-                  {project.title}
-                </option>
-              ),
-            )}
+            {projects.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.title}
+              </option>
+            ))}
           </select>
 
           {errors.projectId ? (
             <p className="text-xs font-medium text-red-600">
-              {
-                errors
-                  .projectId
-                  .message
-              }
+              {errors.projectId.message}
             </p>
           ) : null}
         </div>
@@ -675,12 +639,8 @@ export default function CreateTaskForm({
 
           <select
             id="task-sub-project"
-            {...register(
-              "subProjectId",
-            )}
-            disabled={
-              !selectedProjectId
-            }
+            {...register("subProjectId")}
+            disabled={!selectedProjectId}
             className="glass-field h-11 w-full rounded-xl px-3.5 text-right text-sm font-medium text-slate-700 outline-none disabled:cursor-not-allowed disabled:opacity-50"
           >
             <option value="">
@@ -689,34 +649,16 @@ export default function CreateTaskForm({
                 : "انتخاب زیرپروژه"}
             </option>
 
-            {selectedProject?.subProjects.map(
-              (subProject) => (
-                <option
-                  key={
-                    subProject.id
-                  }
-                  value={
-                    subProject.id
-                  }
-                >
-                  {
-                    subProjectLabels[
-                      subProject
-                        .type
-                    ]
-                  }
-                </option>
-              ),
-            )}
+            {selectedProject?.subProjects.map((subProject) => (
+              <option key={subProject.id} value={subProject.id}>
+                {subProjectLabels[subProject.type]}
+              </option>
+            ))}
           </select>
 
           {errors.subProjectId ? (
             <p className="text-xs font-medium text-red-600">
-              {
-                errors
-                  .subProjectId
-                  .message
-              }
+              {errors.subProjectId.message}
             </p>
           ) : null}
         </div>
@@ -731,88 +673,361 @@ export default function CreateTaskForm({
 
           <select
             id="task-priority"
-            {...register(
-              "priority",
-            )}
+            {...register("priority")}
             className="glass-field h-11 w-full rounded-xl px-3.5 text-right text-sm font-medium text-slate-700 outline-none"
           >
-            {priorityOptions.map(
-              (priority) => (
-                <option
-                  key={
-                    priority.value
-                  }
-                  value={
-                    priority.value
-                  }
-                >
-                  {
-                    priority.label
-                  }
-                </option>
-              ),
-            )}
+            {priorityOptions.map((priority) => (
+              <option
+                key={priority.value}
+                value={priority.value}
+              >
+                {priority.label}
+              </option>
+            ))}
           </select>
 
           {errors.priority ? (
             <p className="text-xs font-medium text-red-600">
-              {
-                errors
-                  .priority
-                  .message
-              }
+              {errors.priority.message}
             </p>
           ) : null}
         </div>
 
         <div className="space-y-3 lg:col-span-2">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <label className="text-sm font-semibold text-slate-700">
-              مسئول‌های Task
-            </label>
+          <label className="text-sm font-semibold text-slate-700">
+            نوع تسک
+          </label>
 
-            {selectedProject ? (
-              <span className="text-xs font-medium text-slate-400">
-                {
-                  assigneeIds.length.toLocaleString(
-                    "fa-IR",
-                  )
-                }{" "}
-                نفر انتخاب شده
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => handleTaskModeChange(false)}
+              aria-pressed={!isStaged}
+              className={[
+                "flex min-h-24 items-start gap-3 rounded-2xl border p-4 text-right transition",
+                !isStaged
+                  ? "border-slate-900 bg-slate-900 text-white shadow-lg"
+                  : "border-white/60 bg-white/40 text-slate-700 hover:bg-white/60",
+              ].join(" ")}
+            >
+              <span
+                className={[
+                  "flex size-10 shrink-0 items-center justify-center rounded-xl",
+                  !isStaged
+                    ? "bg-white/10"
+                    : "bg-slate-100",
+                ].join(" ")}
+              >
+                <Users
+                  className={[
+                    "size-5",
+                    !isStaged
+                      ? "text-white"
+                      : "text-slate-600",
+                  ].join(" ")}
+                />
               </span>
-            ) : null}
-          </div>
 
-          {!selectedProjectId ? (
-            <div className="rounded-2xl border border-dashed border-slate-200 bg-white/20 px-4 py-5 text-sm text-slate-400">
-              ابتدا پروژه را انتخاب کنید.
+              <span className="min-w-0">
+                <span className="block text-sm font-bold">
+                  تسک معمولی
+                </span>
+
+                <span
+                  className={[
+                    "mt-1 block text-xs leading-6",
+                    !isStaged
+                      ? "text-slate-300"
+                      : "text-slate-500",
+                  ].join(" ")}
+                >
+                  واگذاری مستقیم تسک به یک یا چند کارمند
+                </span>
+              </span>
+
+              {!isStaged ? (
+                <Check className="mr-auto size-4 shrink-0" />
+              ) : null}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleTaskModeChange(true)}
+              aria-pressed={isStaged}
+              className={[
+                "flex min-h-24 items-start gap-3 rounded-2xl border p-4 text-right transition",
+                isStaged
+                  ? "border-slate-900 bg-slate-900 text-white shadow-lg"
+                  : "border-white/60 bg-white/40 text-slate-700 hover:bg-white/60",
+              ].join(" ")}
+            >
+              <span
+                className={[
+                  "flex size-10 shrink-0 items-center justify-center rounded-xl",
+                  isStaged
+                    ? "bg-white/10"
+                    : "bg-slate-100",
+                ].join(" ")}
+              >
+                <ListOrdered
+                  className={[
+                    "size-5",
+                    isStaged
+                      ? "text-white"
+                      : "text-slate-600",
+                  ].join(" ")}
+                />
+              </span>
+
+              <span className="min-w-0">
+                <span className="block text-sm font-bold">
+                  تسک چندمرحله‌ای
+                </span>
+
+                <span
+                  className={[
+                    "mt-1 block text-xs leading-6",
+                    isStaged
+                      ? "text-slate-300"
+                      : "text-slate-500",
+                  ].join(" ")}
+                >
+                  هر مرحله مسئول خودش را دارد و مراحل به‌ترتیب فعال می‌شوند
+                </span>
+              </span>
+
+              {isStaged ? (
+                <Check className="mr-auto size-4 shrink-0" />
+              ) : null}
+            </button>
+          </div>
+        </div>
+
+        {isStaged ? (
+          <div className="space-y-4 lg:col-span-2">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-800">
+                  مراحل انجام تسک
+                </h3>
+
+                <p className="mt-1 text-xs leading-6 text-slate-500">
+                  مرحله اول ابتدا فعال می‌شود. مسئول هر مرحله پس از اتمام کار،
+                  مرحله بعدی را فعال می‌کند.
+                </p>
+              </div>
+
+              <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
+                {stages.length.toLocaleString("fa-IR")} مرحله
+              </span>
             </div>
-          ) : availableEmployees.length ===
-            0 ? (
-            <div className="rounded-2xl border border-dashed border-red-200 bg-red-50/50 px-4 py-5 text-sm font-medium text-red-600">
-              این پروژه عضو فعال برای
-              واگذاری Task ندارد.
+
+            <div className="space-y-3">
+              {stages.map((stage, index) => {
+                const stageErrors =
+                  errors.stages?.[index];
+
+                return (
+                  <section
+                    key={`task-stage-${index}`}
+                    className="relative rounded-2xl border border-slate-200/80 bg-white/45 p-4 sm:p-5"
+                  >
+                    <div className="mb-4 flex items-center gap-3">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-sm font-bold text-white">
+                        {(
+                          index + 1
+                        ).toLocaleString("fa-IR")}
+                      </span>
+
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-sm font-bold text-slate-800">
+                          مرحله {(
+                            index + 1
+                          ).toLocaleString("fa-IR")}
+                        </h4>
+
+                        <p className="mt-1 text-xs text-slate-500">
+                          {index === 0
+                            ? "این مرحله پس از ایجاد تسک فعال می‌شود."
+                            : "بعد از تکمیل مراحل قبلی فعال می‌شود."}
+                        </p>
+                      </div>
+
+                      {stages.length > 2 ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleRemoveStage(index)
+                          }
+                          aria-label={`حذف مرحله ${index + 1}`}
+                          className="flex size-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
+                      ) : null}
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <label
+                          htmlFor={`stage-title-${index}`}
+                          className="text-sm font-semibold text-slate-700"
+                        >
+                          عنوان مرحله
+                        </label>
+
+                        <input
+                          id={`stage-title-${index}`}
+                          value={stage.title ?? ""}
+                          onChange={(event) =>
+                            updateStage(index, {
+                              title: event.target.value,
+                            })
+                          }
+                          placeholder={
+                            index === 0
+                              ? "مثلاً فیلمبرداری"
+                              : "مثلاً تدوین ویدئو"
+                          }
+                          className="glass-field h-11 w-full rounded-xl px-3.5 text-right text-sm text-slate-800 outline-none placeholder:text-slate-400"
+                        />
+
+                        {stageErrors?.title?.message ? (
+                          <p className="text-xs font-medium text-red-600">
+                            {stageErrors.title.message}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <div className="space-y-2">
+                        <label
+                          htmlFor={`stage-assignee-${index}`}
+                          className="text-sm font-semibold text-slate-700"
+                        >
+                          مسئول این مرحله
+                        </label>
+
+                        <div className="relative">
+                          <select
+                            id={`stage-assignee-${index}`}
+                            value={stage.assigneeId ?? ""}
+                            onChange={(event) =>
+                              updateStage(index, {
+                                assigneeId: event.target.value,
+                              })
+                            }
+                            disabled={!selectedProjectId}
+                            className="glass-field h-11 w-full appearance-none rounded-xl px-3.5 pl-10 text-right text-sm font-medium text-slate-700 outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <option value="">
+                              {!selectedProjectId
+                                ? "ابتدا پروژه را انتخاب کنید"
+                                : "انتخاب مسئول مرحله"}
+                            </option>
+
+                            {availableEmployees.map((employee) => (
+                              <option
+                                key={employee.id}
+                                value={employee.id}
+                              >
+                                {employee.name}
+                              </option>
+                            ))}
+                          </select>
+
+                          <ChevronDown className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                        </div>
+
+                        {stageErrors?.assigneeId?.message ? (
+                          <p className="text-xs font-medium text-red-600">
+                            {stageErrors.assigneeId.message}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <div className="space-y-2 md:col-span-2">
+                        <label
+                          htmlFor={`stage-description-${index}`}
+                          className="text-sm font-semibold text-slate-700"
+                        >
+                          توضیحات مرحله
+                          <span className="mr-1 font-normal text-slate-400">
+                            (اختیاری)
+                          </span>
+                        </label>
+
+                        <textarea
+                          id={`stage-description-${index}`}
+                          value={stage.description ?? ""}
+                          onChange={(event) =>
+                            updateStage(index, {
+                              description: event.target.value,
+                            })
+                          }
+                          rows={2}
+                          placeholder="جزئیات و خروجی مورد انتظار این مرحله..."
+                          className="glass-field min-h-20 w-full resize-y rounded-xl px-3.5 py-3 text-right text-sm leading-7 text-slate-800 outline-none placeholder:text-slate-400"
+                        />
+
+                        {stageErrors?.description?.message ? (
+                          <p className="text-xs font-medium text-red-600">
+                            {stageErrors.description.message}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </section>
+                );
+              })}
             </div>
-          ) : (
-            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-              {availableEmployees.map(
-                (employee) => {
-                  const isSelected =
-                    assigneeIds.includes(
-                      employee.id,
-                    );
+
+            <button
+              type="button"
+              onClick={handleAddStage}
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-white/30 px-4 text-sm font-semibold text-slate-600 transition hover:border-slate-500 hover:bg-white/60 hover:text-slate-900"
+            >
+              <Plus className="size-4" />
+              افزودن مرحله جدید
+            </button>
+
+            <div className="rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3 text-xs leading-6 text-blue-900">
+              مسئولان مراحل بعدی از ابتدا مشخص می‌شوند، اما تا زمان تکمیل مرحله
+              قبلی، نوبت انجام مرحله آن‌ها فعال نخواهد بود. با تکمیل آخرین مرحله،
+              خود تسک نیز تکمیل می‌شود.
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3 lg:col-span-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label className="text-sm font-semibold text-slate-700">
+                مسئول‌های تسک
+              </label>
+
+              {selectedProject ? (
+                <span className="text-xs font-medium text-slate-400">
+                  {assigneeIds.length.toLocaleString("fa-IR")} نفر انتخاب شده
+                </span>
+              ) : null}
+            </div>
+
+            {!selectedProjectId ? (
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-white/20 px-4 py-5 text-sm text-slate-400">
+                ابتدا پروژه را انتخاب کنید.
+              </div>
+            ) : availableEmployees.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-red-200 bg-red-50/50 px-4 py-5 text-sm font-medium text-red-600">
+                این پروژه عضو فعال برای واگذاری تسک ندارد.
+              </div>
+            ) : (
+              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                {availableEmployees.map((employee) => {
+                  const isSelected = assigneeIds.includes(employee.id);
 
                   return (
                     <button
-                      key={
-                        employee.id
-                      }
+                      key={employee.id}
                       type="button"
-                      onClick={() =>
-                        toggleAssignee(
-                          employee.id,
-                        )
-                      }
+                      onClick={() => toggleAssignee(employee.id)}
                       className={[
                         "flex min-h-16 items-center gap-3 rounded-2xl border px-3.5 py-3 text-right transition",
                         isSelected
@@ -835,9 +1050,7 @@ export default function CreateTaskForm({
 
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-semibold">
-                          {
-                            employee.name
-                          }
+                          {employee.name}
                         </span>
 
                         <span
@@ -848,28 +1061,22 @@ export default function CreateTaskForm({
                               : "text-slate-400",
                           ].join(" ")}
                         >
-                          {
-                            employee.email
-                          }
+                          {employee.email}
                         </span>
                       </span>
                     </button>
                   );
-                },
-              )}
-            </div>
-          )}
+                })}
+              </div>
+            )}
 
-          {errors.assigneeIds ? (
-            <p className="text-xs font-medium text-red-600">
-              {
-                errors
-                  .assigneeIds
-                  .message
-              }
-            </p>
-          ) : null}
-        </div>
+            {errors.assigneeIds ? (
+              <p className="text-xs font-medium text-red-600">
+                {errors.assigneeIds.message}
+              </p>
+            ) : null}
+          </div>
+        )}
 
         {!isRecurring ? (
           <div className="space-y-2 lg:col-span-2">
@@ -877,38 +1084,26 @@ export default function CreateTaskForm({
               htmlFor="task-deadline"
               className="text-sm font-semibold text-slate-700"
             >
-              Deadline
+              مهلت انجام
             </label>
 
             <Controller
               control={control}
               name="deadline"
-              render={({
-                field,
-              }) => (
+              render={({ field }) => (
                 <PersianDatePicker
                   id="task-deadline"
-                  value={
-                    field.value as string
-                  }
-                  onChange={
-                    field.onChange
-                  }
-                  error={
-                    !!errors.deadline
-                  }
-                  placeholder="انتخاب Deadline"
+                  value={field.value as string}
+                  onChange={field.onChange}
+                  error={!!errors.deadline}
+                  placeholder="انتخاب مهلت انجام"
                 />
               )}
             />
 
             {errors.deadline ? (
               <p className="text-xs font-medium text-red-600">
-                {
-                  errors
-                    .deadline
-                    .message
-                }
+                {errors.deadline.message}
               </p>
             ) : null}
           </div>
@@ -919,142 +1114,85 @@ export default function CreateTaskForm({
             htmlFor="task-description"
             className="text-sm font-semibold text-slate-700"
           >
-            توضیحات
+            توضیحات تسک
           </label>
 
           <textarea
             id="task-description"
-            {...register(
-              "description",
-            )}
+            {...register("description")}
             rows={5}
-            placeholder="توضیحات مربوط به Task..."
+            placeholder="توضیحات کلی مربوط به تسک..."
             className="glass-field min-h-32 w-full resize-none rounded-xl px-3.5 py-3 text-right text-sm leading-7 text-slate-800 outline-none placeholder:text-slate-400"
           />
 
           {errors.description ? (
             <p className="text-xs font-medium text-red-600">
-              {
-                errors
-                  .description
-                  .message
-              }
+              {errors.description.message}
             </p>
           ) : null}
         </div>
       </div>
 
-      <TaskRecurrenceFields
-        isRecurring={
-          !!isRecurring
-        }
-        recurrenceType={
-          (recurrenceType ??
-            "NONE") as
-            | "NONE"
-            | "DAILY"
-            | "WEEKLY"
-            | "MONTHLY"
-        }
-        recurrenceStartDate={
-          typeof recurrenceStartDate ===
-          "string"
-            ? recurrenceStartDate
-            : ""
-        }
-        recurrenceWeekdays={
-          recurrenceWeekdays ??
-          []
-        }
-        recurrenceDayOfMonth={
-          recurrenceDayOfMonth ??
-          null
-        }
-        recurrenceActive={
-          recurrenceActive ??
-          true
-        }
-        onIsRecurringChange={
-          handleRecurrenceToggle
-        }
-        onRecurrenceTypeChange={(
-          value,
-        ) =>
-          setValue(
-            "recurrenceType",
-            value,
-            {
-              shouldValidate:
-                true,
-            },
-          )
-        }
-        onRecurrenceStartDateChange={(
-          value,
-        ) =>
-          setValue(
-            "recurrenceStartDate",
-            value,
-            {
-              shouldValidate:
-                true,
-            },
-          )
-        }
-        onRecurrenceWeekdaysChange={(
-          value,
-        ) =>
-          setValue(
-            "recurrenceWeekdays",
-            value,
-            {
-              shouldValidate:
-                true,
-            },
-          )
-        }
-        onRecurrenceDayOfMonthChange={(
-          value,
-        ) =>
-          setValue(
-            "recurrenceDayOfMonth",
-            value,
-            {
-              shouldValidate:
-                true,
-            },
-          )
-        }
-        onRecurrenceActiveChange={(
-          value,
-        ) =>
-          setValue(
-            "recurrenceActive",
-            value,
-          )
-        }
-        errors={{
-          recurrenceType:
-            errors
-              .recurrenceType
-              ?.message,
-
-          recurrenceStartDate:
-            errors
-              .recurrenceStartDate
-              ?.message,
-
-          recurrenceWeekdays:
-            errors
-              .recurrenceWeekdays
-              ?.message,
-
-          recurrenceDayOfMonth:
-            errors
-              .recurrenceDayOfMonth
-              ?.message,
-        }}
-      />
+      {!isStaged ? (
+        <TaskRecurrenceFields
+          isRecurring={isRecurring}
+          recurrenceType={
+            (recurrenceType ?? "NONE") as
+              | "NONE"
+              | "DAILY"
+              | "WEEKLY"
+              | "MONTHLY"
+          }
+          recurrenceStartDate={
+            typeof recurrenceStartDate === "string"
+              ? recurrenceStartDate
+              : ""
+          }
+          recurrenceWeekdays={recurrenceWeekdays ?? []}
+          recurrenceDayOfMonth={recurrenceDayOfMonth ?? null}
+          recurrenceActive={recurrenceActive ?? true}
+          onIsRecurringChange={handleRecurrenceToggle}
+          onRecurrenceTypeChange={(value) =>
+            setValue("recurrenceType", value, {
+              shouldValidate: true,
+            })
+          }
+          onRecurrenceStartDateChange={(value) =>
+            setValue("recurrenceStartDate", value, {
+              shouldValidate: true,
+            })
+          }
+          onRecurrenceWeekdaysChange={(value) =>
+            setValue("recurrenceWeekdays", value, {
+              shouldValidate: true,
+            })
+          }
+          onRecurrenceDayOfMonthChange={(value) =>
+            setValue("recurrenceDayOfMonth", value, {
+              shouldValidate: true,
+            })
+          }
+          onRecurrenceActiveChange={(value) =>
+            setValue("recurrenceActive", value)
+          }
+          errors={{
+            recurrenceType: errors.recurrenceType?.message,
+            recurrenceStartDate:
+              errors.recurrenceStartDate?.message,
+            recurrenceWeekdays:
+              errors.recurrenceWeekdays?.message,
+            recurrenceDayOfMonth:
+              errors.recurrenceDayOfMonth?.message,
+          }}
+        />
+      ) : (
+        <div className="rounded-2xl border border-slate-200/70 bg-white/30 px-4 py-3 text-sm leading-6 text-slate-600">
+          <span className="font-semibold text-slate-800">
+            تکرار غیرفعال است.
+          </span>{" "}
+          تسک‌های چندمرحله‌ای به‌ترتیب اجرا می‌شوند و قابلیت تکرار ندارند.
+        </div>
+      )}
 
       {selectedProject ? (
         <div className="rounded-3xl border border-white/55 bg-white/24 p-4">
@@ -1062,9 +1200,7 @@ export default function CreateTaskForm({
             <span className="text-slate-400">
               پروژه:
               <strong className="mr-1 text-slate-700">
-                {
-                  selectedProject.title
-                }
+                {selectedProject.title}
               </strong>
             </span>
 
@@ -1072,32 +1208,26 @@ export default function CreateTaskForm({
               زیرپروژه:
               <strong className="mr-1 text-slate-700">
                 {selectedSubProject
-                  ? subProjectLabels[
-                      selectedSubProject
-                        .type
-                    ]
+                  ? subProjectLabels[selectedSubProject.type]
                   : "انتخاب نشده"}
               </strong>
             </span>
 
             <span className="text-slate-400">
-              مسئول‌ها:
+              {isStaged ? "مراحل:" : "مسئول‌ها:"}
               <strong className="mr-1 text-slate-700">
-                {
-                  assigneeIds.length.toLocaleString(
-                    "fa-IR",
-                  )
-                }{" "}
-                نفر
+                {isStaged
+                  ? stages.length.toLocaleString("fa-IR")
+                  : assigneeIds.length.toLocaleString("fa-IR")}{" "}
+                {isStaged ? "مرحله" : "نفر"}
               </strong>
             </span>
 
             <span className="inline-flex items-center gap-1.5 text-xs text-slate-400">
               <CalendarDays className="size-3.5" />
-
               {isRecurring
                 ? "تاریخ شروع تکرار با تقویم شمسی"
-                : "Deadline با تقویم شمسی"}
+                : "مهلت انجام با تقویم شمسی"}
             </span>
           </div>
         </div>
@@ -1117,7 +1247,9 @@ export default function CreateTaskForm({
 
           {isSubmitting
             ? "در حال ایجاد..."
-            : "ایجاد Task"}
+            : isStaged
+              ? "ایجاد تسک چندمرحله‌ای"
+              : "ایجاد تسک"}
         </button>
       </div>
     </form>

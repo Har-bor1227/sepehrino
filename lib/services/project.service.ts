@@ -344,6 +344,7 @@ export async function getProjectById(
         },
       },
     },
+
     select: {
       id: true,
       title: true,
@@ -357,6 +358,7 @@ export async function getProjectById(
         where: {
           userId: session.user.id,
         },
+
         select: {
           joinedAt: true,
 
@@ -373,9 +375,11 @@ export async function getProjectById(
         orderBy: {
           createdAt: "asc",
         },
+
         select: {
           id: true,
           type: true,
+
           _count: {
             select: {
               tasks: true,
@@ -386,15 +390,28 @@ export async function getProjectById(
 
       tasks: {
         where: {
-          assignees: {
-            some: {
-              userId: session.user.id,
+          OR: [
+            {
+              assignees: {
+                some: {
+                  userId: session.user.id,
+                },
+              },
             },
-          },
+            {
+              stages: {
+                some: {
+                  assigneeId: session.user.id,
+                },
+              },
+            },
+          ],
         },
+
         orderBy: {
           createdAt: "desc",
         },
+
         select: {
           id: true,
           title: true,
@@ -410,12 +427,46 @@ export async function getProjectById(
               type: true,
             },
           },
+
+          stages: {
+            orderBy: {
+              position: "asc",
+            },
+
+            select: {
+              id: true,
+              taskId: true,
+              title: true,
+              description: true,
+              position: true,
+              status: true,
+              assigneeId: true,
+              activatedAt: true,
+              completedAt: true,
+              completedById: true,
+
+              assignee: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+
+              completedBy: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+            },
+          },
         },
       },
     },
   });
 }
-
 export async function createProject(input: {
   title: string;
   description?: string;

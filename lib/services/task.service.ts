@@ -16,6 +16,7 @@ import {
 } from "@/lib/validations/task";
 
 import {
+  createNotification,
   notifyTaskAssigned,
   notifyTaskCompleted,
   notifyTaskStatusChanged,
@@ -41,6 +42,32 @@ type TaskAssigneeForAccess = {
   id: string;
   name: string;
   email: string;
+};
+
+type TaskStageStatus =
+  | "LOCKED"
+  | "IN_PROGRESS"
+  | "COMPLETED";
+
+type TaskStageForAccess = {
+  id: string;
+  title: string;
+  description: string | null;
+  position: number;
+  status: TaskStageStatus;
+  assigneeId: string;
+  activatedAt: Date | null;
+  completedAt: Date | null;
+  completedById: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+
+  assignee: TaskAssigneeForAccess;
+
+  completedBy: {
+    id: string;
+    name: string;
+  } | null;
 };
 
 type TaskForAccess = {
@@ -106,6 +133,8 @@ type TaskForAccess = {
     user: TaskAssigneeForAccess;
     assignedAt: Date;
   }[];
+
+  stages: TaskStageForAccess[];
 
   createdBy: {
     id: string;
@@ -292,6 +321,21 @@ function getRemovedAssigneeIds(
   );
 }
 
+function haveSameIds(
+  first: string[],
+  second: string[],
+) {
+  const firstSet = new Set(first);
+  const secondSet = new Set(second);
+
+  return (
+    firstSet.size === secondSet.size &&
+    [...firstSet].every(
+      (id) => secondSet.has(id),
+    )
+  );
+}
+
 /* -------------------------------------------------------------------------- */
 /* Recurrence helpers                                                         */
 /* -------------------------------------------------------------------------- */
@@ -358,9 +402,7 @@ export function isTaskScheduledForDate(
 
     case "WEEKLY":
       return recurrence.recurrenceWeekdays.includes(
-        getIsoWeekday(
-          targetDate,
-        ),
+        getIsoWeekday(targetDate),
       );
 
     case "MONTHLY":
@@ -391,9 +433,7 @@ function validateRecurrenceConfig(
     );
   }
 
-  if (
-    !config.recurrenceStartDate
-  ) {
+  if (!config.recurrenceStartDate) {
     throw new Error(
       "RECURRENCE_INVALID",
     );
@@ -414,8 +454,7 @@ function validateRecurrenceConfig(
   if (
     config.recurrenceType ===
       "WEEKLY" &&
-    config.recurrenceWeekdays
-      .length === 0
+    config.recurrenceWeekdays.length === 0
   ) {
     throw new Error(
       "RECURRENCE_INVALID",
@@ -466,20 +505,16 @@ function buildCreateRecurrenceConfig(
         : null,
 
     recurrenceWeekdays:
-      input.recurrenceWeekdays ??
-      [],
+      input.recurrenceWeekdays ?? [],
 
     recurrenceDayOfMonth:
-      input.recurrenceDayOfMonth ??
-      null,
+      input.recurrenceDayOfMonth ?? null,
 
     recurrenceActive:
       input.recurrenceActive,
   };
 
-  validateRecurrenceConfig(
-    config,
-  );
+  validateRecurrenceConfig(config);
 
   return config;
 }
@@ -491,9 +526,7 @@ function buildUpdateRecurrenceConfig(
     recurrenceStartDate: Date | null;
     recurrenceEndDate: Date | null;
     recurrenceWeekdays: number[];
-    recurrenceDayOfMonth:
-      | number
-      | null;
+    recurrenceDayOfMonth: number | null;
     recurrenceActive: boolean;
     deadline: Date;
   },
@@ -508,8 +541,7 @@ function buildUpdateRecurrenceConfig(
     existingTask.recurrenceType;
 
   const recurrenceStartDate =
-    input.recurrenceStartDate !==
-    undefined
+    input.recurrenceStartDate !== undefined
       ? input.recurrenceStartDate
         ? toDateOnly(
             input.recurrenceStartDate,
@@ -522,8 +554,7 @@ function buildUpdateRecurrenceConfig(
         : null;
 
   const recurrenceEndDate =
-    input.recurrenceEndDate !==
-    undefined
+    input.recurrenceEndDate !== undefined
       ? input.recurrenceEndDate
         ? toDateOnly(
             input.recurrenceEndDate,
@@ -540,8 +571,7 @@ function buildUpdateRecurrenceConfig(
     existingTask.recurrenceWeekdays;
 
   const recurrenceDayOfMonth =
-    input.recurrenceDayOfMonth !==
-    undefined
+    input.recurrenceDayOfMonth !== undefined
       ? input.recurrenceDayOfMonth
       : existingTask.recurrenceDayOfMonth;
 
@@ -559,20 +589,10 @@ function buildUpdateRecurrenceConfig(
     recurrenceActive,
   };
 
-  validateRecurrenceConfig(
-    config,
-  );
+  validateRecurrenceConfig(config);
 
-  /*
-   * Task معمولی:
-   * deadline باید حتماً وجود داشته باشد.
-   *
-   * Task تکرارشونده:
-   * deadline داخلی برابر تاریخ شروع recurrence خواهد بود.
-   */
   const requestedDeadline =
-    input.deadline !==
-    undefined
+    input.deadline !== undefined
       ? input.deadline
       : existingTask.deadline;
 
@@ -590,8 +610,7 @@ function buildUpdateRecurrenceConfig(
 
   return {
     config,
-    deadline:
-      effectiveDeadline,
+    deadline: effectiveDeadline,
   };
 }
 
@@ -603,21 +622,13 @@ async function getAccessibleTask(
   taskId: string,
   userId: string,
   isAdmin: boolean,
-): Promise<
-  TaskForAccess | null
-> {
+): Promise<TaskForAccess | null> {
   const where = isAdmin
     ? {
         id: taskId,
       }
     : {
         id: taskId,
-
-        assignees: {
-          some: {
-            userId,
-          },
-        },
 
         project: {
           members: {
@@ -626,6 +637,23 @@ async function getAccessibleTask(
             },
           },
         },
+
+        OR: [
+          {
+            assignees: {
+              some: {
+                userId,
+              },
+            },
+          },
+          {
+            stages: {
+              some: {
+                assigneeId: userId,
+              },
+            },
+          },
+        ],
       };
 
   return prisma.task.findFirst({
@@ -675,6 +703,7 @@ async function getAccessibleTask(
         orderBy: {
           assignedAt: "asc",
         },
+
         select: {
           assignedAt: true,
 
@@ -683,6 +712,41 @@ async function getAccessibleTask(
               id: true,
               name: true,
               email: true,
+            },
+          },
+        },
+      },
+
+      stages: {
+        orderBy: {
+          position: "asc",
+        },
+
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          position: true,
+          status: true,
+          assigneeId: true,
+          activatedAt: true,
+          completedAt: true,
+          completedById: true,
+          createdAt: true,
+          updatedAt: true,
+
+          assignee: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+
+          completedBy: {
+            select: {
+              id: true,
+              name: true,
             },
           },
         },
@@ -714,7 +778,6 @@ export async function ensureTaskOccurrence(
 
       select: {
         id: true,
-
         isRecurring: true,
         recurrenceType: true,
         recurrenceStartDate: true,
@@ -725,41 +788,22 @@ export async function ensureTaskOccurrence(
       },
     });
 
-  if (
-    !task ||
-    !task.isRecurring
-  ) {
+  if (!task || !task.isRecurring) {
     return null;
   }
 
   const normalizedDate =
-    toDateOnly(
-      occurrenceDate,
-    );
+    toDateOnly(occurrenceDate);
 
-  const config: RecurrenceConfig =
-    {
-      isRecurring:
-        task.isRecurring,
-
-      recurrenceType:
-        task.recurrenceType,
-
-      recurrenceStartDate:
-        task.recurrenceStartDate,
-
-      recurrenceEndDate:
-        task.recurrenceEndDate,
-
-      recurrenceWeekdays:
-        task.recurrenceWeekdays,
-
-      recurrenceDayOfMonth:
-        task.recurrenceDayOfMonth,
-
-      recurrenceActive:
-        task.recurrenceActive,
-    };
+  const config: RecurrenceConfig = {
+    isRecurring: task.isRecurring,
+    recurrenceType: task.recurrenceType,
+    recurrenceStartDate: task.recurrenceStartDate,
+    recurrenceEndDate: task.recurrenceEndDate,
+    recurrenceWeekdays: task.recurrenceWeekdays,
+    recurrenceDayOfMonth: task.recurrenceDayOfMonth,
+    recurrenceActive: task.recurrenceActive,
+  };
 
   if (
     !isTaskScheduledForDate(
@@ -770,26 +814,21 @@ export async function ensureTaskOccurrence(
     return null;
   }
 
-  return prisma.taskOccurrence.upsert(
-    {
-      where: {
-        taskId_occurrenceDate: {
-          taskId,
-          occurrenceDate:
-            normalizedDate,
-        },
-      },
-
-      create: {
+  return prisma.taskOccurrence.upsert({
+    where: {
+      taskId_occurrenceDate: {
         taskId,
-
-        occurrenceDate:
-          normalizedDate,
+        occurrenceDate: normalizedDate,
       },
-
-      update: {},
     },
-  );
+
+    create: {
+      taskId,
+      occurrenceDate: normalizedDate,
+    },
+
+    update: {},
+  });
 }
 
 /* -------------------------------------------------------------------------- */
@@ -799,255 +838,366 @@ export async function ensureTaskOccurrence(
 export async function getAdminTasks() {
   await requireAdmin();
 
-  const tasks =
-    await prisma.task.findMany({
-      orderBy: {
-        createdAt: "desc",
+  const tasks = await prisma.task.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      status: true,
+      priority: true,
+      deadline: true,
+      completedAt: true,
+
+      projectId: true,
+      subProjectId: true,
+
+      isRecurring: true,
+      recurrenceType: true,
+      recurrenceStartDate: true,
+      recurrenceEndDate: true,
+      recurrenceWeekdays: true,
+      recurrenceDayOfMonth: true,
+      recurrenceActive: true,
+
+      createdAt: true,
+      updatedAt: true,
+
+      project: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+        },
       },
 
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        status: true,
-        priority: true,
-        deadline: true,
-        completedAt: true,
+      subProject: {
+        select: {
+          id: true,
+          type: true,
+        },
+      },
 
-        projectId: true,
-        subProjectId: true,
-
-        isRecurring: true,
-        recurrenceType: true,
-        recurrenceStartDate: true,
-        recurrenceEndDate: true,
-        recurrenceWeekdays: true,
-        recurrenceDayOfMonth: true,
-        recurrenceActive: true,
-
-        createdAt: true,
-        updatedAt: true,
-
-        project: {
-          select: {
-            id: true,
-            title: true,
-            status: true,
-          },
+      assignees: {
+        orderBy: {
+          assignedAt: "asc",
         },
 
-        subProject: {
-          select: {
-            id: true,
-            type: true,
-          },
-        },
+        select: {
+          assignedAt: true,
 
-        assignees: {
-          orderBy: {
-            assignedAt: "asc",
-          },
-          select: {
-            assignedAt: true,
-
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
             },
           },
         },
+      },
 
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-          },
+      stages: {
+        orderBy: {
+          position: "asc",
         },
 
-        _count: {
-          select: {
-            comments: true,
-            attachments: true,
-            occurrences: true,
+        select: {
+          id: true,
+          taskId: true,
+          title: true,
+          description: true,
+          position: true,
+          status: true,
+          assigneeId: true,
+          activatedAt: true,
+          completedAt: true,
+          completedById: true,
+
+          assignee: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+
+          completedBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
         },
       },
-    });
 
-  const today =
-    getTodayDateOnly();
+      createdBy: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+
+      _count: {
+        select: {
+          comments: true,
+          attachments: true,
+          occurrences: true,
+        },
+      },
+    },
+  });
+
+  const today = getTodayDateOnly();
 
   return Promise.all(
-    tasks.map(
-      async (task) => {
-        const todayOccurrence =
-          task.isRecurring
-            ? await ensureTaskOccurrence(
-                task.id,
-                today,
-              )
-            : null;
+    tasks.map(async (task) => {
+      const todayOccurrence = task.isRecurring
+        ? await ensureTaskOccurrence(task.id, today)
+        : null;
 
-        return {
-          ...task,
-          todayOccurrence,
-        };
-      },
-    ),
+      return {
+        ...task,
+        todayOccurrence,
+      };
+    }),
   );
 }
 
 export async function getEmployeeTasks() {
-  const session =
-    await requireUser();
+  const session = await requireUser();
 
-  if (
-    session.user.role ===
-    "ADMIN"
-  ) {
-    return getAdminTasks();
-  }
+  if (session.user.role === "ADMIN") {
+    const adminTasks = await getAdminTasks();
 
-  const tasks =
-    await prisma.task.findMany({
+    const stages = await prisma.taskStage.findMany({
       where: {
-        assignees: {
-          some: {
-            userId:
-              session.user.id,
-          },
-        },
-
-        project: {
-          members: {
-            some: {
-              userId:
-                session.user.id,
-            },
-          },
+        taskId: {
+          in: adminTasks.map((task) => task.id),
         },
       },
 
       orderBy: [
         {
-          deadline: "asc",
+          taskId: "asc",
         },
         {
-          createdAt: "desc",
+          position: "asc",
         },
       ],
 
       select: {
         id: true,
+        taskId: true,
         title: true,
         description: true,
+        position: true,
         status: true,
-        priority: true,
-        deadline: true,
+        assigneeId: true,
+        activatedAt: true,
         completedAt: true,
+        completedById: true,
 
-        projectId: true,
-        subProjectId: true,
-
-        isRecurring: true,
-        recurrenceType: true,
-        recurrenceStartDate: true,
-        recurrenceEndDate: true,
-        recurrenceWeekdays: true,
-        recurrenceDayOfMonth: true,
-        recurrenceActive: true,
-
-        createdAt: true,
-        updatedAt: true,
-
-        project: {
+        assignee: {
           select: {
             id: true,
-            title: true,
-            status: true,
+            name: true,
+            email: true,
           },
         },
 
-        subProject: {
+        completedBy: {
           select: {
             id: true,
-            type: true,
-          },
-        },
-
-        assignees: {
-          orderBy: {
-            assignedAt: "asc",
-          },
-          select: {
-            assignedAt: true,
-
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-        },
-
-        _count: {
-          select: {
-            comments: true,
-            attachments: true,
-            occurrences: true,
+            name: true,
+            email: true,
           },
         },
       },
     });
 
-  const today =
-    getTodayDateOnly();
+    return adminTasks.map((task) => ({
+      ...task,
+      stages: stages.filter(
+        (stage) => stage.taskId === task.id,
+      ),
+    }));
+  }
+
+  const tasks = await prisma.task.findMany({
+    where: {
+      project: {
+        members: {
+          some: {
+            userId: session.user.id,
+          },
+        },
+      },
+
+      OR: [
+        {
+          assignees: {
+            some: {
+              userId: session.user.id,
+            },
+          },
+        },
+        {
+          stages: {
+            some: {
+              assigneeId: session.user.id,
+            },
+          },
+        },
+      ],
+    },
+
+    orderBy: [
+      {
+        deadline: "asc",
+      },
+      {
+        createdAt: "desc",
+      },
+    ],
+
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      status: true,
+      priority: true,
+      deadline: true,
+      completedAt: true,
+
+      projectId: true,
+      subProjectId: true,
+
+      isRecurring: true,
+      recurrenceType: true,
+      recurrenceStartDate: true,
+      recurrenceEndDate: true,
+      recurrenceWeekdays: true,
+      recurrenceDayOfMonth: true,
+      recurrenceActive: true,
+
+      createdAt: true,
+      updatedAt: true,
+
+      project: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+        },
+      },
+
+      subProject: {
+        select: {
+          id: true,
+          type: true,
+        },
+      },
+
+      assignees: {
+        orderBy: {
+          assignedAt: "asc",
+        },
+
+        select: {
+          assignedAt: true,
+
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
+
+      stages: {
+        orderBy: {
+          position: "asc",
+        },
+
+        select: {
+          id: true,
+          taskId: true,
+          title: true,
+          description: true,
+          position: true,
+          status: true,
+          assigneeId: true,
+          activatedAt: true,
+          completedAt: true,
+          completedById: true,
+
+          assignee: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+
+          completedBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
+
+      _count: {
+        select: {
+          comments: true,
+          attachments: true,
+          occurrences: true,
+        },
+      },
+    },
+  });
+
+  const today = getTodayDateOnly();
 
   return Promise.all(
-    tasks.map(
-      async (task) => {
-        const todayOccurrence =
-          task.isRecurring
-            ? await ensureTaskOccurrence(
-                task.id,
-                today,
-              )
-            : null;
+    tasks.map(async (task) => {
+      const todayOccurrence = task.isRecurring
+        ? await ensureTaskOccurrence(task.id, today)
+        : null;
 
-        return {
-          ...task,
-          todayOccurrence,
-        };
-      },
-    ),
+      return {
+        ...task,
+        todayOccurrence,
+      };
+    }),
   );
 }
 
 export async function getTaskById(
   taskId: string,
 ) {
-  const session =
-    await requireUser();
+  const session = await requireUser();
 
   const task =
     await getAccessibleTask(
       taskId,
       session.user.id,
-      session.user.role ===
-        "ADMIN",
+      session.user.role === "ADMIN",
     );
 
   if (!task) {
     return null;
   }
 
-  const today =
-    getTodayDateOnly();
+  const today = getTodayDateOnly();
 
   const todayOccurrence =
     task.isRecurring
@@ -1059,92 +1209,84 @@ export async function getTaskById(
 
   const occurrences =
     task.isRecurring
-      ? await prisma.taskOccurrence.findMany(
-          {
-            where: {
-              taskId:
-                task.id,
-            },
+      ? await prisma.taskOccurrence.findMany({
+          where: {
+            taskId: task.id,
+          },
 
-            orderBy: {
-              occurrenceDate:
-                "desc",
-            },
+          orderBy: {
+            occurrenceDate: "desc",
+          },
 
-            take: 90,
+          take: 90,
 
-            select: {
-              id: true,
-              occurrenceDate: true,
-              completed: true,
-              completedAt: true,
+          select: {
+            id: true,
+            occurrenceDate: true,
+            completed: true,
+            completedAt: true,
 
-              completedBy: {
-                select: {
-                  id: true,
-                  name: true,
-                },
+            completedBy: {
+              select: {
+                id: true,
+                name: true,
               },
             },
           },
-        )
+        })
       : [];
 
   const comments =
-    await prisma.taskComment.findMany(
-      {
-        where: {
-          taskId: task.id,
-        },
+    await prisma.taskComment.findMany({
+      where: {
+        taskId: task.id,
+      },
 
-        orderBy: {
-          createdAt: "asc",
-        },
+      orderBy: {
+        createdAt: "asc",
+      },
 
-        select: {
-          id: true,
-          content: true,
-          createdAt: true,
-          updatedAt: true,
+      select: {
+        id: true,
+        content: true,
+        createdAt: true,
+        updatedAt: true,
 
-          user: {
-            select: {
-              id: true,
-              name: true,
-              role: true,
-            },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            role: true,
           },
         },
       },
-    );
+    });
 
   const attachments =
-    await prisma.taskAttachment.findMany(
-      {
-        where: {
-          taskId: task.id,
-        },
+    await prisma.taskAttachment.findMany({
+      where: {
+        taskId: task.id,
+      },
 
-        orderBy: {
-          createdAt: "desc",
-        },
+      orderBy: {
+        createdAt: "desc",
+      },
 
-        select: {
-          id: true,
-          fileName: true,
-          mimeType: true,
-          sizeBytes: true,
-          createdAt: true,
+      select: {
+        id: true,
+        fileName: true,
+        mimeType: true,
+        sizeBytes: true,
+        createdAt: true,
 
-          uploadedBy: {
-            select: {
-              id: true,
-              name: true,
-            },
+        uploadedBy: {
+          select: {
+            id: true,
+            name: true,
           },
         },
       },
-    );
+    });
 
   return {
     id: task.id,
@@ -1155,79 +1297,35 @@ export async function getTaskById(
     status: task.status,
     priority: task.priority,
 
-    deadline:
-      task.deadline,
+    deadline: task.deadline,
+    completedAt: task.completedAt,
 
-    completedAt:
-      task.completedAt,
+    projectId: task.projectId,
+    subProjectId: task.subProjectId,
 
-    projectId:
-      task.projectId,
+    isRecurring: task.isRecurring,
+    recurrenceType: task.recurrenceType,
+    recurrenceStartDate: task.recurrenceStartDate,
+    recurrenceEndDate: task.recurrenceEndDate,
+    recurrenceWeekdays: task.recurrenceWeekdays,
+    recurrenceDayOfMonth: task.recurrenceDayOfMonth,
+    recurrenceActive: task.recurrenceActive,
 
-    subProjectId:
-      task.subProjectId,
-
-    isRecurring:
-      task.isRecurring,
-
-    recurrenceType:
-      task.recurrenceType,
-
-    recurrenceStartDate:
-      task.recurrenceStartDate,
-
-    recurrenceEndDate:
-      task.recurrenceEndDate,
-
-    recurrenceWeekdays:
-      task.recurrenceWeekdays,
-
-    recurrenceDayOfMonth:
-      task.recurrenceDayOfMonth,
-
-    recurrenceActive:
-      task.recurrenceActive,
-
-    createdAt:
-      task.createdAt,
-
-    updatedAt:
-      task.updatedAt,
+    createdAt: task.createdAt,
+    updatedAt: task.updatedAt,
 
     todayOccurrence,
-
     occurrences,
 
-    project: {
-      id:
-        task.project.id,
+    project: task.project,
+    subProject: task.subProject,
+    assignees: task.assignees,
 
-      title:
-        task.project.title,
+    stages: task.stages,
 
-      status:
-        task.project.status,
-
-      deadline:
-        task.project.deadline,
-    },
-
-    subProject:
-      task.subProject,
-
-    assignees:
-      task.assignees,
-
-    createdBy: {
-      id:
-        task.createdBy.id,
-
-      name:
-        task.createdBy.name,
-    },
+    createdBy: task.createdBy,
 
     comments,
-
     attachments,
   };
 }
@@ -1239,17 +1337,33 @@ export async function getTaskById(
 export async function createTask(
   input: CreateTaskInput,
 ) {
-  const session =
-    await requireAdmin();
+  const session = await requireAdmin();
 
   const validated =
     createTaskSchema.parse(input);
 
+  const stageInputs =
+    validated.stages ?? [];
+
+  const hasStages =
+    stageInputs.length > 0;
+
+  if (hasStages && stageInputs.length < 2) {
+    throw new Error(
+      "TASK_STAGES_MINIMUM_REQUIRED",
+    );
+  }
+
+  if (hasStages && validated.isRecurring) {
+    throw new Error(
+      "STAGED_TASK_CANNOT_BE_RECURRING",
+    );
+  }
+
   const project =
     await prisma.project.findUnique({
       where: {
-        id:
-          validated.projectId,
+        id: validated.projectId,
       },
 
       select: {
@@ -1265,22 +1379,17 @@ export async function createTask(
   }
 
   const subProject =
-    await prisma.projectSubProject.findFirst(
-      {
-        where: {
-          id:
-            validated.subProjectId,
-
-          projectId:
-            validated.projectId,
-        },
-
-        select: {
-          id: true,
-          type: true,
-        },
+    await prisma.projectSubProject.findFirst({
+      where: {
+        id: validated.subProjectId,
+        projectId: validated.projectId,
       },
-    );
+
+      select: {
+        id: true,
+        type: true,
+      },
+    });
 
   if (!subProject) {
     throw new Error(
@@ -1288,10 +1397,21 @@ export async function createTask(
     );
   }
 
+  // مسئولان یک تسک مرحله‌ای از روی مراحل تعیین می‌شوند.
+  const taskAssigneeIds = hasStages
+    ? [
+        ...new Set(
+          stageInputs.map(
+            (stage) => stage.assigneeId,
+          ),
+        ),
+      ]
+    : validated.assigneeIds;
+
   const employees =
     await validateTaskAssignees(
       validated.projectId,
-      validated.assigneeIds,
+      taskAssigneeIds,
     );
 
   const recurrence =
@@ -1311,109 +1431,124 @@ export async function createTask(
     );
   }
 
+  const now = new Date();
+
+  // ساخت تسک، مسئولان عمومی و مراحل اتمیک انجام می‌شود.
   const task =
-    await prisma.task.create({
-      data: {
-        projectId:
-          validated.projectId,
+    await prisma.$transaction(async (tx) => {
+      const createdTask =
+        await tx.task.create({
+          data: {
+            projectId: validated.projectId,
+            subProjectId: validated.subProjectId,
 
-        subProjectId:
-          validated.subProjectId,
+            title: validated.title,
+            description:
+              validated.description?.trim() || null,
 
-        title:
-          validated.title,
+            createdById: session.user.id,
 
-        description:
-          validated.description?.trim() ||
-          null,
+            status: hasStages
+              ? "IN_PROGRESS"
+              : "TODO",
 
-        createdById:
-          session.user.id,
+            priority: validated.priority,
+            deadline: effectiveDeadline,
 
-        priority:
-          validated.priority,
+            isRecurring: recurrence.isRecurring,
+            recurrenceType: recurrence.recurrenceType,
+            recurrenceStartDate: recurrence.recurrenceStartDate,
+            recurrenceEndDate: recurrence.recurrenceEndDate,
+            recurrenceWeekdays: recurrence.recurrenceWeekdays,
+            recurrenceDayOfMonth: recurrence.recurrenceDayOfMonth,
+            recurrenceActive: recurrence.recurrenceActive,
 
-        deadline:
-          effectiveDeadline,
+            assignees: {
+              create: employees.map(
+                (employee) => ({
+                  userId: employee.id,
+                }),
+              ),
+            },
+          },
 
-        isRecurring:
-          recurrence.isRecurring,
-
-        recurrenceType:
-          recurrence.recurrenceType,
-
-        recurrenceStartDate:
-          recurrence.recurrenceStartDate,
-
-        recurrenceEndDate:
-          recurrence.recurrenceEndDate,
-
-        recurrenceWeekdays:
-          recurrence.recurrenceWeekdays,
-
-        recurrenceDayOfMonth:
-          recurrence.recurrenceDayOfMonth,
-
-        recurrenceActive:
-          recurrence.recurrenceActive,
-
-        assignees: {
-          create:
-            employees.map(
-              (employee) => ({
-                userId:
-                  employee.id,
-              }),
-            ),
-        },
-      },
-
-      select: {
-        id: true,
-        title: true,
-        status: true,
-        priority: true,
-        deadline: true,
-        createdAt: true,
-
-        isRecurring: true,
-        recurrenceType: true,
-        recurrenceStartDate: true,
-        recurrenceEndDate: true,
-        recurrenceWeekdays: true,
-        recurrenceDayOfMonth: true,
-        recurrenceActive: true,
-
-        project: {
           select: {
             id: true,
             title: true,
-          },
-        },
+            status: true,
+            priority: true,
+            deadline: true,
+            createdAt: true,
 
-        subProject: {
-          select: {
-            id: true,
-            type: true,
-          },
-        },
+            isRecurring: true,
+            recurrenceType: true,
+            recurrenceStartDate: true,
+            recurrenceEndDate: true,
+            recurrenceWeekdays: true,
+            recurrenceDayOfMonth: true,
+            recurrenceActive: true,
 
-        assignees: {
-          orderBy: {
-            assignedAt: "asc",
-          },
-          select: {
-            assignedAt: true,
-
-            user: {
+            project: {
               select: {
                 id: true,
-                name: true,
+                title: true,
+              },
+            },
+
+            subProject: {
+              select: {
+                id: true,
+                type: true,
+              },
+            },
+
+            assignees: {
+              orderBy: {
+                assignedAt: "asc",
+              },
+
+              select: {
+                assignedAt: true,
+
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
               },
             },
           },
-        },
-      },
+        });
+
+      if (hasStages) {
+        await tx.taskStage.createMany({
+          data: stageInputs.map(
+            (stage, index) => ({
+              taskId: createdTask.id,
+
+              title: stage.title,
+              description:
+                stage.description?.trim() || null,
+
+              position: index + 1,
+              assigneeId: stage.assigneeId,
+
+              status:
+                index === 0
+                  ? "IN_PROGRESS"
+                  : "LOCKED",
+
+              activatedAt:
+                index === 0
+                  ? now
+                  : null,
+            }),
+          ),
+        });
+      }
+
+      return createdTask;
     });
 
   if (
@@ -1428,43 +1563,25 @@ export async function createTask(
 
   await prisma.activityLog.create({
     data: {
-      userId:
-        session.user.id,
-
-      action:
-        "TASK_CREATED",
-
-      entityType:
-        "TASK",
-
-      entityId:
-        task.id,
+      userId: session.user.id,
+      action: "TASK_CREATED",
+      entityType: "TASK",
+      entityId: task.id,
 
       metadata: {
-        projectId:
-          task.project.id,
+        projectId: task.project.id,
+        subProjectId: task.subProject?.id ?? null,
 
-        subProjectId:
-          task.subProject?.id ??
-          null,
+        assigneeIds: employees.map(
+          (employee) => employee.id,
+        ),
 
-        assigneeIds:
-          employees.map(
-            (employee) =>
-              employee.id,
-          ),
+        assigneeNames: employees.map(
+          (employee) => employee.name,
+        ),
 
-        assigneeNames:
-          employees.map(
-            (employee) =>
-              employee.name,
-          ),
-
-        isRecurring:
-          task.isRecurring,
-
-        recurrenceType:
-          task.recurrenceType,
+        isRecurring: task.isRecurring,
+        recurrenceType: task.recurrenceType,
 
         recurrenceStartDate:
           recurrence.recurrenceStartDate
@@ -1472,56 +1589,50 @@ export async function createTask(
                 recurrence.recurrenceStartDate,
               )
             : null,
+
+        isMultiStage: hasStages,
+        stageCount: stageInputs.length,
       },
     },
   });
 
   await prisma.activityLog.create({
     data: {
-      userId:
-        session.user.id,
-
-      action:
-        "TASK_ASSIGNED",
-
-      entityType:
-        "TASK",
-
-      entityId:
-        task.id,
+      userId: session.user.id,
+      action: "TASK_ASSIGNED",
+      entityType: "TASK",
+      entityId: task.id,
 
       metadata: {
-        assigneeIds:
-          employees.map(
-            (employee) =>
-              employee.id,
-          ),
+        assigneeIds: employees.map(
+          (employee) => employee.id,
+        ),
 
-        assigneeNames:
-          employees.map(
-            (employee) =>
-              employee.name,
-          ),
+        assigneeNames: employees.map(
+          (employee) => employee.name,
+        ),
       },
     },
   });
 
+  // برای تسک مرحله‌ای، ابتدا فقط مسئول مرحله اول اعلان می‌گیرد.
+  const initialNotificationEmployees = hasStages
+    ? employees.filter(
+        (employee) =>
+          employee.id ===
+          stageInputs[0].assigneeId,
+      )
+    : employees;
+
   await Promise.all(
-    employees.map(
+    initialNotificationEmployees.map(
       async (employee) => {
         try {
           await notifyTaskAssigned({
-            userId:
-              employee.id,
-
-            taskId:
-              task.id,
-
-            taskTitle:
-              task.title,
-
-            projectTitle:
-              task.project.title,
+            userId: employee.id,
+            taskId: task.id,
+            taskTitle: task.title,
+            projectTitle: task.project.title,
           });
         } catch (error) {
           console.error(
@@ -1544,8 +1655,7 @@ export async function updateTask(
   taskId: string,
   input: UpdateTaskInput,
 ) {
-  const session =
-    await requireAdmin();
+  const session = await requireAdmin();
 
   const validated =
     updateTaskSchema.parse(input);
@@ -1563,7 +1673,6 @@ export async function updateTask(
         deadline: true,
 
         projectId: true,
-
         subProjectId: true,
 
         isRecurring: true,
@@ -1591,12 +1700,22 @@ export async function updateTask(
           orderBy: {
             assignedAt: "asc",
           },
+
           select: {
             user: {
               select: {
                 id: true,
               },
             },
+          },
+        },
+
+        stages: {
+          select: {
+            id: true,
+            position: true,
+            status: true,
+            assigneeId: true,
           },
         },
       },
@@ -1608,26 +1727,31 @@ export async function updateTask(
     );
   }
 
-  if (
-    validated.subProjectId !==
-    undefined
-  ) {
+  const isStagedTask =
+    existingTask.stages.length > 0;
+
+  const effectiveRecurring =
+    validated.isRecurring ??
+    existingTask.isRecurring;
+
+  if (isStagedTask && effectiveRecurring) {
+    throw new Error(
+      "STAGED_TASK_CANNOT_BE_RECURRING",
+    );
+  }
+
+  if (validated.subProjectId !== undefined) {
     const subProject =
-      await prisma.projectSubProject.findFirst(
-        {
-          where: {
-            id:
-              validated.subProjectId,
-
-            projectId:
-              existingTask.projectId,
-          },
-
-          select: {
-            id: true,
-          },
+      await prisma.projectSubProject.findFirst({
+        where: {
+          id: validated.subProjectId,
+          projectId: existingTask.projectId,
         },
-      );
+
+        select: {
+          id: true,
+        },
+      });
 
     if (!subProject) {
       throw new Error(
@@ -1646,23 +1770,34 @@ export async function updateTask(
     currentAssigneeIds;
 
   const assigneesChanged =
-    validated.assigneeIds !==
-      undefined &&
-    currentAssigneeIds.length !==
-      nextAssigneeIds.length ||
-    validated.assigneeIds !==
-      undefined &&
-    currentAssigneeIds.some(
-      (id) =>
-        !nextAssigneeIds.includes(
-          id,
-        ),
+    validated.assigneeIds !== undefined &&
+    !haveSameIds(
+      currentAssigneeIds,
+      nextAssigneeIds,
     );
 
-  if (
-    validated.assigneeIds !==
-    undefined
-  ) {
+  if (isStagedTask && validated.assigneeIds !== undefined) {
+    const stageAssigneeIds = [
+      ...new Set(
+        existingTask.stages.map(
+          (stage) => stage.assigneeId,
+        ),
+      ),
+    ];
+
+    if (
+      !haveSameIds(
+        stageAssigneeIds,
+        validated.assigneeIds,
+      )
+    ) {
+      throw new Error(
+        "STAGED_TASK_ASSIGNEES_MANAGED_BY_STAGES",
+      );
+    }
+  }
+
+  if (validated.assigneeIds !== undefined) {
     await validateTaskAssignees(
       existingTask.projectId,
       validated.assigneeIds,
@@ -1694,254 +1829,202 @@ export async function updateTask(
     );
 
   const task =
-    await prisma.$transaction(
-      async (tx) => {
-        const updatedTask =
-          await tx.task.update({
-            where: {
-              id: taskId,
+    await prisma.$transaction(async (tx) => {
+      const updatedTask =
+        await tx.task.update({
+          where: {
+            id: taskId,
+          },
+
+          data: {
+            ...(validated.title !== undefined && {
+              title: validated.title,
+            }),
+
+            ...(validated.description !== undefined && {
+              description:
+                validated.description?.trim() || null,
+            }),
+
+            ...(validated.subProjectId !== undefined && {
+              subProjectId: validated.subProjectId,
+            }),
+
+            ...(validated.priority !== undefined && {
+              priority: validated.priority,
+            }),
+
+            deadline: recurrence.deadline,
+
+            isRecurring:
+              recurrence.config.isRecurring,
+
+            recurrenceType:
+              recurrence.config.recurrenceType,
+
+            recurrenceStartDate:
+              recurrence.config.recurrenceStartDate,
+
+            recurrenceEndDate:
+              recurrence.config.recurrenceEndDate,
+
+            recurrenceWeekdays:
+              recurrence.config.recurrenceWeekdays,
+
+            recurrenceDayOfMonth:
+              recurrence.config.recurrenceDayOfMonth,
+
+            recurrenceActive:
+              recurrence.config.recurrenceActive,
+          },
+
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            status: true,
+            priority: true,
+            deadline: true,
+            completedAt: true,
+            updatedAt: true,
+
+            project: {
+              select: {
+                id: true,
+                title: true,
+              },
             },
 
-            data: {
-              ...(validated.title !==
-                undefined && {
-                title:
-                  validated.title,
-              }),
-
-              ...(validated.description !==
-                undefined && {
-                description:
-                  validated.description?.trim() ||
-                  null,
-              }),
-
-              ...(validated.subProjectId !==
-                undefined && {
-                subProjectId:
-                  validated.subProjectId,
-              }),
-
-              ...(validated.priority !==
-                undefined && {
-                priority:
-                  validated.priority,
-              }),
-
-              deadline:
-                recurrence.deadline,
-
-              isRecurring:
-                recurrence.config
-                  .isRecurring,
-
-              recurrenceType:
-                recurrence.config
-                  .recurrenceType,
-
-              recurrenceStartDate:
-                recurrence.config
-                  .recurrenceStartDate,
-
-              recurrenceEndDate:
-                recurrence.config
-                  .recurrenceEndDate,
-
-              recurrenceWeekdays:
-                recurrence.config
-                  .recurrenceWeekdays,
-
-              recurrenceDayOfMonth:
-                recurrence.config
-                  .recurrenceDayOfMonth,
-
-              recurrenceActive:
-                recurrence.config
-                  .recurrenceActive,
+            subProject: {
+              select: {
+                id: true,
+                type: true,
+              },
             },
 
-            select: {
-              id: true,
-              title: true,
-              description: true,
-              status: true,
-              priority: true,
-              deadline: true,
-              completedAt: true,
-              updatedAt: true,
-
-              project: {
-                select: {
-                  id: true,
-                  title: true,
-                },
+            assignees: {
+              orderBy: {
+                assignedAt: "asc",
               },
 
-              subProject: {
-                select: {
-                  id: true,
-                  type: true,
-                },
-              },
+              select: {
+                assignedAt: true,
 
-              assignees: {
-                orderBy: {
-                  assignedAt: "asc",
-                },
-                select: {
-                  assignedAt:
-                    true,
-
-                  user: {
-                    select: {
-                      id: true,
-                      name: true,
-                    },
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
                   },
                 },
               },
-
-              isRecurring: true,
-              recurrenceType: true,
-              recurrenceStartDate:
-                true,
-              recurrenceEndDate:
-                true,
-              recurrenceWeekdays:
-                true,
-              recurrenceDayOfMonth:
-                true,
-              recurrenceActive:
-                true,
             },
-          });
 
-        if (
-          validated.assigneeIds !==
-          undefined
-        ) {
-          await tx.taskAssignee.deleteMany(
-            {
-              where: {
-                taskId,
+            isRecurring: true,
+            recurrenceType: true,
+            recurrenceStartDate: true,
+            recurrenceEndDate: true,
+            recurrenceWeekdays: true,
+            recurrenceDayOfMonth: true,
+            recurrenceActive: true,
+          },
+        });
+
+      // در تسک مرحله‌ای، تخصیص عمومی از روی مراحل مدیریت می‌شود.
+      if (
+        validated.assigneeIds !== undefined &&
+        !isStagedTask
+      ) {
+        await tx.taskAssignee.deleteMany({
+          where: {
+            taskId,
+          },
+        });
+
+        await tx.taskAssignee.createMany({
+          data: newAssigneeIds.map(
+            (userId) => ({
+              taskId,
+              userId,
+            }),
+          ),
+        });
+      }
+
+      const refreshedTask =
+        await tx.task.findUnique({
+          where: {
+            id: taskId,
+          },
+
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            status: true,
+            priority: true,
+            deadline: true,
+            completedAt: true,
+            updatedAt: true,
+
+            project: {
+              select: {
+                id: true,
+                title: true,
               },
             },
-          );
 
-          await tx.taskAssignee.createMany(
-            {
-              data:
-                newAssigneeIds.map(
-                  (userId) => ({
-                    taskId,
-                    userId,
-                  }),
-                ),
+            subProject: {
+              select: {
+                id: true,
+                type: true,
+              },
             },
-          );
-        }
 
-        const refreshedTask =
-          await tx.task.findUnique({
-            where: {
-              id: taskId,
-            },
-            select: {
-              id: true,
-              title: true,
-              description: true,
-              status: true,
-              priority: true,
-              deadline: true,
-              completedAt: true,
-              updatedAt: true,
-
-              project: {
-                select: {
-                  id: true,
-                  title: true,
-                },
+            assignees: {
+              orderBy: {
+                assignedAt: "asc",
               },
 
-              subProject: {
-                select: {
-                  id: true,
-                  type: true,
-                },
-              },
+              select: {
+                assignedAt: true,
 
-              assignees: {
-                orderBy: {
-                  assignedAt:
-                    "asc",
-                },
-                select: {
-                  assignedAt:
-                    true,
-
-                  user: {
-                    select: {
-                      id: true,
-                      name: true,
-                    },
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
                   },
                 },
               },
-
-              isRecurring: true,
-              recurrenceType: true,
-              recurrenceStartDate:
-                true,
-              recurrenceEndDate:
-                true,
-              recurrenceWeekdays:
-                true,
-              recurrenceDayOfMonth:
-                true,
-              recurrenceActive:
-                true,
             },
-          });
 
-        return (
-          refreshedTask ??
-          updatedTask
-        );
-      },
-    );
+            isRecurring: true,
+            recurrenceType: true,
+            recurrenceStartDate: true,
+            recurrenceEndDate: true,
+            recurrenceWeekdays: true,
+            recurrenceDayOfMonth: true,
+            recurrenceActive: true,
+          },
+        });
+
+      return refreshedTask ?? updatedTask;
+    });
 
   await prisma.activityLog.create({
     data: {
-      userId:
-        session.user.id,
-
-      action:
-        "TASK_UPDATED",
-
-      entityType:
-        "TASK",
-
-      entityId:
-        task.id,
+      userId: session.user.id,
+      action: "TASK_UPDATED",
+      entityType: "TASK",
+      entityId: task.id,
 
       metadata: {
-        changedFields:
-          Object.keys(
-            validated,
-          ),
+        changedFields: Object.keys(validated),
 
-        isRecurring:
-          task.isRecurring,
+        isRecurring: task.isRecurring,
+        recurrenceType: task.recurrenceType,
+        subProjectId: task.subProject?.id ?? null,
 
-        recurrenceType:
-          task.recurrenceType,
-
-        subProjectId:
-          task.subProject?.id ??
-          null,
-
-        assigneeIds:
-          newAssigneeIds,
+        assigneeIds: newAssigneeIds,
       },
     },
   });
@@ -1952,21 +2035,13 @@ export async function updateTask(
   ) {
     await prisma.activityLog.create({
       data: {
-        userId:
-          session.user.id,
-
-        action:
-          "TASK_ASSIGNED",
-
-        entityType:
-          "TASK",
-
-        entityId:
-          task.id,
+        userId: session.user.id,
+        action: "TASK_ASSIGNED",
+        entityType: "TASK",
+        entityId: task.id,
 
         metadata: {
-          assigneeIds:
-            addedAssigneeIds,
+          assigneeIds: addedAssigneeIds,
         },
       },
     });
@@ -1978,27 +2053,20 @@ export async function updateTask(
   ) {
     await prisma.activityLog.create({
       data: {
-        userId:
-          session.user.id,
-
-        action:
-          "TASK_ASSIGNEE_REMOVED",
-
-        entityType:
-          "TASK",
-
-        entityId:
-          task.id,
+        userId: session.user.id,
+        action: "TASK_ASSIGNEE_REMOVED",
+        entityType: "TASK",
+        entityId: task.id,
 
         metadata: {
-          assigneeIds:
-            removedAssigneeIds,
+          assigneeIds: removedAssigneeIds,
         },
       },
     });
   }
 
   if (
+    !isStagedTask &&
     assigneesChanged &&
     addedAssigneeIds.length > 0
   ) {
@@ -2008,15 +2076,9 @@ export async function updateTask(
           try {
             await notifyTaskAssigned({
               userId,
-
-              taskId:
-                task.id,
-
-              taskTitle:
-                task.title,
-
-              projectTitle:
-                task.project.title,
+              taskId: task.id,
+              taskTitle: task.title,
+              projectTitle: task.project.title,
             });
           } catch (error) {
             console.error(
@@ -2030,31 +2092,19 @@ export async function updateTask(
   }
 
   if (
-    validated.priority !==
-      undefined &&
-    validated.priority !==
-      existingTask.priority
+    validated.priority !== undefined &&
+    validated.priority !== existingTask.priority
   ) {
     await prisma.activityLog.create({
       data: {
-        userId:
-          session.user.id,
-
-        action:
-          "TASK_PRIORITY_CHANGED",
-
-        entityType:
-          "TASK",
-
-        entityId:
-          task.id,
+        userId: session.user.id,
+        action: "TASK_PRIORITY_CHANGED",
+        entityType: "TASK",
+        entityId: task.id,
 
         metadata: {
-          oldPriority:
-            existingTask.priority,
-
-          newPriority:
-            validated.priority,
+          oldPriority: existingTask.priority,
+          newPriority: validated.priority,
         },
       },
     });
@@ -2066,17 +2116,10 @@ export async function updateTask(
   ) {
     await prisma.activityLog.create({
       data: {
-        userId:
-          session.user.id,
-
-        action:
-          "TASK_DEADLINE_CHANGED",
-
-        entityType:
-          "TASK",
-
-        entityId:
-          task.id,
+        userId: session.user.id,
+        action: "TASK_DEADLINE_CHANGED",
+        entityType: "TASK",
+        entityId: task.id,
 
         metadata: {
           oldDeadline:
@@ -2091,13 +2134,11 @@ export async function updateTask(
 
   if (
     task.isRecurring &&
-    recurrence.config
-      .recurrenceStartDate
+    recurrence.config.recurrenceStartDate
   ) {
     await ensureTaskOccurrence(
       task.id,
-      recurrence.config
-        .recurrenceStartDate,
+      recurrence.config.recurrenceStartDate,
     );
   }
 
@@ -2116,8 +2157,7 @@ export async function updateTaskStatus(
     | "COMPLETED"
     | "CANCELLED",
 ) {
-  const session =
-    await requireUser();
+  const session = await requireUser();
 
   const validated =
     updateTaskStatusSchema.parse({
@@ -2129,8 +2169,7 @@ export async function updateTaskStatus(
     await getAccessibleTask(
       validated.taskId,
       session.user.id,
-      session.user.role ===
-        "ADMIN",
+      session.user.role === "ADMIN",
     );
 
   if (!task) {
@@ -2139,34 +2178,45 @@ export async function updateTaskStatus(
     );
   }
 
-  /*
-   * وضعیت parent برای recurring task
-   * نباید نماینده completion روزانه باشد.
-   */
   if (task.isRecurring) {
     throw new Error(
       "RECURRING_TASK_STATUS_USE_OCCURRENCE",
     );
   }
 
+  // تکمیل تسک مرحله‌ای فقط از طریق تأیید آخرین مرحله ممکن است.
+  if (task.stages.length > 0) {
+    if (task.status === "COMPLETED") {
+      throw new Error(
+        "STAGED_TASK_ALREADY_COMPLETED",
+      );
+    }
+
+    if (
+      session.user.role !== "ADMIN" ||
+      validated.status !== "CANCELLED"
+    ) {
+      throw new Error(
+        validated.status === "COMPLETED"
+          ? "STAGED_TASK_COMPLETE_THROUGH_STAGES"
+          : "STAGED_TASK_STATUS_MANAGED_BY_STAGES",
+      );
+    }
+  }
+
   const completedAt =
-    validated.status ===
-    "COMPLETED"
-      ? task.completedAt ??
-        new Date()
+    validated.status === "COMPLETED"
+      ? task.completedAt ?? new Date()
       : null;
 
   const updatedTask =
     await prisma.task.update({
       where: {
-        id:
-          validated.taskId,
+        id: validated.taskId,
       },
 
       data: {
-        status:
-          validated.status,
-
+        status: validated.status,
         completedAt,
       },
 
@@ -2181,61 +2231,37 @@ export async function updateTaskStatus(
 
   await prisma.activityLog.create({
     data: {
-      userId:
-        session.user.id,
+      userId: session.user.id,
 
       action:
-        validated.status ===
-        "COMPLETED"
+        validated.status === "COMPLETED"
           ? "TASK_COMPLETED"
           : "TASK_STATUS_CHANGED",
 
-      entityType:
-        "TASK",
-
-      entityId:
-        validated.taskId,
+      entityType: "TASK",
+      entityId: validated.taskId,
 
       metadata: {
-        oldStatus:
-          task.status,
-
-        newStatus:
-          validated.status,
+        oldStatus: task.status,
+        newStatus: validated.status,
       },
     },
   });
 
-  if (
-    validated.status ===
-    "COMPLETED"
-  ) {
-    if (
-      session.user.role ===
-      "ADMIN"
-    ) {
+  if (validated.status === "COMPLETED") {
+    if (session.user.role === "ADMIN") {
       await Promise.all(
         task.assignees.map(
-          async ({
-            user,
-          }) => {
-            if (
-              user.id ===
-              session.user.id
-            ) {
+          async ({ user }) => {
+            if (user.id === session.user.id) {
               return;
             }
 
             try {
               await notifyTaskCompleted({
-                userId:
-                  user.id,
-
-                taskId:
-                  task.id,
-
-                taskTitle:
-                  task.title,
+                userId: user.id,
+                taskId: task.id,
+                taskTitle: task.title,
               });
             } catch (error) {
               console.error(
@@ -2247,19 +2273,13 @@ export async function updateTaskStatus(
         ),
       );
     } else if (
-      task.createdById !==
-      session.user.id
+      task.createdById !== session.user.id
     ) {
       try {
         await notifyTaskCompleted({
-          userId:
-            task.createdById,
-
-          taskId:
-            task.id,
-
-          taskTitle:
-            task.title,
+          userId: task.createdById,
+          taskId: task.id,
+          taskTitle: task.title,
         });
       } catch (error) {
         console.error(
@@ -2269,36 +2289,22 @@ export async function updateTaskStatus(
       }
     }
   } else if (
-    session.user.role ===
-      "ADMIN" &&
-    validated.status !==
-      task.status
+    session.user.role === "ADMIN" &&
+    validated.status !== task.status
   ) {
     await Promise.all(
       task.assignees.map(
-        async ({
-          user,
-        }) => {
-          if (
-            user.id ===
-            session.user.id
-          ) {
+        async ({ user }) => {
+          if (user.id === session.user.id) {
             return;
           }
 
           try {
             await notifyTaskStatusChanged({
-              userId:
-                user.id,
-
-              taskId:
-                task.id,
-
-              taskTitle:
-                task.title,
-
-              newStatus:
-                validated.status,
+              userId: user.id,
+              taskId: task.id,
+              taskTitle: task.title,
+              newStatus: validated.status,
             });
           } catch (error) {
             console.error(
@@ -2315,6 +2321,369 @@ export async function updateTaskStatus(
 }
 
 /* -------------------------------------------------------------------------- */
+/* Complete task stage                                                        */
+/* -------------------------------------------------------------------------- */
+
+export async function completeTaskStage(
+  stageId: string,
+) {
+  const session = await requireUser();
+
+  if (!stageId.trim()) {
+    throw new Error(
+      "TASK_STAGE_NOT_FOUND",
+    );
+  }
+
+  const stage =
+    await prisma.taskStage.findUnique({
+      where: {
+        id: stageId,
+      },
+
+      select: {
+        id: true,
+        taskId: true,
+        title: true,
+        position: true,
+        status: true,
+        assigneeId: true,
+
+        task: {
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            isRecurring: true,
+            createdById: true,
+          },
+        },
+      },
+    });
+
+  if (!stage) {
+    throw new Error(
+      "TASK_STAGE_NOT_FOUND",
+    );
+  }
+
+  // فقط مسئول همین مرحله مجاز به تأیید آن است.
+  if (stage.assigneeId !== session.user.id) {
+    throw new Error(
+      "TASK_STAGE_FORBIDDEN",
+    );
+  }
+
+  if (stage.task.isRecurring) {
+    throw new Error(
+      "STAGED_TASK_CANNOT_BE_RECURRING",
+    );
+  }
+
+  if (stage.status === "LOCKED") {
+    throw new Error(
+      "TASK_STAGE_LOCKED",
+    );
+  }
+
+  if (stage.status === "COMPLETED") {
+    throw new Error(
+      "TASK_STAGE_ALREADY_COMPLETED",
+    );
+  }
+
+  if (stage.task.status !== "IN_PROGRESS") {
+    throw new Error(
+      "STAGED_TASK_STATUS_MANAGED_BY_STAGES",
+    );
+  }
+
+  const now = new Date();
+
+  /*
+   * ابتدا ردیف تسک اصلی در تراکنش قفل منطقی می‌شود.
+   * سپس وضعیت مرحله دوباره از دیتابیس بررسی می‌شود.
+   * بنابراین دو درخواست هم‌زمان نمی‌توانند یک مرحله را دوبار جلو ببرند.
+   */
+  const transition =
+    await prisma.$transaction(async (tx) => {
+      const lockedTask =
+        await tx.task.updateMany({
+          where: {
+            id: stage.taskId,
+            status: "IN_PROGRESS",
+            isRecurring: false,
+          },
+
+          data: {
+            updatedAt: now,
+          },
+        });
+
+      if (lockedTask.count !== 1) {
+        throw new Error(
+          "STAGED_TASK_STATUS_MANAGED_BY_STAGES",
+        );
+      }
+
+      const currentStage =
+        await tx.taskStage.findUnique({
+          where: {
+            id: stage.id,
+          },
+
+          select: {
+            id: true,
+            taskId: true,
+            title: true,
+            position: true,
+            status: true,
+            assigneeId: true,
+          },
+        });
+
+      if (!currentStage) {
+        throw new Error(
+          "TASK_STAGE_NOT_FOUND",
+        );
+      }
+
+      if (
+        currentStage.assigneeId !==
+        session.user.id
+      ) {
+        throw new Error(
+          "TASK_STAGE_FORBIDDEN",
+        );
+      }
+
+      if (currentStage.status === "LOCKED") {
+        throw new Error(
+          "TASK_STAGE_LOCKED",
+        );
+      }
+
+      if (currentStage.status === "COMPLETED") {
+        throw new Error(
+          "TASK_STAGE_ALREADY_COMPLETED",
+        );
+      }
+
+      if (currentStage.status !== "IN_PROGRESS") {
+        throw new Error(
+          "TASK_STAGE_NOT_ACTIVE",
+        );
+      }
+
+      const unfinishedPreviousStages =
+        await tx.taskStage.count({
+          where: {
+            taskId: currentStage.taskId,
+
+            position: {
+              lt: currentStage.position,
+            },
+
+            status: {
+              not: "COMPLETED",
+            },
+          },
+        });
+
+      if (unfinishedPreviousStages > 0) {
+        throw new Error(
+          "TASK_STAGE_LOCKED",
+        );
+      }
+
+      const completed =
+        await tx.taskStage.updateMany({
+          where: {
+            id: currentStage.id,
+            status: "IN_PROGRESS",
+            assigneeId: session.user.id,
+          },
+
+          data: {
+            status: "COMPLETED",
+            completedAt: now,
+            completedById: session.user.id,
+          },
+        });
+
+      if (completed.count !== 1) {
+        throw new Error(
+          "TASK_STAGE_NOT_ACTIVE",
+        );
+      }
+
+      const nextStage =
+        await tx.taskStage.findFirst({
+          where: {
+            taskId: currentStage.taskId,
+
+            position: {
+              gt: currentStage.position,
+            },
+          },
+
+          orderBy: {
+            position: "asc",
+          },
+
+          select: {
+            id: true,
+            title: true,
+            position: true,
+            status: true,
+            assigneeId: true,
+          },
+        });
+
+      if (nextStage) {
+        if (nextStage.status !== "LOCKED") {
+          throw new Error(
+            "TASK_STAGE_SEQUENCE_INVALID",
+          );
+        }
+
+        const activated =
+          await tx.taskStage.updateMany({
+            where: {
+              id: nextStage.id,
+              status: "LOCKED",
+            },
+
+            data: {
+              status: "IN_PROGRESS",
+              activatedAt: now,
+            },
+          });
+
+        if (activated.count !== 1) {
+          throw new Error(
+            "TASK_STAGE_NEXT_ALREADY_ACTIVE",
+          );
+        }
+
+        return {
+          nextStage,
+          taskCompleted: false,
+        };
+      }
+
+      const unfinishedStages =
+        await tx.taskStage.count({
+          where: {
+            taskId: currentStage.taskId,
+
+            status: {
+              not: "COMPLETED",
+            },
+          },
+        });
+
+      if (unfinishedStages !== 0) {
+        throw new Error(
+          "TASK_STAGE_SEQUENCE_INVALID",
+        );
+      }
+
+      const completedTask =
+        await tx.task.updateMany({
+          where: {
+            id: currentStage.taskId,
+            status: "IN_PROGRESS",
+          },
+
+          data: {
+            status: "COMPLETED",
+            completedAt: now,
+          },
+        });
+
+      if (completedTask.count !== 1) {
+        throw new Error(
+          "STAGED_TASK_STATUS_MANAGED_BY_STAGES",
+        );
+      }
+
+      return {
+        nextStage: null,
+        taskCompleted: true,
+      };
+    });
+
+  await prisma.activityLog.create({
+    data: {
+      userId: session.user.id,
+
+      action: transition.taskCompleted
+        ? "TASK_COMPLETED"
+        : "TASK_STATUS_CHANGED",
+
+      entityType: "TASK",
+      entityId: stage.taskId,
+
+      metadata: {
+        stageId: stage.id,
+        stageTitle: stage.title,
+        stagePosition: stage.position,
+        stageStatus: "COMPLETED",
+        nextStageId:
+          transition.nextStage?.id ?? null,
+        taskCompleted: transition.taskCompleted,
+      },
+    },
+  });
+
+  if (transition.nextStage) {
+    try {
+      await createNotification({
+        userId: transition.nextStage.assigneeId,
+        type: "TASK_ASSIGNED",
+        title: "مرحله جدید فعال شد",
+
+        message:
+          `مرحله «${transition.nextStage.title}» از تسک «${stage.task.title}» اکنون فعال است.`,
+
+        entityType: "TASK",
+        entityId: stage.taskId,
+      });
+    } catch (error) {
+      console.error(
+        "Failed to notify the next task stage assignee:",
+        error,
+      );
+    }
+  } else if (
+    stage.task.createdById !== session.user.id
+  ) {
+    try {
+      await notifyTaskCompleted({
+        userId: stage.task.createdById,
+        taskId: stage.taskId,
+        taskTitle: stage.task.title,
+      });
+    } catch (error) {
+      console.error(
+        "Failed to notify task creator about completion:",
+        error,
+      );
+    }
+  }
+
+  return {
+    success: true,
+    taskId: stage.taskId,
+    stageId: stage.id,
+    nextStageId:
+      transition.nextStage?.id ?? null,
+    taskCompleted: transition.taskCompleted,
+  };
+}
+
+/* -------------------------------------------------------------------------- */
 /* Recurring occurrence                                                       */
 /* -------------------------------------------------------------------------- */
 
@@ -2322,15 +2691,13 @@ export async function getTaskOccurrence(
   taskId: string,
   occurrenceDate: Date,
 ) {
-  const session =
-    await requireUser();
+  const session = await requireUser();
 
   const task =
     await getAccessibleTask(
       taskId,
       session.user.id,
-      session.user.role ===
-        "ADMIN",
+      session.user.role === "ADMIN",
     );
 
   if (!task) {
@@ -2344,38 +2711,31 @@ export async function getTaskOccurrence(
   }
 
   const normalizedDate =
-    toDateOnly(
-      occurrenceDate,
-    );
+    toDateOnly(occurrenceDate);
 
   const existingOccurrence =
-    await prisma.taskOccurrence.findUnique(
-      {
-        where: {
-          taskId_occurrenceDate: {
-            taskId:
-              task.id,
-
-            occurrenceDate:
-              normalizedDate,
-          },
+    await prisma.taskOccurrence.findUnique({
+      where: {
+        taskId_occurrenceDate: {
+          taskId: task.id,
+          occurrenceDate: normalizedDate,
         },
+      },
 
-        select: {
-          id: true,
-          occurrenceDate: true,
-          completed: true,
-          completedAt: true,
+      select: {
+        id: true,
+        occurrenceDate: true,
+        completed: true,
+        completedAt: true,
 
-          completedBy: {
-            select: {
-              id: true,
-              name: true,
-            },
+        completedBy: {
+          select: {
+            id: true,
+            name: true,
           },
         },
       },
-    );
+    });
 
   if (existingOccurrence) {
     return existingOccurrence;
@@ -2391,15 +2751,13 @@ export async function getTaskOccurrenceHistory(
   taskId: string,
   limit = 90,
 ) {
-  const session =
-    await requireUser();
+  const session = await requireUser();
 
   const task =
     await getAccessibleTask(
       taskId,
       session.user.id,
-      session.user.role ===
-        "ADMIN",
+      session.user.role === "ADMIN",
     );
 
   if (!task) {
@@ -2421,34 +2779,31 @@ export async function getTaskOccurrenceHistory(
       365,
     );
 
-  return prisma.taskOccurrence.findMany(
-    {
-      where: {
-        taskId,
-      },
+  return prisma.taskOccurrence.findMany({
+    where: {
+      taskId,
+    },
 
-      orderBy: {
-        occurrenceDate:
-          "desc",
-      },
+    orderBy: {
+      occurrenceDate: "desc",
+    },
 
-      take: safeLimit,
+    take: safeLimit,
 
-      select: {
-        id: true,
-        occurrenceDate: true,
-        completed: true,
-        completedAt: true,
+    select: {
+      id: true,
+      occurrenceDate: true,
+      completed: true,
+      completedAt: true,
 
-        completedBy: {
-          select: {
-            id: true,
-            name: true,
-          },
+      completedBy: {
+        select: {
+          id: true,
+          name: true,
         },
       },
     },
-  );
+  });
 }
 
 export async function setTaskOccurrenceStatus(
@@ -2456,24 +2811,20 @@ export async function setTaskOccurrenceStatus(
   occurrenceDate: Date,
   completed: boolean,
 ) {
-  const session =
-    await requireUser();
+  const session = await requireUser();
 
   const validated =
-    setTaskOccurrenceStatusSchema.parse(
-      {
-        taskId,
-        occurrenceDate,
-        completed,
-      },
-    );
+    setTaskOccurrenceStatusSchema.parse({
+      taskId,
+      occurrenceDate,
+      completed,
+    });
 
   const task =
     await getAccessibleTask(
       validated.taskId,
       session.user.id,
-      session.user.role ===
-        "ADMIN",
+      session.user.role === "ADMIN",
     );
 
   if (!task) {
@@ -2489,40 +2840,25 @@ export async function setTaskOccurrenceStatus(
   }
 
   const normalizedDate =
-    toDateOnly(
-      validated.occurrenceDate,
-    );
+    toDateOnly(validated.occurrenceDate);
 
-  const today =
-    getTodayDateOnly();
+  const today = getTodayDateOnly();
 
   /*
-   * Employee فقط اجازه دارد
-   * occurrence همان روز را تکمیل کند.
-   *
-   * Admin می‌تواند تاریخ‌های دیگر را
-   * برای مدیریت/اصلاح تاریخچه تغییر دهد.
+   * کارمند فقط می‌تواند Occurrence امروز را تغییر دهد.
+   * مدیر امکان مدیریت Occurrenceهای تاریخ‌های دیگر را دارد.
    */
   if (
-    session.user.role !==
-      "ADMIN" &&
-    !isSameDate(
-      normalizedDate,
-      today,
-    )
+    session.user.role !== "ADMIN" &&
+    !isSameDate(normalizedDate, today)
   ) {
     throw new Error(
       "OCCURRENCE_DATE_NOT_ALLOWED",
     );
   }
 
-  /*
-   * Task غیرفعال دیگر occurrence جدید تولید نمی‌کند.
-   * Admin همچنان امکان مدیریت occurrenceهای قبلی را دارد.
-   */
   if (
-    session.user.role !==
-      "ADMIN" &&
+    session.user.role !== "ADMIN" &&
     !task.recurrenceActive
   ) {
     throw new Error(
@@ -2530,29 +2866,15 @@ export async function setTaskOccurrenceStatus(
     );
   }
 
-  const recurrence: RecurrenceConfig =
-    {
-      isRecurring:
-        task.isRecurring,
-
-      recurrenceType:
-        task.recurrenceType,
-
-      recurrenceStartDate:
-        task.recurrenceStartDate,
-
-      recurrenceEndDate:
-        task.recurrenceEndDate,
-
-      recurrenceWeekdays:
-        task.recurrenceWeekdays,
-
-      recurrenceDayOfMonth:
-        task.recurrenceDayOfMonth,
-
-      recurrenceActive:
-        task.recurrenceActive,
-    };
+  const recurrence: RecurrenceConfig = {
+    isRecurring: task.isRecurring,
+    recurrenceType: task.recurrenceType,
+    recurrenceStartDate: task.recurrenceStartDate,
+    recurrenceEndDate: task.recurrenceEndDate,
+    recurrenceWeekdays: task.recurrenceWeekdays,
+    recurrenceDayOfMonth: task.recurrenceDayOfMonth,
+    recurrenceActive: task.recurrenceActive,
+  };
 
   const scheduled =
     isTaskScheduledForDate(
@@ -2561,31 +2883,22 @@ export async function setTaskOccurrenceStatus(
     );
 
   const existingOccurrence =
-    await prisma.taskOccurrence.findUnique(
-      {
-        where: {
-          taskId_occurrenceDate: {
-            taskId:
-              task.id,
-
-            occurrenceDate:
-              normalizedDate,
-          },
+    await prisma.taskOccurrence.findUnique({
+      where: {
+        taskId_occurrenceDate: {
+          taskId: task.id,
+          occurrenceDate: normalizedDate,
         },
       },
-    );
+    });
 
-  if (
-    !scheduled &&
-    !existingOccurrence
-  ) {
+  if (!scheduled && !existingOccurrence) {
     throw new Error(
       "OCCURRENCE_NOT_SCHEDULED",
     );
   }
 
-  let occurrence =
-    existingOccurrence;
+  let occurrence = existingOccurrence;
 
   if (!occurrence) {
     occurrence =
@@ -2601,117 +2914,78 @@ export async function setTaskOccurrenceStatus(
     );
   }
 
-  const now =
-    new Date();
+  const now = new Date();
 
   const updatedOccurrence =
-    await prisma.taskOccurrence.update(
-      {
-        where: {
-          id:
-            occurrence.id,
-        },
+    await prisma.taskOccurrence.update({
+      where: {
+        id: occurrence.id,
+      },
 
-        data: {
-          completed:
-            validated.completed,
+      data: {
+        completed: validated.completed,
 
-          completedAt:
-            validated.completed
-              ? occurrence.completedAt ??
-                now
-              : null,
+        completedAt:
+          validated.completed
+            ? occurrence.completedAt ?? now
+            : null,
 
-          completedById:
-            validated.completed
-              ? session.user.id
-              : null,
-        },
+        completedById:
+          validated.completed
+            ? session.user.id
+            : null,
+      },
 
-        select: {
-          id: true,
-          taskId: true,
-          occurrenceDate: true,
-          completed: true,
-          completedAt: true,
+      select: {
+        id: true,
+        taskId: true,
+        occurrenceDate: true,
+        completed: true,
+        completedAt: true,
 
-          completedBy: {
-            select: {
-              id: true,
-              name: true,
-            },
+        completedBy: {
+          select: {
+            id: true,
+            name: true,
           },
         },
       },
-    );
+    });
 
   await prisma.activityLog.create({
     data: {
-      userId:
-        session.user.id,
+      userId: session.user.id,
 
-      action:
-        validated.completed
-          ? "TASK_COMPLETED"
-          : "TASK_STATUS_CHANGED",
+      action: validated.completed
+        ? "TASK_COMPLETED"
+        : "TASK_STATUS_CHANGED",
 
-      entityType:
-        "TASK",
-
-      entityId:
-        task.id,
+      entityType: "TASK",
+      entityId: task.id,
 
       metadata: {
-        recurring:
-          true,
-
-        occurrenceId:
-          occurrence.id,
-
-        occurrenceDate:
-          getDateKey(
-            normalizedDate,
-          ),
-
-        completed:
-          validated.completed,
+        recurring: true,
+        occurrenceId: occurrence.id,
+        occurrenceDate: getDateKey(normalizedDate),
+        completed: validated.completed,
       },
     },
   });
 
-  /*
-   * هنگام تکمیل occurrence،
-   * به صاحب Task اطلاع داده می‌شود.
-   */
-  if (
-    validated.completed
-  ) {
-    if (
-      session.user.role ===
-      "ADMIN"
-    ) {
+  if (validated.completed) {
+    if (session.user.role === "ADMIN") {
       await Promise.all(
         task.assignees.map(
-          async ({
-            user,
-          }) => {
-            if (
-              user.id ===
-              session.user.id
-            ) {
+          async ({ user }) => {
+            if (user.id === session.user.id) {
               return;
             }
 
             try {
               await notifyTaskCompleted({
-                userId:
-                  user.id,
-
-                taskId:
-                  task.id,
-
-                taskTitle:
-                  task.title,
+                userId: user.id,
+                taskId: task.id,
+                taskTitle: task.title,
               });
             } catch (error) {
               console.error(
@@ -2723,19 +2997,13 @@ export async function setTaskOccurrenceStatus(
         ),
       );
     } else if (
-      task.createdById !==
-      session.user.id
+      task.createdById !== session.user.id
     ) {
       try {
         await notifyTaskCompleted({
-          userId:
-            task.createdById,
-
-          taskId:
-            task.id,
-
-          taskTitle:
-            task.title,
+          userId: task.createdById,
+          taskId: task.id,
+          taskTitle: task.title,
         });
       } catch (error) {
         console.error(
@@ -2756,8 +3024,7 @@ export async function setTaskOccurrenceStatus(
 export async function deleteTask(
   taskId: string,
 ) {
-  const session =
-    await requireAdmin();
+  const session = await requireAdmin();
 
   const task =
     await prisma.task.findUnique({
@@ -2779,8 +3046,8 @@ export async function deleteTask(
 
   /*
    * به دلیل onDelete: Cascade،
-   * occurrenceها، commentها، attachmentها
-   * و assigneeهای Task نیز حذف می‌شوند.
+   * مراحل، Occurrenceها، کامنت‌ها، فایل‌ها و مسئولان
+   * مرتبط با تسک نیز حذف می‌شوند.
    */
   await prisma.task.delete({
     where: {
@@ -2790,21 +3057,13 @@ export async function deleteTask(
 
   await prisma.activityLog.create({
     data: {
-      userId:
-        session.user.id,
-
-      action:
-        "TASK_DELETED",
-
-      entityType:
-        "TASK",
-
-      entityId:
-        taskId,
+      userId: session.user.id,
+      action: "TASK_DELETED",
+      entityType: "TASK",
+      entityId: taskId,
 
       metadata: {
-        title:
-          task.title,
+        title: task.title,
       },
     },
   });
@@ -2829,18 +3088,19 @@ export function isTaskOverdue(
 ) {
   return (
     deadline < now &&
-    status !==
-      "COMPLETED" &&
-    status !==
-      "CANCELLED"
+    status !== "COMPLETED" &&
+    status !== "CANCELLED"
   );
 }
+
+/* -------------------------------------------------------------------------- */
+/* Admin recurring tasks                                                      */
+/* -------------------------------------------------------------------------- */
 
 export async function getAdminRecurringTasksToday() {
   await requireAdmin();
 
-  const now =
-    new Date();
+  const now = new Date();
 
   const today =
     new Date(
@@ -2856,16 +3116,18 @@ export async function getAdminRecurringTasksToday() {
       where: {
         isRecurring: true,
         recurrenceActive: true,
+
         recurrenceType: {
           not: "NONE",
         },
+
         recurrenceStartDate: {
           lte: today,
         },
+
         OR: [
           {
-            recurrenceEndDate:
-              null,
+            recurrenceEndDate: null,
           },
           {
             recurrenceEndDate: {
@@ -2906,6 +3168,7 @@ export async function getAdminRecurringTasksToday() {
           orderBy: {
             assignedAt: "asc",
           },
+
           select: {
             assignedAt: true,
 
@@ -2921,16 +3184,18 @@ export async function getAdminRecurringTasksToday() {
 
         occurrences: {
           where: {
-            occurrenceDate:
-              today,
+            occurrenceDate: today,
           },
+
           take: 1,
+
           select: {
             id: true,
             occurrenceDate: true,
             completed: true,
             completedAt: true,
             completedById: true,
+
             completedBy: {
               select: {
                 id: true,
@@ -2951,122 +3216,81 @@ export async function getAdminRecurringTasksToday() {
     today.getUTCDate();
 
   const scheduledRows =
-    rows.filter(
-      (task) => {
-        if (
-          task.recurrenceType ===
-          "DAILY"
-        ) {
-          return true;
-        }
+    rows.filter((task) => {
+      if (task.recurrenceType === "DAILY") {
+        return true;
+      }
 
-        if (
-          task.recurrenceType ===
-          "WEEKLY"
-        ) {
-          return task.recurrenceWeekdays.includes(
-            isoWeekday,
-          );
-        }
+      if (task.recurrenceType === "WEEKLY") {
+        return task.recurrenceWeekdays.includes(
+          isoWeekday,
+        );
+      }
 
-        if (
-          task.recurrenceType ===
-          "MONTHLY"
-        ) {
-          return (
-            task.recurrenceDayOfMonth ===
-            dayOfMonth
-          );
-        }
+      if (task.recurrenceType === "MONTHLY") {
+        return (
+          task.recurrenceDayOfMonth ===
+          dayOfMonth
+        );
+      }
 
-        return false;
-      },
-    );
+      return false;
+    });
 
-  const result =
-    await Promise.all(
-      scheduledRows.map(
-        async (task) => {
-          const existingOccurrence =
-            task.occurrences[0] ??
-            null;
+  return Promise.all(
+    scheduledRows.map(async (task) => {
+      const existingOccurrence =
+        task.occurrences[0] ?? null;
 
-          const todayOccurrence =
-            existingOccurrence ??
-            (await prisma.taskOccurrence.upsert(
-              {
-                where: {
-                  taskId_occurrenceDate:
-                    {
-                      taskId:
-                        task.id,
-                      occurrenceDate:
-                        today,
-                    },
-                },
+      const todayOccurrence =
+        existingOccurrence ??
+        (await prisma.taskOccurrence.upsert({
+          where: {
+            taskId_occurrenceDate: {
+              taskId: task.id,
+              occurrenceDate: today,
+            },
+          },
 
-                create: {
-                  taskId:
-                    task.id,
-                  occurrenceDate:
-                    today,
-                },
+          create: {
+            taskId: task.id,
+            occurrenceDate: today,
+          },
 
-                update: {},
+          update: {},
 
-                select: {
-                  id: true,
-                  occurrenceDate:
-                    true,
-                  completed: true,
-                  completedAt:
-                    true,
-                  completedById:
-                    true,
+          select: {
+            id: true,
+            occurrenceDate: true,
+            completed: true,
+            completedAt: true,
+            completedById: true,
 
-                  completedBy: {
-                    select: {
-                      id: true,
-                      name: true,
-                    },
-                  },
-                },
+            completedBy: {
+              select: {
+                id: true,
+                name: true,
               },
-            ));
+            },
+          },
+        }));
 
-          return {
-            id: task.id,
-            title: task.title,
+      return {
+        id: task.id,
+        title: task.title,
 
-            recurrenceType:
-              task.recurrenceType,
+        recurrenceType: task.recurrenceType,
+        recurrenceStartDate: task.recurrenceStartDate,
+        recurrenceEndDate: task.recurrenceEndDate,
+        recurrenceWeekdays: task.recurrenceWeekdays,
+        recurrenceDayOfMonth: task.recurrenceDayOfMonth,
 
-            recurrenceStartDate:
-              task.recurrenceStartDate,
+        project: task.project,
+        subProject: task.subProject,
+        assignees: task.assignees,
 
-            recurrenceEndDate:
-              task.recurrenceEndDate,
-
-            recurrenceWeekdays:
-              task.recurrenceWeekdays,
-
-            recurrenceDayOfMonth:
-              task.recurrenceDayOfMonth,
-
-            project:
-              task.project,
-
-            subProject:
-              task.subProject,
-
-            assignees:
-              task.assignees,
-
-            todayOccurrence,
-          };
-        },
-      ),
-    );
-
-  return result;
+        todayOccurrence,
+      };
+    }),
+  );
 }

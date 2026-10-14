@@ -52,6 +52,33 @@ const assigneeIdsSchema = z
     "مسئول‌های Task نمی‌توانند تکراری باشند.",
   );
 
+const createAssigneeIdsSchema = z
+  .array(idSchema)
+  .refine(
+    (ids) => new Set(ids).size === ids.length,
+    "مسئول‌های Task نمی‌توانند تکراری باشند.",
+  );
+
+export const taskStageSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(2, "عنوان مرحله باید حداقل ۲ کاراکتر باشد.")
+    .max(255, "عنوان مرحله بیش از حد طولانی است."),
+
+  description: z
+    .string()
+    .trim()
+    .max(5000, "توضیحات مرحله بیش از حد طولانی است.")
+    .optional(),
+
+  assigneeId: idSchema,
+});
+
+export type TaskStageInput = z.infer<
+  typeof taskStageSchema
+>;
+
 export const createTaskSchema = z
   .object({
     projectId: idSchema,
@@ -79,7 +106,11 @@ export const createTaskSchema = z
       )
       .optional(),
 
-    assigneeIds: assigneeIdsSchema,
+    assigneeIds: createAssigneeIdsSchema,
+
+    stages: z
+      .array(taskStageSchema)
+      .optional(),
 
     priority: taskPrioritySchema.default(
       "MEDIUM",
@@ -128,6 +159,37 @@ export const createTaskSchema = z
       .default(true),
   })
   .superRefine((data, ctx) => {
+    const stageCount = data.stages?.length ?? 0;
+
+    const hasStages = stageCount > 0;
+
+    if (hasStages && stageCount < 2) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["stages"],
+        message:
+          "Task چندمرحله‌ای باید حداقل دو مرحله داشته باشد.",
+      });
+    }
+
+    if (!hasStages && data.assigneeIds.length === 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["assigneeIds"],
+        message:
+          "برای Task معمولی حداقل یک مسئول انتخاب کنید.",
+      });
+    }
+
+    if (hasStages && data.isRecurring) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["isRecurring"],
+        message:
+          "Task چندمرحله‌ای نمی‌تواند تکرارشونده باشد.",
+      });
+    }
+
     if (!data.isRecurring) {
       if (data.recurrenceType !== "NONE") {
         ctx.addIssue({
@@ -183,9 +245,7 @@ export const createTaskSchema = z
     }
 
     if (data.recurrenceType === "WEEKLY") {
-      if (
-        data.recurrenceWeekdays.length === 0
-      ) {
+      if (data.recurrenceWeekdays.length === 0) {
         ctx.addIssue({
           code: "custom",
           path: ["recurrenceWeekdays"],
@@ -197,10 +257,8 @@ export const createTaskSchema = z
 
     if (data.recurrenceType === "MONTHLY") {
       if (
-        data.recurrenceDayOfMonth ===
-          null ||
-        data.recurrenceDayOfMonth ===
-          undefined
+        data.recurrenceDayOfMonth === null ||
+        data.recurrenceDayOfMonth === undefined
       ) {
         ctx.addIssue({
           code: "custom",

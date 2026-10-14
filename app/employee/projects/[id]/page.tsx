@@ -487,79 +487,156 @@ export default async function EmployeeProjectDetailPage({
             </div>
           ) : (
             <div className="divide-y divide-white/35">
-              {sortedTasks.map(
-                (task) => {
-                  const overdue =
-                    isOverdue(
-                      task.deadline,
-                      task.status,
-                    );
+{sortedTasks.map((task) => {
+  const overdue = isOverdue(task.deadline, task.status);
+  const stages = "stages" in task ? task.stages : [];
+  const isStaged = stages.length > 0;
 
-                  return (
-                    <Link
-                      key={task.id}
-                      href={`/employee/tasks/${task.id}`}
-                      className="group block p-5 transition hover:bg-white/25 sm:p-6"
-                    >
-                      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="break-words font-bold text-slate-800 transition group-hover:text-slate-950">
-                              {task.title}
-                            </h3>
+  const completedStages = stages.filter(
+    (stage) => stage.status === "COMPLETED",
+  ).length;
 
-                            {overdue ? (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-red-200/55 bg-red-50/65 px-2.5 py-1 text-[11px] font-bold text-red-700">
-                                <AlertTriangle className="size-3" />
-                                عقب‌افتاده
-                              </span>
-                            ) : null}
-                          </div>
+  const activeStage = stages.find(
+    (stage) => stage.status === "IN_PROGRESS",
+  );
 
-                          <div className="mt-3 flex flex-wrap items-center gap-2">
-                            <span
-                              className={`rounded-full border px-3 py-1 text-xs font-bold ${getStatusClass(
-                                task.status,
-                              )}`}
-                            >
-                              {STATUS_LABELS[
-                                task.status
-                              ]}
-                            </span>
+  const stageProgress = isStaged
+    ? Math.round((completedStages / stages.length) * 100)
+    : 0;
 
-                            <span
-                              className={`rounded-full border px-3 py-1 text-xs font-bold ${getPriorityClass(
-                                task.priority,
-                              )}`}
-                            >
-                              اولویت{" "}
-                              {PRIORITY_LABELS[
-                                task.priority
-                              ]}
-                            </span>
-                          </div>
-                        </div>
+  return (
+    <Link
+      key={task.id}
+      href={`/employee/tasks/${task.id}`}
+      className="group block p-5 transition hover:bg-white/25 sm:p-6"
+    >
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="break-words font-bold text-slate-800 transition group-hover:text-slate-950">
+              {task.title}
+            </h3>
 
-                        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center lg:shrink-0 lg:justify-end">
-                          <div className="glass-chip inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs text-slate-500">
-                            <CalendarDays className="size-3.5" />
+            {isStaged ? (
+              <span className="inline-flex items-center rounded-full border border-indigo-200/70 bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700">
+                چندمرحله‌ای
+              </span>
+            ) : null}
 
-                            {formatDate(
-                              task.deadline,
-                            )}
-                          </div>
+            {overdue ? (
+              <span className="inline-flex items-center gap-1 rounded-full border border-red-200/55 bg-red-50/65 px-2.5 py-1 text-[11px] font-bold text-red-700">
+                <AlertTriangle className="size-3" />
+                عقب‌افتاده
+              </span>
+            ) : null}
+          </div>
 
-                          <div className="glass-chip inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs text-slate-500">
-                            <Clock3 className="size-3.5" />
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span
+              className={`rounded-full border px-3 py-1 text-xs font-bold ${getStatusClass(
+                task.status,
+              )}`}
+            >
+              {STATUS_LABELS[task.status]}
+            </span>
 
-                            مشاهده Task
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  );
-                },
+            <span
+              className={`rounded-full border px-3 py-1 text-xs font-bold ${getPriorityClass(
+                task.priority,
+              )}`}
+            >
+              اولویت {PRIORITY_LABELS[task.priority]}
+            </span>
+          </div>
+
+          {isStaged ? (
+            <div className="mt-4 max-w-2xl rounded-2xl border border-indigo-100/80 bg-indigo-50/45 p-3.5 sm:p-4">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs font-bold text-indigo-900">
+                  پیشرفت مراحل
+                </span>
+
+                <span className="shrink-0 text-xs font-extrabold text-indigo-800">
+                  {completedStages.toLocaleString("fa-IR")} از{" "}
+                  {stages.length.toLocaleString("fa-IR")}
+                </span>
+              </div>
+
+              <div
+                className="mt-3 h-2 overflow-hidden rounded-full bg-white"
+                role="progressbar"
+                aria-label="درصد پیشرفت مراحل"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={stageProgress}
+              >
+                <div
+                  className="h-full rounded-full bg-indigo-600 transition-all duration-300"
+                  style={{
+                    width: `${stageProgress}%`,
+                  }}
+                />
+              </div>
+
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <span className="text-[11px] font-semibold text-slate-500">
+                  {stageProgress.toLocaleString("fa-IR")}٪ تکمیل شده
+                </span>
+
+                <span className="text-[11px] text-slate-400">
+                  {stages.length.toLocaleString("fa-IR")} مرحله
+                </span>
+              </div>
+
+              {activeStage ? (
+                <div className="mt-3 flex items-start gap-2 border-t border-indigo-100/70 pt-3">
+                  <Clock3 className="mt-0.5 size-4 shrink-0 text-blue-700" />
+
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold text-slate-500">
+                      مرحله فعال
+                    </p>
+
+                    <p className="mt-1 break-words text-sm font-bold text-slate-800">
+                      {activeStage.title}
+                    </p>
+
+                    <p className="mt-1 text-xs text-slate-500">
+                      مسئول:{" "}
+                      {activeStage.assignee.name ||
+                        activeStage.assignee.email}
+                    </p>
+                  </div>
+                </div>
+              ) : task.status === "COMPLETED" ? (
+                <p className="mt-3 flex items-center gap-2 border-t border-indigo-100/70 pt-3 text-xs font-bold text-emerald-700">
+                  <CheckCircle2 className="size-4" />
+                  تمام مراحل تکمیل شده‌اند.
+                </p>
+              ) : (
+                <p className="mt-3 border-t border-indigo-100/70 pt-3 text-xs text-slate-500">
+                  در حال حاضر مرحله فعالی ثبت نشده است.
+                </p>
               )}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center lg:shrink-0 lg:justify-end">
+          <div className="glass-chip inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs text-slate-500">
+            <CalendarDays className="size-3.5" />
+            {formatDate(task.deadline)}
+          </div>
+
+          <div className="glass-chip inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs text-slate-500">
+            <Clock3 className="size-3.5" />
+            مشاهده Task
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+})}
             </div>
           )}
         </section>

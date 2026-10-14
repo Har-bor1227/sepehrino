@@ -2,12 +2,15 @@ import Link from "next/link";
 import {
   AlertTriangle,
   CalendarDays,
+  Check,
   CheckCircle2,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock3,
   ListChecks,
+  ListOrdered,
+  LockKeyhole,
   Plus,
   Repeat2,
   UserRound,
@@ -41,11 +44,9 @@ const SUB_PROJECT_LABELS = {
   VIDEOGRAPHY: "فیلمبرداری",
   TEASER_PRODUCTION: "تیزرسازی",
   CATALOG: "کاتالوگ",
-  BRAND_IDENTITY_DESIGN:
-    "طراحی هویت بصری",
+  BRAND_IDENTITY_DESIGN: "طراحی هویت بصری",
   CRM_MANAGEMENT: "مدیریت CRM",
-  BOOTH_CONSTRUCTION:
-    "غرفه سازی",
+  BOOTH_CONSTRUCTION: "غرفه سازی",
   PROGRAMMING: "برنامه نویسی",
 } as const;
 
@@ -55,14 +56,10 @@ function getStatusClass(
   status: keyof typeof STATUS_LABELS,
 ) {
   const classes = {
-    TODO:
-      "border-slate-200/70 bg-slate-50 text-slate-700",
-    IN_PROGRESS:
-      "border-blue-200/70 bg-blue-50 text-blue-700",
-    COMPLETED:
-      "border-emerald-200/70 bg-emerald-50 text-emerald-700",
-    CANCELLED:
-      "border-red-200/70 bg-red-50 text-red-700",
+    TODO: "border-slate-200/70 bg-slate-50 text-slate-700",
+    IN_PROGRESS: "border-blue-200/70 bg-blue-50 text-blue-700",
+    COMPLETED: "border-emerald-200/70 bg-emerald-50 text-emerald-700",
+    CANCELLED: "border-red-200/70 bg-red-50 text-red-700",
   };
 
   return classes[status];
@@ -72,43 +69,33 @@ function getPriorityClass(
   priority: keyof typeof PRIORITY_LABELS,
 ) {
   const classes = {
-    LOW:
-      "border-slate-200/70 bg-slate-50 text-slate-600",
-    MEDIUM:
-      "border-amber-200/70 bg-amber-50 text-amber-700",
-    HIGH:
-      "border-orange-200/70 bg-orange-50 text-orange-700",
-    URGENT:
-      "border-red-200/70 bg-red-50 text-red-700",
+    LOW: "border-slate-200/70 bg-slate-50 text-slate-600",
+    MEDIUM: "border-amber-200/70 bg-amber-50 text-amber-700",
+    HIGH: "border-orange-200/70 bg-orange-50 text-orange-700",
+    URGENT: "border-red-200/70 bg-red-50 text-red-700",
   };
 
   return classes[priority];
 }
 
 function formatDate(date: Date) {
-  return new Intl.DateTimeFormat(
-    "fa-IR",
-    {
-      calendar: "persian",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    },
-  ).format(date);
+  return new Intl.DateTimeFormat("fa-IR", {
+    calendar: "persian",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(date);
 }
 
 function formatDateTime(date: Date) {
-  return new Intl.DateTimeFormat(
-    "fa-IR",
-    {
-      calendar: "persian",
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    },
-  ).format(date);
+  return new Intl.DateTimeFormat("fa-IR", {
+    calendar: "persian",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }
 
 function isOverdue(
@@ -135,12 +122,7 @@ function StatCard({
   label: string;
   value: number;
   icon: typeof ListChecks;
-  tone:
-    | "slate"
-    | "blue"
-    | "emerald"
-    | "amber"
-    | "red";
+  tone: "slate" | "blue" | "emerald" | "amber" | "red";
 }) {
   const toneClasses = {
     slate: {
@@ -186,9 +168,7 @@ function StatCard({
       <p
         className={`mt-1 text-3xl font-extrabold tracking-tight ${toneClasses[tone].value}`}
       >
-        {value.toLocaleString(
-          "fa-IR",
-        )}
+        {value.toLocaleString("fa-IR")}
       </p>
     </div>
   );
@@ -197,20 +177,30 @@ function StatCard({
 function TaskCard({
   task,
 }: {
-  task: Awaited<
-    ReturnType<
-      typeof getAdminTasks
-    >
-  >[number];
+  task: Awaited<ReturnType<typeof getAdminTasks>>[number];
 }) {
-  const overdue = isOverdue(
-    task.deadline,
-    task.status,
+  const stages = task.stages ?? [];
+  const isStaged = stages.length > 0;
+
+  const completedStageCount = stages.filter(
+    (stage) => stage.status === "COMPLETED",
+  ).length;
+
+  const activeStage = stages.find(
+    (stage) => stage.status === "IN_PROGRESS",
   );
 
+  const progressPercent =
+    stages.length > 0
+      ? Math.round(
+          (completedStageCount / stages.length) * 100,
+        )
+      : 0;
+
+  const overdue = isOverdue(task.deadline, task.status);
+
   const recurringCompleted =
-    task.isRecurring &&
-    task.todayOccurrence?.completed;
+    task.isRecurring && task.todayOccurrence?.completed;
 
   return (
     <article className="group relative flex h-full min-w-0 flex-col overflow-hidden rounded-[1.75rem] border border-white/60 bg-white/52 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_12px_30px_rgba(15,23,42,0.04)] backdrop-blur-xl transition duration-200 hover:-translate-y-0.5 hover:bg-white/65 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_18px_38px_rgba(15,23,42,0.07)] sm:p-5">
@@ -220,6 +210,11 @@ function TaskCard({
             <span className="inline-flex items-center gap-1 rounded-full border border-violet-200/70 bg-violet-50 px-2.5 py-1 text-[10px] font-bold text-violet-700">
               <Repeat2 className="size-3" />
               تکرارشونده
+            </span>
+          ) : isStaged ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200/70 bg-indigo-50 px-2.5 py-1 text-[10px] font-bold text-indigo-700">
+              <ListOrdered className="size-3" />
+              چندمرحله‌ای
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 rounded-full border border-slate-200/70 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-600">
@@ -241,9 +236,7 @@ function TaskCard({
             task.priority,
           )}`}
         >
-          {PRIORITY_LABELS[
-            task.priority
-          ]}
+          {PRIORITY_LABELS[task.priority]}
         </span>
       </div>
 
@@ -264,9 +257,7 @@ function TaskCard({
 
         {task.subProject ? (
           <span className="mt-2 inline-flex max-w-full truncate rounded-full border border-slate-200/70 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-600">
-            {SUB_PROJECT_LABELS[
-              task.subProject.type
-            ]}
+            {SUB_PROJECT_LABELS[task.subProject.type]}
           </span>
         ) : null}
       </div>
@@ -279,53 +270,105 @@ function TaskCard({
         <div className="mt-4 h-[72px]" />
       )}
 
+      {isStaged ? (
+        <div className="mt-4 rounded-2xl border border-indigo-100/80 bg-indigo-50/40 p-3.5">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs font-bold text-indigo-900">
+              پیشرفت مراحل
+            </span>
+
+            <span className="text-xs font-extrabold text-indigo-800">
+              {completedStageCount.toLocaleString("fa-IR")} از{" "}
+              {stages.length.toLocaleString("fa-IR")}
+            </span>
+          </div>
+
+          <div
+            className="mt-3 h-2 overflow-hidden rounded-full bg-white/90"
+            role="progressbar"
+            aria-label="درصد پیشرفت مراحل"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progressPercent}
+          >
+            <div
+              className="h-full rounded-full bg-indigo-600 transition-all"
+              style={{
+                width: `${progressPercent}%`,
+              }}
+            />
+          </div>
+
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <span className="text-[10px] font-semibold text-slate-500">
+              {progressPercent.toLocaleString("fa-IR")}٪ تکمیل شده
+            </span>
+
+            <span className="text-[10px] font-semibold text-slate-400">
+              {stages.length.toLocaleString("fa-IR")} مرحله
+            </span>
+          </div>
+
+          {activeStage ? (
+            <div className="mt-3 flex items-start gap-2 border-t border-indigo-100/70 pt-3">
+              <Clock3 className="mt-0.5 size-4 shrink-0 text-blue-700" />
+
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold text-slate-500">
+                  مرحله فعال
+                </p>
+
+                <p className="mt-1 break-words text-xs font-bold text-slate-800">
+                  {activeStage.title}
+                </p>
+
+                <p className="mt-1 text-[10px] text-slate-500">
+                  مسئول: {activeStage.assignee.name}
+                </p>
+              </div>
+            </div>
+          ) : task.status === "COMPLETED" ? (
+            <p className="mt-3 flex items-center gap-2 border-t border-indigo-100/70 pt-3 text-xs font-bold text-emerald-700">
+              <CheckCircle2 className="size-4" />
+              تمام مراحل تکمیل شده‌اند.
+            </p>
+          ) : (
+            <p className="mt-3 flex items-center gap-2 border-t border-indigo-100/70 pt-3 text-xs text-slate-500">
+              <LockKeyhole className="size-4" />
+              در حال حاضر مرحله فعالی ثبت نشده است.
+            </p>
+          )}
+        </div>
+      ) : null}
+
       <div className="mt-4 grid grid-cols-2 gap-2">
         <div className="min-w-0 rounded-2xl border border-white/55 bg-white/38 p-3">
           <p className="text-[10px] font-medium text-slate-400">
             مسئول‌ها
           </p>
 
-          {task.assignees.length >
-          0 ? (
+          {task.assignees.length > 0 ? (
             <div className="mt-1 space-y-1">
-              {task.assignees
-                .slice(0, 3)
-                .map(
-                  (assignee) => (
-                    <p
-                      key={
-                        assignee.user
-                          .id
-                      }
-                      className="flex items-center gap-1.5 truncate text-xs font-bold text-slate-700"
-                    >
-                      <UserRound className="size-3.5 shrink-0 text-slate-400" />
-                      <span className="truncate">
-                        {
-                          assignee
-                            .user
-                            .name
-                        }
-                      </span>
-                    </p>
-                  ),
-                )}
+              {task.assignees.slice(0, 3).map((assignee) => (
+                <p
+                  key={assignee.user.id}
+                  className="flex items-center gap-1.5 truncate text-xs font-bold text-slate-700"
+                >
+                  <UserRound className="size-3.5 shrink-0 text-slate-400" />
+                  <span className="truncate">{assignee.user.name}</span>
+                </p>
+              ))}
 
-              {task.assignees.length >
-              3 ? (
+              {task.assignees.length > 3 ? (
                 <p className="text-[10px] font-semibold text-slate-400">
-                  +
-                  {(
-                    task
-                      .assignees
-                      .length - 3
-                  ).toLocaleString(
-                    "fa-IR",
-                  )}{" "}
-                  نفر دیگر
+                  +{(task.assignees.length - 3).toLocaleString("fa-IR")} نفر دیگر
                 </p>
               ) : null}
             </div>
+          ) : isStaged ? (
+            <p className="mt-1 text-xs font-bold text-slate-500">
+              مسئولان در مراحل تعیین شده‌اند.
+            </p>
           ) : (
             <p className="mt-1 text-xs font-bold text-slate-400">
               بدون مسئول
@@ -347,10 +390,14 @@ function TaskCard({
               ? recurringCompleted
                 ? "انجام امروز"
                 : "برنامه امروز"
-              : STATUS_LABELS[
-                  task.status
-                ]}
+              : STATUS_LABELS[task.status]}
           </span>
+
+          {isStaged && activeStage ? (
+            <p className="mt-1 truncate text-[10px] font-medium text-blue-700">
+              مرحله: {activeStage.title}
+            </p>
+          ) : null}
         </div>
 
         <div
@@ -366,14 +413,10 @@ function TaskCard({
 
           <p
             className={`mt-1 truncate text-xs font-bold ${
-              overdue
-                ? "text-red-600"
-                : "text-slate-700"
+              overdue ? "text-red-600" : "text-slate-700"
             }`}
           >
-            {formatDate(
-              task.deadline,
-            )}
+            {formatDate(task.deadline)}
           </p>
 
           {overdue ? (
@@ -389,9 +432,7 @@ function TaskCard({
           </p>
 
           <p className="mt-1 truncate text-xs font-bold text-slate-700">
-            {formatDateTime(
-              task.createdAt,
-            )}
+            {formatDateTime(task.createdAt)}
           </p>
         </div>
       </div>
@@ -400,18 +441,12 @@ function TaskCard({
         <div className="flex min-w-0 items-center gap-2 text-[11px] font-medium text-slate-400">
           <span className="inline-flex items-center gap-1">
             <span className="size-1.5 rounded-full bg-slate-300" />
-            {task._count.comments.toLocaleString(
-              "fa-IR",
-            )}{" "}
-            کامنت
+            {task._count.comments.toLocaleString("fa-IR")} کامنت
           </span>
 
           <span className="inline-flex items-center gap-1">
             <span className="size-1.5 rounded-full bg-slate-300" />
-            {task._count.attachments.toLocaleString(
-              "fa-IR",
-            )}{" "}
-            فایل
+            {task._count.attachments.toLocaleString("fa-IR")} فایل
           </span>
         </div>
 
@@ -434,18 +469,18 @@ function EmptyState() {
       </div>
 
       <h3 className="mt-4 font-bold text-slate-800">
-        هنوز Taskی ثبت نشده است
+        هنوز تسکی ثبت نشده است
       </h3>
 
       <p className="mt-2 text-sm leading-6 text-slate-400">
-        اولین Task را از بخش ایجاد Task جدید ثبت کنید.
+        اولین تسک را از بخش ایجاد تسک جدید ثبت کنید.
       </p>
 
       <a
         href="#create-task"
         className="mt-5 inline-flex h-10 items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white transition hover:bg-slate-800"
       >
-        ایجاد Task
+        ایجاد تسک
       </a>
     </div>
   );
@@ -463,26 +498,18 @@ function Pagination({
   }
 
   const pages = Array.from(
-    {
-      length: totalPages,
-    },
+    { length: totalPages },
     (_, index) => index + 1,
   );
 
   return (
     <nav
-      aria-label="صفحه‌بندی Taskها"
+      aria-label="صفحه‌بندی تسک‌ها"
       className="flex flex-col gap-3 border-t border-white/45 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6"
     >
       <p className="text-xs font-semibold text-slate-400">
-        صفحه{" "}
-        {currentPage.toLocaleString(
-          "fa-IR",
-        )}{" "}
-        از{" "}
-        {totalPages.toLocaleString(
-          "fa-IR",
-        )}
+        صفحه {currentPage.toLocaleString("fa-IR")} از{" "}
+        {totalPages.toLocaleString("fa-IR")}
       </p>
 
       <div className="flex items-center gap-2">
@@ -505,26 +532,19 @@ function Pagination({
             <Link
               key={page}
               href={`/admin/tasks?page=${page}`}
-              aria-current={
-                page === currentPage
-                  ? "page"
-                  : undefined
-              }
+              aria-current={page === currentPage ? "page" : undefined}
               className={`inline-flex size-10 items-center justify-center rounded-xl border text-xs font-bold transition ${
                 page === currentPage
                   ? "border-slate-900 bg-slate-900 text-white shadow-[0_8px_18px_rgba(15,23,42,0.12)]"
                   : "border-white/60 bg-white/40 text-slate-600 hover:bg-white/75 hover:text-slate-900"
               }`}
             >
-              {page.toLocaleString(
-                "fa-IR",
-              )}
+              {page.toLocaleString("fa-IR")}
             </Link>
           ))}
         </div>
 
-        {currentPage <
-        totalPages ? (
+        {currentPage < totalPages ? (
           <Link
             href={`/admin/tasks?page=${currentPage + 1}`}
             className="inline-flex size-10 items-center justify-center rounded-xl border border-white/60 bg-white/45 text-slate-600 transition hover:bg-white/75 hover:text-slate-900"
@@ -551,97 +571,56 @@ export default async function AdminTasksPage({
 }) {
   await requireAdmin();
 
-  const [tasks, projects, params] =
-    await Promise.all([
-      getAdminTasks(),
-      getAdminProjects(),
-      searchParams,
-    ]);
+  const [tasks, projects, params] = await Promise.all([
+    getAdminTasks(),
+    getAdminProjects(),
+    searchParams,
+  ]);
 
-  const totalTasks =
-    tasks.length;
+  const totalTasks = tasks.length;
 
-  const completedTasks =
-    tasks.filter(
-      (task) =>
-        task.status ===
-        "COMPLETED",
-    ).length;
+  const completedTasks = tasks.filter(
+    (task) => task.status === "COMPLETED",
+  ).length;
 
-  const inProgressTasks =
-    tasks.filter(
-      (task) =>
-        task.status ===
-        "IN_PROGRESS",
-    ).length;
+  const inProgressTasks = tasks.filter(
+    (task) => task.status === "IN_PROGRESS",
+  ).length;
 
-  const todoTasks =
-    tasks.filter(
-      (task) =>
-        task.status ===
-        "TODO",
-    ).length;
+  const todoTasks = tasks.filter(
+    (task) => task.status === "TODO",
+  ).length;
 
-  const overdueTasks =
-    tasks.filter((task) =>
-      isOverdue(
-        task.deadline,
-        task.status,
-      ),
-    ).length;
+  const overdueTasks = tasks.filter((task) =>
+    isOverdue(task.deadline, task.status),
+  ).length;
 
-  const activeProjects =
-    projects.filter(
-      (project) =>
-        project.status !==
-          "COMPLETED" &&
-        project.status !==
-          "ARCHIVED",
-    );
+  const activeProjects = projects.filter(
+    (project) =>
+      project.status !== "COMPLETED" &&
+      project.status !== "ARCHIVED",
+  );
 
-  const totalPages =
-    Math.max(
-      1,
-      Math.ceil(
-        totalTasks /
-          PAGE_SIZE,
-      ),
-    );
+  const totalPages = Math.max(
+    1,
+    Math.ceil(totalTasks / PAGE_SIZE),
+  );
 
-  const parsedPage =
-    Number.parseInt(
-      params.page ?? "1",
-      10,
-    );
+  const parsedPage = Number.parseInt(params.page ?? "1", 10);
 
-  const currentPage =
-    Number.isFinite(
-      parsedPage,
-    )
-      ? Math.min(
-          Math.max(
-            parsedPage,
-            1,
-          ),
-          totalPages,
-        )
-      : 1;
+  const currentPage = Number.isFinite(parsedPage)
+    ? Math.min(Math.max(parsedPage, 1), totalPages)
+    : 1;
 
-  const pageStart =
-    (currentPage - 1) *
-    PAGE_SIZE;
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
 
-  const paginatedTasks =
-    tasks.slice(
-      pageStart,
-      pageStart + PAGE_SIZE,
-    );
+  const paginatedTasks = tasks.slice(
+    pageStart,
+    pageStart + PAGE_SIZE,
+  );
 
   return (
-    <main
-      className="min-h-screen"
-      dir="rtl"
-    >
+    <main className="min-h-screen" dir="rtl">
       <div className="mx-auto max-w-[1500px] space-y-6 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
         <section className="glass-strong overflow-hidden rounded-[2rem] p-5 sm:p-6 lg:p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -651,15 +630,15 @@ export default async function AdminTasksPage({
                   <ListChecks className="size-4 text-slate-600" />
                 </div>
 
-                مدیریت Taskها
+                مدیریت تسک‌ها
               </div>
 
               <h1 className="mt-4 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">
-                Taskهای سازمان
+                تسک‌های سازمان
               </h1>
 
               <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-500">
-                ساخت، تخصیص و پیگیری Taskهای تمام پروژه‌ها در یک محیط یکپارچه.
+                ساخت، تخصیص و پیگیری تسک‌های تمام پروژه‌ها در یک محیط یکپارچه.
               </p>
             </div>
 
@@ -668,14 +647,14 @@ export default async function AdminTasksPage({
               className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white shadow-[0_12px_26px_rgba(15,23,42,0.16)] transition hover:-translate-y-px hover:bg-slate-800 sm:w-auto"
             >
               <Plus className="size-4" />
-              ایجاد Task جدید
+              ایجاد تسک جدید
             </a>
           </div>
         </section>
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <StatCard
-            label="کل Taskها"
+            label="کل تسک‌ها"
             value={totalTasks}
             icon={ListChecks}
             tone="slate"
@@ -723,21 +702,18 @@ export default async function AdminTasksPage({
 
                 <div className="min-w-0">
                   <h2 className="text-lg font-extrabold tracking-tight text-slate-900 sm:text-xl">
-                    ایجاد Task جدید
+                    ایجاد تسک جدید
                   </h2>
 
                   <p className="mt-1 truncate text-xs leading-6 text-slate-400 sm:text-sm">
-                    برای ساخت Task، این بخش را باز کنید.
+                    برای ساخت تسک، این بخش را باز کنید.
                   </p>
                 </div>
               </div>
 
               <div className="flex shrink-0 items-center gap-3">
                 <span className="hidden rounded-full border border-white/60 bg-white/45 px-3 py-1.5 text-xs font-semibold text-slate-500 sm:inline-flex">
-                  {activeProjects.length.toLocaleString(
-                    "fa-IR",
-                  )}{" "}
-                  پروژه فعال
+                  {activeProjects.length.toLocaleString("fa-IR")} پروژه فعال
                 </span>
 
                 <span className="glass-icon flex size-10 items-center justify-center rounded-xl text-slate-500 transition-transform duration-200 group-open:rotate-180">
@@ -754,7 +730,7 @@ export default async function AdminTasksPage({
                   </div>
 
                   <p className="mt-4 font-bold text-slate-700">
-                    هنوز پروژه‌ای برای ایجاد Task وجود ندارد.
+                    هنوز پروژه‌ای برای ایجاد تسک وجود ندارد.
                   </p>
 
                   <p className="mt-2 text-sm leading-6 text-slate-400">
@@ -768,15 +744,14 @@ export default async function AdminTasksPage({
                     مدیریت پروژه‌ها
                   </Link>
                 </div>
-              ) : activeProjects.length ===
-                0 ? (
+              ) : activeProjects.length === 0 ? (
                 <div className="soft-grid flex min-h-56 flex-col items-center justify-center rounded-3xl border border-dashed border-amber-200/50 bg-amber-50/25 px-6 text-center">
                   <div className="glass-icon flex size-14 items-center justify-center rounded-2xl bg-amber-500/8">
                     <AlertTriangle className="size-6 text-amber-600" />
                   </div>
 
                   <p className="mt-4 font-bold text-slate-700">
-                    پروژه فعالی برای ایجاد Task وجود ندارد.
+                    پروژه فعالی برای ایجاد تسک وجود ندارد.
                   </p>
 
                   <p className="mt-2 text-sm leading-6 text-slate-400">
@@ -792,31 +767,18 @@ export default async function AdminTasksPage({
                 </div>
               ) : (
                 <CreateTaskForm
-                  projects={activeProjects.map(
-                    (project) => ({
-                      id: project.id,
-                      title: project.title,
-                      status:
-                        project.status,
-                      subProjects:
-                        project.subProjects.map(
-                          (
-                            subProject,
-                          ) => ({
-                            id: subProject.id,
-                            type: subProject.type,
-                          }),
-                        ),
-                      members:
-                        project.members.map(
-                          (
-                            member,
-                          ) => ({
-                            user: member.user,
-                          }),
-                        ),
-                    }),
-                  )}
+                  projects={activeProjects.map((project) => ({
+                    id: project.id,
+                    title: project.title,
+                    status: project.status,
+                    subProjects: project.subProjects.map((subProject) => ({
+                      id: subProject.id,
+                      type: subProject.type,
+                    })),
+                    members: project.members.map((member) => ({
+                      user: member.user,
+                    })),
+                  }))}
                 />
               )}
             </div>
@@ -827,19 +789,16 @@ export default async function AdminTasksPage({
           <div className="flex flex-col gap-4 border-b border-white/40 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div>
               <h2 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
-                فهرست Taskها
+                فهرست تسک‌ها
               </h2>
 
               <p className="mt-1 text-sm leading-6 text-slate-400">
-                Taskها به‌صورت کارت نمایش داده می‌شوند تا بررسی آن‌ها سریع‌تر باشد.
+                پیشرفت و وضعیت تسک‌های سازمان را بررسی کنید.
               </p>
             </div>
 
             <span className="glass-chip w-fit rounded-full px-3 py-1.5 text-xs font-semibold text-slate-500">
-              {totalTasks.toLocaleString(
-                "fa-IR",
-              )}{" "}
-              مورد
+              {totalTasks.toLocaleString("fa-IR")} مورد
             </span>
           </div>
 
@@ -850,27 +809,14 @@ export default async function AdminTasksPage({
           ) : (
             <>
               <div className="grid gap-4 p-5 sm:grid-cols-2 sm:p-6 xl:grid-cols-3">
-                {paginatedTasks.map(
-                  (task) => (
-                    <TaskCard
-                      key={
-                        task.id
-                      }
-                      task={
-                        task
-                      }
-                    />
-                  ),
-                )}
+                {paginatedTasks.map((task) => (
+                  <TaskCard key={task.id} task={task} />
+                ))}
               </div>
 
               <Pagination
-                currentPage={
-                  currentPage
-                }
-                totalPages={
-                  totalPages
-                }
+                currentPage={currentPage}
+                totalPages={totalPages}
               />
             </>
           )}
