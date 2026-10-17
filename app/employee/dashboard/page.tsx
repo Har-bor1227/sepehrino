@@ -398,8 +398,13 @@ export default async function EmployeeDashboardPage() {
                           task.id
                         }
                         href={`/employee/tasks/${task.id}`}
-                        className="block p-5 transition hover:bg-white/22 sm:p-6"
-                      >
+className={`block p-5 transition sm:p-6 ${
+  overdue
+    ? "bg-red-100 hover:bg-red-200 ring-1 ring-inset ring-red-300"
+    : task.status === "TODO"
+      ? "bg-amber-100 hover:bg-amber-200 ring-1 ring-inset ring-amber-300"
+      : "hover:bg-white/22"
+}`}                    >
                         <div className="flex items-start justify-between gap-4">
                           <div className="min-w-0">
                             <h3 className="truncate font-bold text-slate-800">

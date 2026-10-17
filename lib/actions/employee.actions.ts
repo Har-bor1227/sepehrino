@@ -16,7 +16,9 @@ import {
   updateEmployee,
   updateEmployeeHozorinoLink,
 } from "@/lib/services/employee.service";
+
 import { prisma } from "@/lib/db/prisma";
+
 import {
   getHozorinoEmployees,
   performHozorinoAttendanceAction,
@@ -103,6 +105,20 @@ const hozorinoLinkSchema = z.object({
     .nullable(),
 });
 
+/**
+ * اطلاعات موقعیت مکانی دریافت‌شده از مرورگر.
+ *
+ * این داده‌ها ورودی غیرقابل‌اعتماد هستند و در سمت سرور
+ * اعتبارسنجی می‌شوند.
+ */
+const attendanceLocationSchema = z
+  .object({
+    latitude: z.number().finite().min(-90).max(90),
+    longitude: z.number().finite().min(-180).max(180),
+    accuracy: z.number().finite().min(0).max(100_000),
+  })
+  .strict();
+
 function getHozorinoErrorMessage(
   error: unknown,
 ): string {
@@ -152,6 +168,150 @@ function getHozorinoErrorMessage(
     default:
       return "خطایی هنگام ارتباط با حضورینو رخ داد.";
   }
+}
+
+/**
+ * محاسبه فاصله دو مختصات جغرافیایی بر حسب متر.
+ */
+function calculateDistanceInMeters(
+  latitude1: number,
+  longitude1: number,
+  latitude2: number,
+  longitude2: number,
+): number {
+  const earthRadiusMeters = 6_371_000;
+
+  const toRadians = (degrees: number) =>
+    (degrees * Math.PI) / 180;
+
+  const latitudeDifference = toRadians(
+    latitude2 - latitude1,
+  );
+
+  const longitudeDifference = toRadians(
+    longitude2 - longitude1,
+  );
+
+  const firstLatitude = toRadians(latitude1);
+  const secondLatitude = toRadians(latitude2);
+
+  const haversine =
+    Math.sin(latitudeDifference / 2) ** 2 +
+    Math.cos(firstLatitude) *
+      Math.cos(secondLatitude) *
+      Math.sin(longitudeDifference / 2) ** 2;
+
+  const safeHaversine = Math.min(
+    1,
+    Math.max(0, haversine),
+  );
+
+  return (
+    earthRadiusMeters *
+    2 *
+    Math.atan2(
+      Math.sqrt(safeHaversine),
+      Math.sqrt(1 - safeHaversine),
+    )
+  );
+}
+
+/**
+ * بررسی موقعیت مکانی هنگام ثبت ورود.
+ *
+ * تنظیمات محیطی:
+ * ATTENDANCE_GEOFENCE_ENABLED=true
+ * ATTENDANCE_COMPANY_LATITUDE
+ * ATTENDANCE_COMPANY_LONGITUDE
+ * ATTENDANCE_GEOFENCE_RADIUS_METERS=100
+ * ATTENDANCE_GEOFENCE_MAX_ACCURACY_METERS=100
+ *
+ * تا زمانی که قابلیت فعال نشده باشد، رفتار قبلی حفظ می‌شود.
+ */
+function validateAttendanceLocation(
+  location: unknown,
+): string | null {
+  const isGeofenceEnabled =
+    process.env.ATTENDANCE_GEOFENCE_ENABLED
+      ?.trim()
+      .toLowerCase() === "true";
+
+  if (!isGeofenceEnabled) {
+    return null;
+  }
+
+  const latitudeValue =
+    process.env.ATTENDANCE_COMPANY_LATITUDE;
+
+  const longitudeValue =
+    process.env.ATTENDANCE_COMPANY_LONGITUDE;
+
+  const radiusMeters = Number(
+    process.env.ATTENDANCE_GEOFENCE_RADIUS_METERS ??
+      "100",
+  );
+
+  const maxAccuracyMeters = Number(
+    process.env.ATTENDANCE_GEOFENCE_MAX_ACCURACY_METERS ??
+      "100",
+  );
+
+  if (
+    !latitudeValue?.trim() ||
+    !longitudeValue?.trim()
+  ) {
+    return "تنظیمات محدوده جغرافیایی شرکت کامل نیست. لطفاً موضوع را به مدیر سامانه اطلاع دهید.";
+  }
+
+  const companyLatitude = Number(latitudeValue);
+  const companyLongitude = Number(longitudeValue);
+
+  if (
+    !Number.isFinite(companyLatitude) ||
+    companyLatitude < -90 ||
+    companyLatitude > 90 ||
+    !Number.isFinite(companyLongitude) ||
+    companyLongitude < -180 ||
+    companyLongitude > 180 ||
+    !Number.isFinite(radiusMeters) ||
+    radiusMeters <= 0 ||
+    radiusMeters > 100_000 ||
+    !Number.isFinite(maxAccuracyMeters) ||
+    maxAccuracyMeters <= 0 ||
+    maxAccuracyMeters > 100_000
+  ) {
+    return "تنظیمات محدوده جغرافیایی شرکت معتبر نیست. لطفاً موضوع را به مدیر سامانه اطلاع دهید.";
+  }
+
+  const validation =
+    attendanceLocationSchema.safeParse(location);
+
+  if (!validation.success) {
+    return "برای ثبت ورود، دریافت موقعیت مکانی معتبر ضروری است. دسترسی به موقعیت مکانی را فعال کنید و دوباره تلاش کنید.";
+  }
+
+  const {
+    latitude,
+    longitude,
+    accuracy,
+  } = validation.data;
+
+  if (accuracy > maxAccuracyMeters) {
+    return "دقت موقعیت مکانی کافی نیست. GPS را روشن کنید و دوباره تلاش کنید.";
+  }
+
+  const distance = calculateDistanceInMeters(
+    companyLatitude,
+    companyLongitude,
+    latitude,
+    longitude,
+  );
+
+  if (distance > radiusMeters) {
+    return "شما در محدوده مجاز شرکت نیستید؛ ثبت ورود انجام نشد.";
+  }
+
+  return null;
 }
 
 export async function createEmployeeAction(
@@ -493,31 +653,31 @@ export async function updateEmployeeHozorinoLinkAction(
  */
 async function runHozorinoAttendanceAction(
   action: HozorinoAttendanceAction,
+  location?: unknown,
 ): Promise<HozorinoAttendanceActionResult> {
-  // این بررسی خارج از try می‌ماند تا رفتار احراز هویت
-  // و redirect احتمالی requireEmployee حفظ شود.
+  // رفتار احراز هویت و redirect احتمالی حفظ می‌شود.
   const session = await requireEmployee();
 
   try {
-const employee = await prisma.user.findFirst({
-  where: {
-    id: session.user.id,
-    role: "EMPLOYEE",
-    isActive: true,
-  },
-  select: {
-    isActive: true,
-    hozorinoUserId: true,
-  },
-});
+    const employee = await prisma.user.findFirst({
+      where: {
+        id: session.user.id,
+        role: "EMPLOYEE",
+        isActive: true,
+      },
+      select: {
+        isActive: true,
+        hozorinoUserId: true,
+      },
+    });
 
-if (!employee || !employee.isActive) {
-  return {
-    success: false,
-    message:
-      "حساب کاربری فعال در فرتاک پیدا نشد.",
-  };
-}
+    if (!employee || !employee.isActive) {
+      return {
+        success: false,
+        message:
+          "حساب کاربری فعال در فرتاک پیدا نشد.",
+      };
+    }
 
     const hozorinoUserId =
       employee.hozorinoUserId;
@@ -528,6 +688,20 @@ if (!employee || !employee.isActive) {
         message:
           "حساب حضورینوی شما به فرتاک متصل نشده است. از مدیر سیستم بخواهید اتصال حساب را انجام دهد.",
       };
+    }
+
+    // کنترل محدوده فقط برای ثبت ورود اجرا می‌شود.
+    // کنترل در سمت سرور است و به رابط کاربری وابسته نیست.
+    if (action === "checkIn") {
+      const locationError =
+        validateAttendanceLocation(location);
+
+      if (locationError) {
+        return {
+          success: false,
+          message: locationError,
+        };
+      }
     }
 
     const result =
@@ -558,9 +732,17 @@ if (!employee || !employee.isActive) {
 
 /**
  * اکشن ثبت ورود از صفحه کارمند فرتاک.
+ *
+ * مختصات در ورودی اجباری نشده‌اند تا تا زمان فعال‌سازی
+ * قابلیت، رفتار فعلی سیستم حفظ شود.
  */
-export async function checkInHozorinoAction(): Promise<HozorinoAttendanceActionResult> {
-  return runHozorinoAttendanceAction("checkIn");
+export async function checkInHozorinoAction(
+  location?: unknown,
+): Promise<HozorinoAttendanceActionResult> {
+  return runHozorinoAttendanceAction(
+    "checkIn",
+    location,
+  );
 }
 
 /**

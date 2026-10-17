@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   AlertTriangle,
   CalendarDays,
-  Check,
   CheckCircle2,
   ChevronDown,
   ChevronLeft,
@@ -69,10 +68,10 @@ function getPriorityClass(
   priority: keyof typeof PRIORITY_LABELS,
 ) {
   const classes = {
-    LOW: "border-slate-200/70 bg-slate-50 text-slate-600",
-    MEDIUM: "border-amber-200/70 bg-amber-50 text-amber-700",
-    HIGH: "border-orange-200/70 bg-orange-50 text-orange-700",
-    URGENT: "border-red-200/70 bg-red-50 text-red-700",
+    LOW: "border-slate-300 bg-slate-100 text-slate-700",
+    MEDIUM: "border-amber-300 bg-amber-100 text-amber-800",
+    HIGH: "border-orange-300 bg-orange-100 text-orange-800",
+    URGENT: "border-red-300 bg-red-100 text-red-800",
   };
 
   return classes[priority];
@@ -179,29 +178,28 @@ function TaskCard({
 }: {
   task: Awaited<ReturnType<typeof getAdminTasks>>[number];
 }) {
+  const taskStages = task.stages ?? [];
+  const isStaged = taskStages.length > 0;
 
-const taskStages = task.stages ?? [];
-const isStaged = taskStages.length > 0;
+  const stages =
+    task.isRecurring && isStaged
+      ? task.todayOccurrence?.stages ?? []
+      : taskStages;
 
-const stages =
-  task.isRecurring && isStaged
-    ? task.todayOccurrence?.stages ?? []
-    : taskStages;
+  const completedStageCount = stages.filter(
+    (stage) => stage.status === "COMPLETED",
+  ).length;
 
-const completedStageCount = stages.filter(
-  (stage) => stage.status === "COMPLETED",
-).length;
+  const activeStage = stages.find(
+    (stage) => stage.status === "IN_PROGRESS",
+  );
 
-const activeStage = stages.find(
-  (stage) => stage.status === "IN_PROGRESS",
-);
-
-const progressPercent =
-  stages.length > 0
-    ? Math.round(
-        (completedStageCount / stages.length) * 100,
-      )
-    : 0;
+  const progressPercent =
+    stages.length > 0
+      ? Math.round(
+          (completedStageCount / stages.length) * 100,
+        )
+      : 0;
 
   const overdue = isOverdue(task.deadline, task.status);
 
@@ -213,32 +211,32 @@ const progressPercent =
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           {task.isRecurring ? (
-            <span className="inline-flex items-center gap-1 rounded-full border border-violet-200/70 bg-violet-50 px-2.5 py-1 text-[10px] font-bold text-violet-700">
-              <Repeat2 className="size-3" />
+            <span className="inline-flex items-center gap-1 rounded-full border border-violet-200/70 bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700">
+              <Repeat2 className="size-3.5" />
               تکرارشونده
             </span>
           ) : isStaged ? (
-            <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200/70 bg-indigo-50 px-2.5 py-1 text-[10px] font-bold text-indigo-700">
-              <ListOrdered className="size-3" />
+            <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200/70 bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700">
+              <ListOrdered className="size-3.5" />
               چندمرحله‌ای
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 rounded-full border border-slate-200/70 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-600">
-              <ListChecks className="size-3" />
+            <span className="inline-flex items-center gap-1 rounded-full border border-slate-200/70 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-600">
+              <ListChecks className="size-3.5" />
               معمولی
             </span>
           )}
 
           {overdue ? (
-            <span className="inline-flex items-center gap-1 rounded-full border border-red-200/70 bg-red-50 px-2.5 py-1 text-[10px] font-bold text-red-700">
-              <AlertTriangle className="size-3" />
+            <span className="inline-flex items-center gap-1 rounded-full border border-red-200/70 bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700">
+              <AlertTriangle className="size-3.5" />
               عقب‌افتاده
             </span>
           ) : null}
         </div>
 
         <span
-          className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold ${getPriorityClass(
+          className={`inline-flex min-h-8 shrink-0 items-center justify-center rounded-xl border px-3 py-1.5 text-sm font-extrabold shadow-sm ${getPriorityClass(
             task.priority,
           )}`}
         >
@@ -249,41 +247,41 @@ const progressPercent =
       <div className="mt-4 min-w-0">
         <Link
           href={`/admin/tasks/${task.id}`}
-          className="block break-words text-base font-extrabold leading-7 text-slate-900 transition group-hover:text-slate-700"
+          className="block break-words text-lg font-extrabold leading-8 text-slate-950 transition group-hover:text-blue-800 sm:text-xl"
         >
           {task.title}
         </Link>
 
         <Link
           href={`/admin/projects/${task.project.id}`}
-          className="mt-1 block truncate text-xs font-semibold text-slate-400 transition hover:text-slate-700"
+          className="mt-1 block truncate text-sm font-semibold text-slate-500 transition hover:text-blue-700"
         >
           {task.project.title}
         </Link>
 
         {task.subProject ? (
-          <span className="mt-2 inline-flex max-w-full truncate rounded-full border border-slate-200/70 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-600">
+          <span className="mt-2 inline-flex max-w-full truncate rounded-full border border-slate-200/70 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700">
             {SUB_PROJECT_LABELS[task.subProject.type]}
           </span>
         ) : null}
       </div>
 
       {task.description ? (
-        <p className="mt-4 line-clamp-3 text-sm leading-6 text-slate-500">
+        <p className="mt-4 line-clamp-3 text-sm leading-7 text-slate-500">
           {task.description}
         </p>
       ) : (
-        <div className="mt-4 h-[72px]" />
+        <div className="mt-4 h-[84px]" />
       )}
 
       {isStaged ? (
         <div className="mt-4 rounded-2xl border border-indigo-100/80 bg-indigo-50/40 p-3.5">
           <div className="flex items-center justify-between gap-3">
-            <span className="text-xs font-bold text-indigo-900">
+            <span className="text-sm font-bold text-indigo-950">
               پیشرفت مراحل
             </span>
 
-            <span className="text-xs font-extrabold text-indigo-800">
+            <span className="text-sm font-extrabold text-indigo-800">
               {completedStageCount.toLocaleString("fa-IR")} از{" "}
               {stages.length.toLocaleString("fa-IR")}
             </span>
@@ -306,11 +304,11 @@ const progressPercent =
           </div>
 
           <div className="mt-2 flex items-center justify-between gap-2">
-            <span className="text-[10px] font-semibold text-slate-500">
+            <span className="text-xs font-semibold text-slate-600">
               {progressPercent.toLocaleString("fa-IR")}٪ تکمیل شده
             </span>
 
-            <span className="text-[10px] font-semibold text-slate-400">
+            <span className="text-xs font-semibold text-slate-500">
               {stages.length.toLocaleString("fa-IR")} مرحله
             </span>
           </div>
@@ -320,27 +318,27 @@ const progressPercent =
               <Clock3 className="mt-0.5 size-4 shrink-0 text-blue-700" />
 
               <div className="min-w-0">
-                <p className="text-[10px] font-semibold text-slate-500">
+                <p className="text-xs font-semibold text-slate-600">
                   مرحله فعال
                 </p>
 
-                <p className="mt-1 break-words text-xs font-bold text-slate-800">
+                <p className="mt-1 break-words text-sm font-bold text-slate-800">
                   {activeStage.title}
                 </p>
 
-                <p className="mt-1 text-[10px] text-slate-500">
+                <p className="mt-1 text-xs font-semibold text-blue-800">
                   مسئول: {activeStage.assignee.name}
                 </p>
               </div>
             </div>
           ) : task.status === "COMPLETED" ? (
-            <p className="mt-3 flex items-center gap-2 border-t border-indigo-100/70 pt-3 text-xs font-bold text-emerald-700">
-              <CheckCircle2 className="size-4" />
+            <p className="mt-3 flex items-center gap-2 border-t border-indigo-100/70 pt-3 text-sm font-bold text-emerald-700">
+              <CheckCircle2 className="size-4 shrink-0" />
               تمام مراحل تکمیل شده‌اند.
             </p>
           ) : (
-            <p className="mt-3 flex items-center gap-2 border-t border-indigo-100/70 pt-3 text-xs text-slate-500">
-              <LockKeyhole className="size-4" />
+            <p className="mt-3 flex items-center gap-2 border-t border-indigo-100/70 pt-3 text-xs text-slate-600">
+              <LockKeyhole className="size-4 shrink-0" />
               در حال حاضر مرحله فعالی ثبت نشده است.
             </p>
           )}
@@ -348,47 +346,49 @@ const progressPercent =
       ) : null}
 
       <div className="mt-4 grid grid-cols-2 gap-2">
-        <div className="min-w-0 rounded-2xl border border-white/55 bg-white/38 p-3">
-          <p className="text-[10px] font-medium text-slate-400">
+        <div className="min-w-0 rounded-2xl border border-blue-100/80 bg-blue-50/55 p-3">
+          <p className="text-xs font-bold text-blue-700">
             مسئول‌ها
           </p>
 
           {task.assignees.length > 0 ? (
-            <div className="mt-1 space-y-1">
+            <div className="mt-2 space-y-2">
               {task.assignees.slice(0, 3).map((assignee) => (
                 <p
                   key={assignee.user.id}
-                  className="flex items-center gap-1.5 truncate text-xs font-bold text-slate-700"
+                  className="flex items-center gap-1.5 text-sm font-extrabold leading-6 text-blue-900"
                 >
-                  <UserRound className="size-3.5 shrink-0 text-slate-400" />
-                  <span className="truncate">{assignee.user.name}</span>
+                  <UserRound className="size-4 shrink-0 text-blue-600" />
+                  <span className="min-w-0 break-words">
+                    {assignee.user.name}
+                  </span>
                 </p>
               ))}
 
               {task.assignees.length > 3 ? (
-                <p className="text-[10px] font-semibold text-slate-400">
+                <p className="text-xs font-bold text-blue-700">
                   +{(task.assignees.length - 3).toLocaleString("fa-IR")} نفر دیگر
                 </p>
               ) : null}
             </div>
           ) : isStaged ? (
-            <p className="mt-1 text-xs font-bold text-slate-500">
+            <p className="mt-2 text-xs font-bold leading-6 text-blue-800">
               مسئولان در مراحل تعیین شده‌اند.
             </p>
           ) : (
-            <p className="mt-1 text-xs font-bold text-slate-400">
+            <p className="mt-2 text-sm font-bold text-slate-500">
               بدون مسئول
             </p>
           )}
         </div>
 
-        <div className="min-w-0 rounded-2xl border border-white/55 bg-white/38 p-3">
-          <p className="text-[10px] font-medium text-slate-400">
+        <div className="min-w-0 rounded-2xl border border-white/55 bg-white/45 p-3">
+          <p className="text-xs font-bold text-slate-500">
             وضعیت
           </p>
 
           <span
-            className={`mt-1 inline-flex max-w-full items-center truncate rounded-full border px-2.5 py-1 text-[10px] font-bold ${getStatusClass(
+            className={`mt-2 inline-flex max-w-full items-center truncate rounded-xl border px-2.5 py-1.5 text-xs font-extrabold ${getStatusClass(
               task.status,
             )}`}
           >
@@ -400,7 +400,7 @@ const progressPercent =
           </span>
 
           {isStaged && activeStage ? (
-            <p className="mt-1 truncate text-[10px] font-medium text-blue-700">
+            <p className="mt-2 break-words text-xs font-bold leading-5 text-blue-800">
               مرحله: {activeStage.title}
             </p>
           ) : null}
@@ -409,58 +409,65 @@ const progressPercent =
         <div
           className={`min-w-0 rounded-2xl border p-3 ${
             overdue
-              ? "border-red-200/60 bg-red-50/45"
-              : "border-white/55 bg-white/38"
+              ? "border-red-200 bg-red-50/75"
+              : "border-amber-200/80 bg-amber-50/65"
           }`}
         >
-          <p className="text-[10px] font-medium text-slate-400">
-            Deadline
+          <p
+            className={`text-xs font-bold ${
+              overdue ? "text-red-700" : "text-amber-800"
+            }`}
+          >
+            <CalendarDays className="ml-1 inline size-3.5 align-[-2px]" />
+            مهلت انجام
           </p>
 
           <p
-            className={`mt-1 truncate text-xs font-bold ${
-              overdue ? "text-red-600" : "text-slate-700"
+            className={`mt-2 break-words text-sm font-extrabold leading-6 sm:text-base ${
+              overdue ? "text-red-700" : "text-amber-950"
             }`}
           >
             {formatDate(task.deadline)}
           </p>
 
           {overdue ? (
-            <p className="mt-1 text-[10px] font-semibold text-red-500">
+            <p className="mt-1 flex items-center gap-1 text-xs font-extrabold text-red-600">
+              <AlertTriangle className="size-3.5 shrink-0" />
               عقب‌افتاده
             </p>
           ) : null}
         </div>
 
         <div className="min-w-0 rounded-2xl border border-white/55 bg-white/38 p-3">
-          <p className="text-[10px] font-medium text-slate-400">
+          <p className="text-xs font-semibold text-slate-500">
             ثبت
           </p>
 
-          <p className="mt-1 truncate text-xs font-bold text-slate-700">
+          <p className="mt-2 break-words text-xs font-bold leading-6 text-slate-700 sm:text-sm">
             {formatDateTime(task.createdAt)}
           </p>
         </div>
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/45 pt-3">
-        <div className="flex min-w-0 items-center gap-2 text-[11px] font-medium text-slate-400">
-          <span className="inline-flex items-center gap-1">
-            <span className="size-1.5 rounded-full bg-slate-300" />
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 text-xs font-semibold text-slate-500">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="size-2 rounded-full bg-slate-400" />
             {task._count.comments.toLocaleString("fa-IR")} کامنت
           </span>
 
-          <span className="inline-flex items-center gap-1">
-            <span className="size-1.5 rounded-full bg-slate-300" />
+          <span className="inline-flex items-center gap-1.5">
+            <span className="size-2 rounded-full bg-slate-400" />
             {task._count.attachments.toLocaleString("fa-IR")} فایل
           </span>
         </div>
 
         <Link
           href={`/admin/tasks/${task.id}`}
-          className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-xl bg-slate-900 px-3.5 text-xs font-bold text-white shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition hover:bg-slate-800"
+          className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-4 text-sm font-bold text-white shadow-[0_8px_18px_rgba(15,23,42,0.12)] transition hover:bg-blue-800"
         >
           جزئیات
+          <ChevronLeft className="size-4" />
         </Link>
       </div>
     </article>
@@ -474,17 +481,17 @@ function EmptyState() {
         <ListChecks className="size-6 text-slate-400" />
       </div>
 
-      <h3 className="mt-4 font-bold text-slate-800">
+      <h3 className="mt-4 text-lg font-extrabold text-slate-800">
         هنوز تسکی ثبت نشده است
       </h3>
 
-      <p className="mt-2 text-sm leading-6 text-slate-400">
+      <p className="mt-2 text-sm leading-7 text-slate-500">
         اولین تسک را از بخش ایجاد تسک جدید ثبت کنید.
       </p>
 
       <a
         href="#create-task"
-        className="mt-5 inline-flex h-10 items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white transition hover:bg-slate-800"
+        className="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-bold text-white transition hover:bg-blue-800"
       >
         ایجاد تسک
       </a>
@@ -513,7 +520,7 @@ function Pagination({
       aria-label="صفحه‌بندی تسک‌ها"
       className="flex flex-col gap-3 border-t border-white/45 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6"
     >
-      <p className="text-xs font-semibold text-slate-400">
+      <p className="text-sm font-semibold text-slate-500">
         صفحه {currentPage.toLocaleString("fa-IR")} از{" "}
         {totalPages.toLocaleString("fa-IR")}
       </p>
@@ -539,7 +546,7 @@ function Pagination({
               key={page}
               href={`/admin/tasks?page=${page}`}
               aria-current={page === currentPage ? "page" : undefined}
-              className={`inline-flex size-10 items-center justify-center rounded-xl border text-xs font-bold transition ${
+              className={`inline-flex size-10 items-center justify-center rounded-xl border text-sm font-bold transition ${
                 page === currentPage
                   ? "border-slate-900 bg-slate-900 text-white shadow-[0_8px_18px_rgba(15,23,42,0.12)]"
                   : "border-white/60 bg-white/40 text-slate-600 hover:bg-white/75 hover:text-slate-900"
@@ -631,7 +638,7 @@ export default async function AdminTasksPage({
         <section className="glass-strong overflow-hidden rounded-[2rem] p-5 sm:p-6 lg:p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+              <div className="flex items-center gap-2 text-sm font-bold text-slate-500">
                 <div className="glass-icon flex size-9 items-center justify-center rounded-xl">
                   <ListChecks className="size-4 text-slate-600" />
                 </div>
@@ -639,20 +646,20 @@ export default async function AdminTasksPage({
                 مدیریت تسک‌ها
               </div>
 
-              <h1 className="mt-4 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">
+              <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl">
                 تسک‌های سازمان
               </h1>
 
-              <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-500">
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
                 ساخت، تخصیص و پیگیری تسک‌های تمام پروژه‌ها در یک محیط یکپارچه.
               </p>
             </div>
 
             <a
               href="#create-task"
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white shadow-[0_12px_26px_rgba(15,23,42,0.16)] transition hover:-translate-y-px hover:bg-slate-800 sm:w-auto"
+              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white shadow-[0_12px_26px_rgba(15,23,42,0.16)] transition hover:-translate-y-px hover:bg-blue-800 sm:w-auto"
             >
-              <Plus className="size-4" />
+              <Plus className="size-5" />
               ایجاد تسک جدید
             </a>
           </div>
@@ -707,18 +714,18 @@ export default async function AdminTasksPage({
                 </div>
 
                 <div className="min-w-0">
-                  <h2 className="text-lg font-extrabold tracking-tight text-slate-900 sm:text-xl">
+                  <h2 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
                     ایجاد تسک جدید
                   </h2>
 
-                  <p className="mt-1 truncate text-xs leading-6 text-slate-400 sm:text-sm">
+                  <p className="mt-1 truncate text-sm leading-6 text-slate-500">
                     برای ساخت تسک، این بخش را باز کنید.
                   </p>
                 </div>
               </div>
 
               <div className="flex shrink-0 items-center gap-3">
-                <span className="hidden rounded-full border border-white/60 bg-white/45 px-3 py-1.5 text-xs font-semibold text-slate-500 sm:inline-flex">
+                <span className="hidden rounded-full border border-white/60 bg-white/45 px-3 py-1.5 text-sm font-semibold text-slate-600 sm:inline-flex">
                   {activeProjects.length.toLocaleString("fa-IR")} پروژه فعال
                 </span>
 
@@ -735,17 +742,17 @@ export default async function AdminTasksPage({
                     <ListChecks className="size-6 text-slate-400" />
                   </div>
 
-                  <p className="mt-4 font-bold text-slate-700">
+                  <p className="mt-4 text-base font-bold text-slate-800">
                     هنوز پروژه‌ای برای ایجاد تسک وجود ندارد.
                   </p>
 
-                  <p className="mt-2 text-sm leading-6 text-slate-400">
+                  <p className="mt-2 text-sm leading-7 text-slate-500">
                     ابتدا یک پروژه ایجاد کنید.
                   </p>
 
                   <Link
                     href="/admin/projects"
-                    className="mt-5 inline-flex h-10 items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white transition hover:bg-slate-800"
+                    className="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-bold text-white transition hover:bg-blue-800"
                   >
                     مدیریت پروژه‌ها
                   </Link>
@@ -756,17 +763,17 @@ export default async function AdminTasksPage({
                     <AlertTriangle className="size-6 text-amber-600" />
                   </div>
 
-                  <p className="mt-4 font-bold text-slate-700">
+                  <p className="mt-4 text-base font-bold text-slate-700">
                     پروژه فعالی برای ایجاد تسک وجود ندارد.
                   </p>
 
-                  <p className="mt-2 text-sm leading-6 text-slate-400">
+                  <p className="mt-2 text-sm leading-7 text-slate-500">
                     پروژه‌های تکمیل‌شده و آرشیوشده در این فرم قابل انتخاب نیستند.
                   </p>
 
                   <Link
                     href="/admin/projects"
-                    className="mt-5 inline-flex h-10 items-center justify-center rounded-xl border border-white/60 bg-white/45 px-4 text-sm font-semibold text-slate-700 transition hover:bg-white/70"
+                    className="mt-5 inline-flex h-11 items-center justify-center rounded-xl border border-white/60 bg-white/45 px-5 text-sm font-bold text-slate-700 transition hover:bg-white/70"
                   >
                     مشاهده پروژه‌ها
                   </Link>
@@ -794,16 +801,16 @@ export default async function AdminTasksPage({
         <section className="glass-card overflow-hidden rounded-[2rem]">
           <div className="flex flex-col gap-4 border-b border-white/40 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div>
-              <h2 className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
+              <h2 className="text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">
                 فهرست تسک‌ها
               </h2>
 
-              <p className="mt-1 text-sm leading-6 text-slate-400">
+              <p className="mt-2 text-sm leading-7 text-slate-500 sm:text-base">
                 پیشرفت و وضعیت تسک‌های سازمان را بررسی کنید.
               </p>
             </div>
 
-            <span className="glass-chip w-fit rounded-full px-3 py-1.5 text-xs font-semibold text-slate-500">
+            <span className="glass-chip w-fit rounded-full px-4 py-2 text-sm font-bold text-slate-600">
               {totalTasks.toLocaleString("fa-IR")} مورد
             </span>
           </div>

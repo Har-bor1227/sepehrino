@@ -29,6 +29,55 @@ type ActionFeedback = {
   message: string;
 };
 
+type AttendanceLocation = {
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+};
+
+/**
+ * دریافت موقعیت جغرافیایی مرورگر.
+ *
+ * در صورت رد دسترسی، خطای GPS یا در دسترس نبودن
+ * قابلیت مکان‌یابی، مقدار undefined برگردانده می‌شود.
+ *
+ * تصمیم نهایی درباره مجاز بودن ثبت ورود در سمت سرور است.
+ */
+function getCurrentLocation(): Promise<
+  AttendanceLocation | undefined
+> {
+  if (
+    typeof navigator === "undefined" ||
+    !navigator.geolocation
+  ) {
+    return Promise.resolve(undefined);
+  }
+
+  return new Promise((resolve) => {
+    try {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+          });
+        },
+        () => {
+          resolve(undefined);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0,
+        },
+      );
+    } catch {
+      resolve(undefined);
+    }
+  });
+}
+
 export function AttendanceActions({
   attendance,
 }: AttendanceActionsProps) {
@@ -37,8 +86,13 @@ export function AttendanceActions({
   const [isPending, startTransition] =
     useTransition();
 
+  const [isLocating, setIsLocating] =
+    useState(false);
+
   const [feedback, setFeedback] =
     useState<ActionFeedback | null>(null);
+
+  const isBusy = isPending || isLocating;
 
   const isWorkingDay =
     attendance.isWorkingDay &&
@@ -57,20 +111,32 @@ export function AttendanceActions({
       (exit) => exit.status === "OPEN",
     );
 
-  function submitAction(
+  async function submitAction(
     action: "checkIn" | "checkOut",
   ) {
-    if (isPending) {
+    if (isBusy) {
       return;
     }
 
     setFeedback(null);
 
+    let location: AttendanceLocation | undefined;
+
+    if (action === "checkIn") {
+      setIsLocating(true);
+
+      try {
+        location = await getCurrentLocation();
+      } finally {
+        setIsLocating(false);
+      }
+    }
+
     startTransition(async () => {
       try {
         const result =
           action === "checkIn"
-            ? await checkInHozorinoAction()
+            ? await checkInHozorinoAction(location)
             : await checkOutHozorinoAction();
 
         setFeedback(result);
@@ -92,6 +158,7 @@ export function AttendanceActions({
     <section
       dir="rtl"
       aria-labelledby="attendance-actions-title"
+      aria-busy={isBusy}
       className="glass-strong rounded-[2rem] p-5 sm:p-6 lg:p-7"
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -105,6 +172,8 @@ export function AttendanceActions({
 
           <p className="mt-2 text-sm leading-7 text-slate-500">
             ثبت ورود و خروج مستقیماً در حضورینو انجام می‌شود.
+            در صورت فعال بودن محدودیت مکانی، موقعیت شما پیش
+            از ثبت ورود در سمت سرور بررسی خواهد شد.
           </p>
         </div>
 
@@ -112,38 +181,40 @@ export function AttendanceActions({
           {!hasCheckedIn && isWorkingDay ? (
             <button
               type="button"
-              disabled={isPending}
-              onClick={() =>
-                submitAction("checkIn")
-              }
+              disabled={isBusy}
+              onClick={() => submitAction("checkIn")}
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-[0_8px_20px_rgba(5,150,105,0.16)] transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-600/20 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isPending ? (
+              {isBusy ? (
                 <LoaderCircle className="size-5 animate-spin" />
               ) : (
                 <LogIn className="size-5" />
               )}
 
-              ثبت ورود
+              {isLocating
+                ? "در حال دریافت موقعیت..."
+                : isPending
+                  ? "در حال ثبت ورود..."
+                  : "ثبت ورود"}
             </button>
           ) : null}
 
           {hasCheckedIn && !hasCheckedOut ? (
             <button
               type="button"
-              disabled={isPending || hasOpenTemporaryExit}
-              onClick={() =>
-                submitAction("checkOut")
-              }
+              disabled={isBusy || hasOpenTemporaryExit}
+              onClick={() => submitAction("checkOut")}
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-900/20 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isPending ? (
+              {isBusy ? (
                 <LoaderCircle className="size-5 animate-spin" />
               ) : (
                 <LogOut className="size-5" />
               )}
 
-              ثبت خروج نهایی
+              {isPending
+                ? "در حال ثبت خروج..."
+                : "ثبت خروج نهایی"}
             </button>
           ) : null}
 
@@ -175,7 +246,9 @@ export function AttendanceActions({
         </div>
       ) : null}
 
-      {hasOpenTemporaryExit && hasCheckedIn && !hasCheckedOut ? (
+      {hasOpenTemporaryExit &&
+      hasCheckedIn &&
+      !hasCheckedOut ? (
         <div
           role="status"
           className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/70 p-4"
@@ -183,7 +256,8 @@ export function AttendanceActions({
           <AlertCircle className="mt-0.5 size-5 shrink-0 text-amber-700" />
 
           <p className="text-sm leading-7 text-amber-900">
-            یک خروج موقت یا مأموریت باز دارید. برای ثبت خروج نهایی، ابتدا باید بازگشت خود را در حضورینو ثبت کنید.
+            یک خروج موقت یا مأموریت باز دارید. برای ثبت خروج
+            نهایی، ابتدا باید بازگشت خود را در حضورینو ثبت کنید.
           </p>
         </div>
       ) : null}
