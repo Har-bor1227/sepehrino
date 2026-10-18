@@ -1757,85 +1757,126 @@ export async function updateTask(
 ) {
   const session = await requireAdmin();
 
-  const validated =
-    updateTaskSchema.parse(input);
+  const validated = updateTaskSchema.parse(input);
 
-  const existingTask =
-    await prisma.task.findUnique({
-      where: {
-        id: taskId,
+  const existingTask = await prisma.task.findUnique({
+    where: {
+      id: taskId,
+    },
+
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      priority: true,
+      deadline: true,
+      completedAt: true,
+
+      projectId: true,
+      subProjectId: true,
+
+      isRecurring: true,
+      recurrenceType: true,
+      recurrenceStartDate: true,
+      recurrenceEndDate: true,
+      recurrenceWeekdays: true,
+      recurrenceDayOfMonth: true,
+      recurrenceActive: true,
+
+      project: {
+        select: {
+          title: true,
+        },
       },
 
-      select: {
-        id: true,
-        title: true,
-        priority: true,
-        deadline: true,
+      subProject: {
+        select: {
+          id: true,
+          type: true,
+        },
+      },
 
-        projectId: true,
-        subProjectId: true,
-
-        isRecurring: true,
-        recurrenceType: true,
-        recurrenceStartDate: true,
-        recurrenceEndDate: true,
-        recurrenceWeekdays: true,
-        recurrenceDayOfMonth: true,
-        recurrenceActive: true,
-
-        project: {
-          select: {
-            title: true,
-          },
+      assignees: {
+        orderBy: {
+          assignedAt: "asc",
         },
 
-        subProject: {
-          select: {
-            id: true,
-            type: true,
-          },
-        },
-
-        assignees: {
-          orderBy: {
-            assignedAt: "asc",
-          },
-
-          select: {
-            user: {
-              select: {
-                id: true,
-              },
+        select: {
+          user: {
+            select: {
+              id: true,
             },
           },
         },
+      },
 
-        stages: {
-          select: {
-            id: true,
-            position: true,
-            status: true,
-            assigneeId: true,
-          },
+      stages: {
+        orderBy: {
+          position: "asc",
+        },
+
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          position: true,
+          status: true,
+          assigneeId: true,
+          activatedAt: true,
+          completedAt: true,
+          completedById: true,
         },
       },
-    });
+    },
+  });
 
   if (!existingTask) {
+    throw new Error("TASK_NOT_FOUND");
+  }
+
+  const isStagedTask = existingTask.stages.length > 0;
+  const submittedStages = validated.stages;
+
+  const currentAssigneeIds = getAssigneeIds(
+    existingTask.assignees,
+  );
+
+  const currentStageAssigneeIds = [
+    ...new Set(
+      existingTask.stages.map(
+        (stage) => stage.assigneeId,
+      ),
+    ),
+  ];
+
+  const hasStageUpdates = submittedStages !== undefined;
+
+  if (hasStageUpdates && !isStagedTask) {
     throw new Error(
-      "TASK_NOT_FOUND",
+      "برای افزودن مراحل به یک تسک معمولی، ابتدا باید قابلیت تبدیل آن به تسک چندمرحله‌ای پیاده‌سازی شود.",
     );
   }
 
-  const isStagedTask =
-    existingTask.stages.length > 0;
+  if (
+    isStagedTask &&
+    validated.assigneeIds !== undefined &&
+    !hasStageUpdates
+  ) {
+    if (
+      !haveSameIds(
+        currentStageAssigneeIds,
+        validated.assigneeIds,
+      )
+    ) {
+      throw new Error(
+        "مسئولان تسک چندمرحله‌ای باید از طریق ویرایش مراحل تغییر کنند.",
+      );
+    }
+  }
 
-  const effectiveRecurring =
-    validated.isRecurring ??
-    existingTask.isRecurring;
-
-
-  if (validated.subProjectId !== undefined) {
+  if (
+    validated.subProjectId !== undefined
+  ) {
     const subProject =
       await prisma.projectSubProject.findFirst({
         where: {
@@ -1849,50 +1890,33 @@ export async function updateTask(
       });
 
     if (!subProject) {
-      throw new Error(
-        "SUB_PROJECT_NOT_FOUND",
-      );
+      throw new Error("SUB_PROJECT_NOT_FOUND");
     }
   }
 
-  const currentAssigneeIds =
-    getAssigneeIds(
-      existingTask.assignees,
-    );
-
-  const nextAssigneeIds =
-    validated.assigneeIds ??
-    currentAssigneeIds;
-
-  const assigneesChanged =
-    validated.assigneeIds !== undefined &&
-    !haveSameIds(
-      currentAssigneeIds,
-      nextAssigneeIds,
-    );
-
-  if (isStagedTask && validated.assigneeIds !== undefined) {
-    const stageAssigneeIds = [
-      ...new Set(
-        existingTask.stages.map(
-          (stage) => stage.assigneeId,
+  /*
+   * مسئولان جدید مراحل باید کارمندان فعال و عضو پروژه باشند.
+   * اگر فرم مراحل را ارسال کرده باشد، مسئولان از خود مراحل
+   * محاسبه می‌شوند، نه از فهرست عمومی مسئولان فرم.
+   */
+  const stageAssigneeIds = hasStageUpdates
+    ? [
+        ...new Set(
+          submittedStages.map(
+            (stage) => stage.assigneeId,
+          ),
         ),
-      ),
-    ];
+      ]
+    : [];
 
-    if (
-      !haveSameIds(
-        stageAssigneeIds,
-        validated.assigneeIds,
-      )
-    ) {
-      throw new Error(
-        "STAGED_TASK_ASSIGNEES_MANAGED_BY_STAGES",
-      );
-    }
-  }
-
-  if (validated.assigneeIds !== undefined) {
+  if (hasStageUpdates) {
+    await validateTaskAssignees(
+      existingTask.projectId,
+      stageAssigneeIds,
+    );
+  } else if (
+    validated.assigneeIds !== undefined
+  ) {
     await validateTaskAssignees(
       existingTask.projectId,
       validated.assigneeIds,
@@ -1905,11 +1929,236 @@ export async function updateTask(
       validated,
     );
 
-  const oldAssigneeIds =
-    currentAssigneeIds;
+  /*
+   * شکل نهایی داده‌هایی که برای هر مرحله ذخیره می‌شوند.
+   */
+  type NormalizedStage = {
+    id?: string;
+    title: string;
+    description: string | null;
+    position: number;
+    status: TaskStageStatus;
+    assigneeId: string;
+    activatedAt: Date | null;
+    completedAt: Date | null;
+    completedById: string | null;
+  };
 
-  const newAssigneeIds =
-    nextAssigneeIds;
+  const normalizedStages: NormalizedStage[] = [];
+
+  if (submittedStages !== undefined) {
+    if (submittedStages.length < 2) {
+      throw new Error(
+        "تسک چندمرحله‌ای باید حداقل دو مرحله داشته باشد.",
+      );
+    }
+
+    const existingStagesById = new Map(
+      existingTask.stages.map(
+        (stage) => [stage.id, stage],
+      ),
+    );
+
+    const seenIds = new Set<string>();
+
+    for (const stage of submittedStages) {
+      if (!stage.id) {
+        continue;
+      }
+
+      if (
+        !existingStagesById.has(stage.id)
+      ) {
+        throw new Error("TASK_STAGE_NOT_FOUND");
+      }
+
+      if (seenIds.has(stage.id)) {
+        throw new Error(
+          "شناسه یک مرحله بیش از یک بار ارسال شده است.",
+        );
+      }
+
+      seenIds.add(stage.id);
+    }
+
+    /*
+     * ترتیب باید از ۱ شروع شود و پیوسته باشد.
+     * ترتیب نهایی از position گرفته می‌شود، نه ترتیب
+     * اتفاقی اعضای آرایه ارسالی.
+     */
+    const orderedStages = [
+      ...submittedStages,
+    ].sort(
+      (a, b) => a.position - b.position,
+    );
+
+    const positions = orderedStages.map(
+      (stage) => stage.position,
+    );
+
+    const hasContinuousPositions =
+      positions.every(
+        (position, index) =>
+          position === index + 1,
+      );
+
+    if (!hasContinuousPositions) {
+      throw new Error(
+        "ترتیب مراحل باید از ۱ شروع شود و هیچ شماره‌ای جا نیفتد.",
+      );
+    }
+
+    /*
+     * ترتیب معتبر وضعیت‌ها:
+     * مراحل تکمیل‌شده، سپس حداکثر یک مرحله فعال،
+     * و پس از آن مراحل قفل‌شده.
+     */
+    let activeStageSeen = false;
+    let lockedStageSeen = false;
+
+    for (const stage of orderedStages) {
+      if (stage.status === "LOCKED") {
+        lockedStageSeen = true;
+        continue;
+      }
+
+      if (lockedStageSeen) {
+        throw new Error(
+          "مرحله فعال یا تکمیل‌شده نمی‌تواند بعد از یک مرحله قفل‌شده قرار گیرد.",
+        );
+      }
+
+      if (
+        stage.status === "COMPLETED" &&
+        activeStageSeen
+      ) {
+        throw new Error(
+          "مرحله‌ای که بعد از مرحله فعال قرار دارد، نمی‌تواند تکمیل‌شده باشد.",
+        );
+      }
+
+      if (stage.status === "IN_PROGRESS") {
+        if (activeStageSeen) {
+          throw new Error(
+            "در هر لحظه فقط یک مرحله می‌تواند فعال باشد.",
+          );
+        }
+
+        activeStageSeen = true;
+      }
+    }
+
+    const now = new Date();
+
+    for (const stage of orderedStages) {
+      const previous = stage.id
+        ? existingStagesById.get(stage.id)
+        : undefined;
+
+      const activatedAt =
+        stage.activatedAt !== undefined
+          ? stage.activatedAt
+          : previous?.activatedAt ??
+            (stage.status !== "LOCKED"
+              ? now
+              : null);
+
+      const completedAt =
+        stage.completedAt !== undefined
+          ? stage.completedAt
+          : stage.status === "COMPLETED"
+            ? previous?.completedAt ?? now
+            : null;
+
+      const completedById =
+        stage.completedById !== undefined
+          ? stage.completedById
+          : stage.status === "COMPLETED"
+            ? previous?.completedById ??
+              session.user.id
+            : null;
+
+      if (
+        activatedAt &&
+        completedAt &&
+        completedAt.getTime() <
+          activatedAt.getTime()
+      ) {
+        throw new Error(
+          "زمان تکمیل یک مرحله نمی‌تواند قبل از زمان فعال‌شدن آن باشد.",
+        );
+      }
+
+      normalizedStages.push({
+        ...(stage.id ? { id: stage.id } : {}),
+
+        title: stage.title,
+
+        description:
+          stage.description !== undefined
+            ? stage.description?.trim() || null
+            : previous?.description ?? null,
+
+        position: stage.position,
+
+        status: stage.status,
+
+        assigneeId: stage.assigneeId,
+
+        activatedAt,
+        completedAt,
+        completedById,
+      });
+    }
+
+    /*
+     * شناسه تکمیل‌کننده باید متعلق به یک کاربر واقعی باشد.
+     */
+    const completedByIds = [
+      ...new Set(
+        normalizedStages
+          .map((stage) => stage.completedById)
+          .filter(
+            (id): id is string =>
+              id !== null,
+          ),
+      ),
+    ];
+
+    if (completedByIds.length > 0) {
+      const existingUsers =
+        await prisma.user.findMany({
+          where: {
+            id: {
+              in: completedByIds,
+            },
+          },
+
+          select: {
+            id: true,
+          },
+        });
+
+      if (
+        existingUsers.length !==
+        completedByIds.length
+      ) {
+        throw new Error("EMPLOYEE_NOT_FOUND");
+      }
+    }
+  }
+
+  const oldAssigneeIds = currentAssigneeIds;
+
+  const newAssigneeIds = hasStageUpdates
+    ? stageAssigneeIds
+    : validated.assigneeIds ??
+      currentAssigneeIds;
+
+  const assigneesChanged = !haveSameIds(
+    oldAssigneeIds,
+    newAssigneeIds,
+  );
 
   const addedAssigneeIds =
     getAddedAssigneeIds(
@@ -1923,8 +2172,44 @@ export async function updateTask(
       newAssigneeIds,
     );
 
-  const task =
-    await prisma.$transaction(async (tx) => {
+  /*
+   * وضعیت کلی تسک عادی از روی وضعیت مراحل محاسبه می‌شود.
+   * در تسک تکرارشونده، وضعیت کلی خود تسک نماینده یک نوبت
+   * مشخص نیست؛ بنابراین اینجا از روی قالب مراحل تغییر نمی‌کند.
+   */
+  const allStagesCompleted =
+    hasStageUpdates &&
+    normalizedStages.every(
+      (stage) => stage.status === "COMPLETED",
+    );
+
+  const hasActiveStage =
+    hasStageUpdates &&
+    normalizedStages.some(
+      (stage) => stage.status === "IN_PROGRESS",
+    );
+
+  const derivedTaskStatus =
+    allStagesCompleted
+      ? "COMPLETED"
+      : hasActiveStage
+        ? "IN_PROGRESS"
+        : "TODO";
+
+  const lastStage =
+    normalizedStages.length > 0
+      ? normalizedStages[
+          normalizedStages.length - 1
+        ]
+      : null;
+
+  const derivedTaskCompletedAt =
+    allStagesCompleted
+      ? lastStage?.completedAt ?? new Date()
+      : null;
+
+  const task = await prisma.$transaction(
+    async (tx) => {
       const updatedTask =
         await tx.task.update({
           where: {
@@ -1971,6 +2256,12 @@ export async function updateTask(
 
             recurrenceActive:
               recurrence.config.recurrenceActive,
+
+            ...(hasStageUpdates &&
+              !recurrence.config.isRecurring && {
+                status: derivedTaskStatus,
+                completedAt: derivedTaskCompletedAt,
+              }),
           },
 
           select: {
@@ -2024,8 +2315,116 @@ export async function updateTask(
           },
         });
 
-      // در تسک مرحله‌ای، تخصیص عمومی از روی مراحل مدیریت می‌شود.
-      if (
+      if (hasStageUpdates) {
+        /*
+         * ابتدا تمام موقعیت‌های موجود موقتاً منفی می‌شوند.
+         * این کار مانع برخورد با قید یکتایی taskId + position
+         * هنگام جابه‌جایی دو مرحله می‌شود.
+         */
+        for (
+          let index = 0;
+          index < existingTask.stages.length;
+          index += 1
+        ) {
+          const existingStage =
+            existingTask.stages[index];
+
+          await tx.taskStage.update({
+            where: {
+              id: existingStage.id,
+            },
+
+            data: {
+              position: -100000 - index,
+            },
+          });
+        }
+
+        const retainedStageIds = new Set(
+          normalizedStages
+            .map((stage) => stage.id)
+            .filter(
+              (id): id is string =>
+                Boolean(id),
+            ),
+        );
+
+        const removedStageIds =
+          existingTask.stages
+            .filter(
+              (stage) =>
+                !retainedStageIds.has(stage.id),
+            )
+            .map((stage) => stage.id);
+
+        if (removedStageIds.length > 0) {
+          await tx.taskStage.deleteMany({
+            where: {
+              taskId,
+              id: {
+                in: removedStageIds,
+              },
+            },
+          });
+        }
+
+        /*
+         * مرحله دارای شناسه به‌روزرسانی می‌شود.
+         * مرحله بدون شناسه، مرحله جدید است.
+         */
+        for (const stage of normalizedStages) {
+          const stageData = {
+            title: stage.title,
+            description: stage.description,
+            position: stage.position,
+            status: stage.status,
+            assigneeId: stage.assigneeId,
+            activatedAt: stage.activatedAt,
+            completedAt: stage.completedAt,
+            completedById: stage.completedById,
+          };
+
+          if (stage.id) {
+            await tx.taskStage.update({
+              where: {
+                id: stage.id,
+              },
+
+              data: stageData,
+            });
+          } else {
+            await tx.taskStage.create({
+              data: {
+                taskId,
+                ...stageData,
+              },
+            });
+          }
+        }
+
+        /*
+         * فهرست مسئولان عمومی تسک با مسئولان مراحل هماهنگ
+         * می‌شود تا تخصیص‌های قدیمی و منسوخ باقی نمانند.
+         */
+        await tx.taskAssignee.deleteMany({
+          where: {
+            taskId,
+          },
+        });
+
+        if (newAssigneeIds.length > 0) {
+          await tx.taskAssignee.createMany({
+            data: newAssigneeIds.map(
+              (userId) => ({
+                taskId,
+                userId,
+              }),
+            ),
+
+            skipDuplicates: true,
+          });
+        }
+      } else if (
         validated.assigneeIds !== undefined &&
         !isStagedTask
       ) {
@@ -2042,6 +2441,8 @@ export async function updateTask(
               userId,
             }),
           ),
+
+          skipDuplicates: true,
         });
       }
 
@@ -2103,7 +2504,8 @@ export async function updateTask(
         });
 
       return refreshedTask ?? updatedTask;
-    });
+    },
+  );
 
   await prisma.activityLog.create({
     data: {
@@ -2120,6 +2522,24 @@ export async function updateTask(
         subProjectId: task.subProject?.id ?? null,
 
         assigneeIds: newAssigneeIds,
+
+        ...(hasStageUpdates && {
+          stageChanges: normalizedStages.map(
+            (stage) => ({
+              id: stage.id ?? null,
+              title: stage.title,
+              position: stage.position,
+              status: stage.status,
+              assigneeId: stage.assigneeId,
+              activatedAt:
+                stage.activatedAt?.toISOString() ?? null,
+              completedAt:
+                stage.completedAt?.toISOString() ?? null,
+              completedById:
+                stage.completedById,
+            }),
+          ),
+        }),
       },
     },
   });
@@ -2239,7 +2659,6 @@ export async function updateTask(
 
   return task;
 }
-
 /* -------------------------------------------------------------------------- */
 /* Normal task status                                                         */
 /* -------------------------------------------------------------------------- */

@@ -7,11 +7,13 @@ import {
   ClipboardList,
   FolderKanban,
   Mail,
+  Sparkles,
   UserCheck,
   Users,
 } from "lucide-react";
-import RecurringTasksToday from "@/components/admin/reports/recurring-tasks-today";
+import type { LucideIcon } from "lucide-react";
 
+import RecurringTasksToday from "@/components/admin/reports/recurring-tasks-today";
 import { ReportCharts } from "@/components/admin/reports/report-charts";
 import { ReportFilters } from "@/components/admin/reports/report-filters";
 import { getAdminReportData } from "@/lib/services/admin-report.service";
@@ -24,26 +26,16 @@ type SearchParams = {
   status?: string;
 };
 
-function parseFromDate(
-  value?: string,
-) {
-  if (
-    !value ||
-    !/^\d{4}-\d{2}-\d{2}$/.test(
-      value,
-    )
-  ) {
+function parseFromDate(value?: string) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return undefined;
   }
 
-  const date = new Date(
-    `${value}T00:00:00.000Z`,
-  );
+  const date = new Date(`${value}T00:00:00.000Z`);
 
   if (
-    Number.isNaN(
-      date.getTime(),
-    )
+    Number.isNaN(date.getTime()) ||
+    date.toISOString().slice(0, 10) !== value
   ) {
     return undefined;
   }
@@ -51,63 +43,58 @@ function parseFromDate(
   return date;
 }
 
-function parseToDate(
-  value?: string,
-) {
-  const date =
-    parseFromDate(value);
+function parseToDate(value?: string) {
+  const date = parseFromDate(value);
 
   if (!date) {
     return undefined;
   }
 
-  date.setUTCDate(
-    date.getUTCDate() + 1,
-  );
+  date.setUTCDate(date.getUTCDate() + 1);
 
   return date;
 }
 
-function formatDate(
-  date: Date,
-) {
-  return new Intl.DateTimeFormat(
-    "fa-IR",
-    {
-      calendar: "persian",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    },
-  ).format(date);
+function formatDate(date: Date) {
+  return new Intl.DateTimeFormat("fa-IR", {
+    calendar: "persian",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
 }
 
-function formatNumber(
-  value: number,
-) {
-  return value.toLocaleString(
-    "fa-IR",
-  );
+function formatNumber(value: number) {
+  return value.toLocaleString("fa-IR");
 }
 
-function getProjectStatusLabel(
-  status: string,
-) {
+function getProjectStatusLabel(status: string) {
   switch (status) {
     case "PLANNED":
       return "برنامه‌ریزی شده";
-
     case "IN_PROGRESS":
       return "در حال انجام";
-
     case "COMPLETED":
       return "تکمیل شده";
-
     case "ARCHIVED":
       return "آرشیو شده";
-
     default:
       return status;
+  }
+}
+
+function getProjectStatusClass(status: string) {
+  switch (status) {
+    case "PLANNED":
+      return "border-amber-300 bg-amber-100 text-amber-800";
+    case "IN_PROGRESS":
+      return "border-blue-300 bg-blue-100 text-blue-800";
+    case "COMPLETED":
+      return "border-emerald-300 bg-emerald-100 text-emerald-800";
+    case "ARCHIVED":
+      return "border-slate-300 bg-slate-100 text-slate-700";
+    default:
+      return "border-slate-300 bg-slate-100 text-slate-700";
   }
 }
 
@@ -121,54 +108,74 @@ function StatCard({
   label: string;
   value: number;
   suffix?: string;
-  icon: typeof Users;
-  tone:
-    | "slate"
-    | "blue"
-    | "emerald"
-    | "red";
+  icon: LucideIcon;
+  tone: "slate" | "blue" | "emerald" | "red";
 }) {
   const toneClasses = {
-    slate:
-      "bg-slate-900/7 text-slate-600",
-    blue:
-      "bg-blue-500/8 text-blue-600",
-    emerald:
-      "bg-emerald-500/8 text-emerald-600",
-    red:
-      "bg-red-500/8 text-red-600",
+    slate: {
+      card: "border-slate-300 bg-gradient-to-br from-white to-slate-100",
+      accent: "bg-slate-500",
+      icon: "border-slate-200 bg-slate-200 text-slate-700",
+      label: "text-slate-600",
+      value: "text-slate-950",
+    },
+    blue: {
+      card: "border-blue-300 bg-gradient-to-br from-white to-blue-50",
+      accent: "bg-blue-600",
+      icon: "border-blue-200 bg-blue-100 text-blue-700",
+      label: "text-blue-800",
+      value: "text-blue-900",
+    },
+    emerald: {
+      card: "border-emerald-300 bg-gradient-to-br from-white to-emerald-50",
+      accent: "bg-emerald-500",
+      icon: "border-emerald-200 bg-emerald-100 text-emerald-700",
+      label: "text-emerald-800",
+      value: "text-emerald-900",
+    },
+    red: {
+      card: "border-red-300 bg-gradient-to-br from-white to-red-50",
+      accent: "bg-red-500",
+      icon: "border-red-200 bg-red-100 text-red-700",
+      label: "text-red-800",
+      value: "text-red-900",
+    },
   };
 
+  const styles = toneClasses[tone];
+
   return (
-    <div className="glass-card rounded-[1.75rem] p-5 transition hover:-translate-y-px">
+    <article
+      className={`relative overflow-hidden rounded-3xl border p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md ${styles.card}`}
+    >
+      <div className={`absolute inset-x-0 top-0 h-1 ${styles.accent}`} />
+
       <div className="flex items-start justify-between gap-3">
-        <div
-          className={`glass-icon flex size-11 items-center justify-center rounded-2xl ${toneClasses[tone]}`}
-        >
-          <Icon className="size-5" />
+        <div className="min-w-0">
+          <p className={`text-sm font-bold ${styles.label}`}>{label}</p>
+
+          <p className={`mt-3 text-3xl font-black tracking-tight sm:text-4xl ${styles.value}`}>
+            {formatNumber(value)}
+          </p>
         </div>
 
-        <span className="text-[10px] font-bold text-slate-300">
-          گزارش
-        </span>
+        <div
+          className={`flex size-12 shrink-0 items-center justify-center rounded-2xl border ${styles.icon}`}
+        >
+          <Icon className="size-6" />
+        </div>
       </div>
 
-      <p className="mt-5 text-xs font-medium text-slate-400">
-        {label}
-      </p>
-
-      <div className="mt-1 flex items-end gap-2">
-        <p className="text-3xl font-extrabold tracking-tight text-slate-900">
-          {formatNumber(value)}
+      {suffix ? (
+        <p className="mt-3 border-t border-slate-200/70 pt-3 text-xs font-semibold leading-6 text-slate-500">
+          {suffix}
         </p>
-
-        {suffix ? (
-          <span className="mb-1 text-xs text-slate-400">
-            {suffix}
-          </span>
-        ) : null}
-      </div>
-    </div>
+      ) : (
+        <div className="mt-3 border-t border-slate-200/70 pt-3 text-xs font-semibold text-slate-500">
+          مشاهده در گزارش
+        </div>
+      )}
+    </article>
   );
 }
 
@@ -179,34 +186,58 @@ function DetailMetric({
 }: {
   label: string;
   value: number;
-  tone?:
-    | "default"
-    | "blue"
-    | "emerald"
-    | "red";
+  tone?: "default" | "blue" | "emerald" | "red";
 }) {
   const classes = {
-    default:
-      "border-white/45 bg-white/24 text-slate-900",
-    blue:
-      "border-blue-200/40 bg-blue-50/40 text-blue-800",
-    emerald:
-      "border-emerald-200/40 bg-emerald-50/40 text-emerald-800",
-    red:
-      "border-red-200/40 bg-red-50/40 text-red-800",
+    default: "border-slate-200 bg-slate-50 text-slate-900",
+    blue: "border-blue-200 bg-blue-50 text-blue-900",
+    emerald: "border-emerald-200 bg-emerald-50 text-emerald-900",
+    red: "border-red-200 bg-red-50 text-red-900",
   };
 
   return (
-    <div
-      className={`rounded-2xl border p-4 ${classes[tone]}`}
-    >
-      <p className="text-xs text-slate-400">
-        {label}
-      </p>
+    <div className={`rounded-2xl border p-4 ${classes[tone]}`}>
+      <p className="text-xs font-bold text-slate-600">{label}</p>
 
-      <p className="mt-2 text-2xl font-extrabold">
+      <p className="mt-2 text-2xl font-black">
         {formatNumber(value)}
       </p>
+    </div>
+  );
+}
+
+function SectionHeader({
+  icon: Icon,
+  title,
+  description,
+  tone = "blue",
+}: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  tone?: "blue" | "emerald" | "violet" | "amber";
+}) {
+  const tones = {
+    blue: "bg-blue-600 text-white",
+    emerald: "bg-emerald-600 text-white",
+    violet: "bg-violet-600 text-white",
+    amber: "bg-amber-500 text-white",
+  };
+
+  return (
+    <div className="flex items-center gap-3">
+      <div
+        className={`flex size-12 shrink-0 items-center justify-center rounded-2xl shadow-sm ${tones[tone]}`}
+      >
+        <Icon className="size-6" />
+      </div>
+
+      <div className="min-w-0">
+        <h2 className="text-lg font-black text-slate-950">{title}</h2>
+        <p className="mt-1 text-sm leading-6 text-slate-500">
+          {description}
+        </p>
+      </div>
     </div>
   );
 }
@@ -216,25 +247,15 @@ export default async function AdminReportsPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const params =
-    await searchParams;
+  const params = await searchParams;
 
-  const data =
-    await getAdminReportData({
-      from: parseFromDate(
-        params.from,
-      ),
-      to: parseToDate(params.to),
-      employeeId:
-        params.employeeId?.trim() ||
-        undefined,
-      projectId:
-        params.projectId?.trim() ||
-        undefined,
-      status:
-        params.status?.trim() ||
-        undefined,
-    });
+  const data = await getAdminReportData({
+    from: parseFromDate(params.from),
+    to: parseToDate(params.to),
+    employeeId: params.employeeId?.trim() || undefined,
+    projectId: params.projectId?.trim() || undefined,
+    status: params.status?.trim() || undefined,
+  });
 
   const hasFilters =
     Boolean(params.from) ||
@@ -243,351 +264,317 @@ export default async function AdminReportsPage({
     Boolean(params.projectId) ||
     Boolean(params.status);
 
-  const selectedEmployeeName =
-    data.details.employee?.name;
-
-  const selectedProjectTitle =
-    data.details.project?.title;
+  const selectedEmployeeName = data.details.employee?.name;
+  const selectedProjectTitle = data.details.project?.title;
 
   return (
-    <main className="min-h-screen">
-      <div className="mx-auto max-w-[1450px] space-y-6 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
-        <section className="glass-strong overflow-hidden rounded-[2rem] p-5 sm:p-6 lg:p-8">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+    <main className="min-h-screen bg-slate-100/90">
+      <div className="mx-auto max-w-[1500px] space-y-6 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
+        {/* Header */}
+        <section className="relative isolate overflow-hidden rounded-[2rem] border border-blue-900/20 bg-gradient-to-l from-slate-950 via-blue-950 to-indigo-900 p-5 text-white shadow-lg sm:p-7 lg:p-9">
+          <div className="pointer-events-none absolute -left-16 -top-20 -z-10 size-64 rounded-full bg-cyan-400/15 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 right-1/3 -z-10 size-80 rounded-full bg-indigo-400/20 blur-3xl" />
+
+          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="min-w-0">
-              <div className="flex items-center gap-3">
-                <div className="glass-icon flex size-11 items-center justify-center rounded-2xl">
-                  <ClipboardList className="size-5 text-slate-600" />
-                </div>
-
-                <div>
-                  <span className="text-xs font-bold text-slate-400">
-                    گزارش‌ها
-                  </span>
-
-                  <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">
-                    گزارش‌گیری مدیریتی
-                  </h1>
-                </div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-2 text-xs font-bold text-blue-100">
+                <span className="flex size-8 items-center justify-center rounded-xl bg-cyan-300/20 text-cyan-200">
+                  <ClipboardList className="size-4" />
+                </span>
+                پنل مدیریت / گزارش‌ها
               </div>
 
-              <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-500">
-                تحلیل کارمندان، پروژه‌ها و Taskها با امکان فیلتر و مشاهده جزئیات.
+              <h1 className="mt-5 text-2xl font-black tracking-tight sm:text-3xl lg:text-4xl">
+                گزارش‌گیری مدیریتی
+              </h1>
+
+              <p className="mt-3 max-w-3xl text-sm leading-7 text-blue-100/85 sm:text-base">
+                عملکرد کارمندان، روند پروژه‌ها و وضعیت Taskها را با فیلترهای
+                دلخواه تحلیل کنید.
               </p>
             </div>
 
             <Link
               href="/admin/dashboard"
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/60 bg-white/38 px-4 text-sm font-semibold text-slate-700 transition hover:bg-white/65 sm:w-auto"
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 text-sm font-bold text-white transition hover:border-white/40 hover:bg-white/20 sm:w-fit"
             >
-              داشبورد
+              بازگشت به داشبورد
               <ArrowLeft className="size-4" />
             </Link>
           </div>
+
+          <div className="relative mt-7 grid grid-cols-3 gap-2 border-t border-white/15 pt-5 sm:gap-3">
+            <div className="flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-3 sm:gap-3 sm:p-4">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-400/15 text-emerald-200">
+                <Users className="size-4 sm:size-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-[10px] font-semibold text-blue-100/70 sm:text-xs">
+                  گزارش
+                </p>
+                <p className="mt-1 truncate text-xs font-extrabold text-white sm:text-sm">
+                  کارمندان
+                </p>
+              </div>
+            </div>
+
+            <div className="flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-3 sm:gap-3 sm:p-4">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-400/15 text-amber-200">
+                <FolderKanban className="size-4 sm:size-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-[10px] font-semibold text-blue-100/70 sm:text-xs">
+                  گزارش
+                </p>
+                <p className="mt-1 truncate text-xs font-extrabold text-white sm:text-sm">
+                  پروژه‌ها
+                </p>
+              </div>
+            </div>
+
+            <div className="flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-3 sm:gap-3 sm:p-4">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-violet-400/15 text-violet-200">
+                <CheckCircle2 className="size-4 sm:size-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-[10px] font-semibold text-blue-100/70 sm:text-xs">
+                  گزارش
+                </p>
+                <p className="mt-1 truncate text-xs font-extrabold text-white sm:text-sm">
+                  Taskها
+                </p>
+              </div>
+            </div>
+          </div>
         </section>
 
-        <ReportFilters
-          employees={
-            data.options
-              .employees
-          }
-          projects={
-            data.options.projects
-          }
-          initialValues={{
-            from:
-              data.filters.from,
-            to: data.filters.to,
-            employeeId:
-              data.filters.employeeId,
-            projectId:
-              data.filters.projectId,
-            status:
-              data.filters.status,
-          }}
-        />
+        {/* Filters */}
+        <section className="overflow-hidden rounded-3xl border border-blue-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 bg-gradient-to-l from-blue-50 to-white p-5 sm:p-6">
+            <SectionHeader
+              icon={ClipboardList}
+              title="فیلتر گزارش‌ها"
+              description="بازه زمانی، کارمند، پروژه یا وضعیت Task را انتخاب کنید."
+              tone="blue"
+            />
+          </div>
+
+          <div className="p-4 sm:p-6">
+            <ReportFilters
+              employees={data.options.employees}
+              projects={data.options.projects}
+              initialValues={{
+                from: data.filters.from,
+                to: data.filters.to,
+                employeeId: data.filters.employeeId,
+                projectId: data.filters.projectId,
+                status: data.filters.status,
+              }}
+            />
+          </div>
+        </section>
 
         {hasFilters ? (
-          <section className="rounded-[1.75rem] border border-blue-200/40 bg-blue-50/35 p-4 sm:p-5">
+          <section className="rounded-2xl border border-blue-300 bg-blue-50 p-4 sm:p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-3">
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/8 text-blue-600">
-                  <ClipboardList className="size-4" />
+              <div className="flex min-w-0 items-start gap-3">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white">
+                  <Sparkles className="size-5" />
                 </div>
 
-                <div>
-                  <p className="text-sm font-extrabold text-blue-900">
-                    فیلتر فعال است
+                <div className="min-w-0">
+                  <p className="font-extrabold text-blue-950">
+                    فیلترهای گزارش فعال هستند
                   </p>
-
-                  <p className="mt-1 text-xs leading-6 text-blue-700/75">
-                    آمار و نمودارهای زیر با فیلترهای انتخاب‌شده محاسبه شده‌اند.
+                  <p className="mt-1 text-sm leading-6 text-blue-800">
+                    آمار و نمودارهای زیر بر اساس فیلترهای انتخاب‌شده محاسبه
+                    شده‌اند.
                   </p>
                 </div>
               </div>
 
               <Link
                 href="/admin/reports"
-                className="inline-flex h-10 items-center justify-center rounded-xl border border-white/60 bg-white/55 px-4 text-xs font-bold text-blue-700 transition hover:bg-white/75"
+                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-blue-300 bg-white px-4 text-sm font-extrabold text-blue-800 transition hover:bg-blue-100"
               >
                 حذف همه فیلترها
+                <ArrowLeft className="size-4" />
               </Link>
             </div>
           </section>
         ) : null}
 
+        {/* Overview statistics */}
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             label="کارمندان فعال"
-            value={
-              data.overview
-                .activeEmployeeCount
-            }
-            suffix={`از ${formatNumber(
-              data.overview
-                .employeeTotal,
-            )} کارمند`}
+            value={data.overview.activeEmployeeCount}
+            suffix={`از ${formatNumber(data.overview.employeeTotal)} کارمند`}
             icon={Users}
             tone="slate"
           />
 
           <StatCard
             label="پروژه‌های فعال"
-            value={
-              data.overview
-                .activeProjectCount
-            }
-            suffix={`از ${formatNumber(
-              data.overview
-                .projectTotal,
-            )} پروژه`}
+            value={data.overview.activeProjectCount}
+            suffix={`از ${formatNumber(data.overview.projectTotal)} پروژه`}
             icon={FolderKanban}
             tone="blue"
           />
 
           <StatCard
             label="نرخ تکمیل Task"
-            value={
-              data.overview
-                .completionRate
-            }
-            suffix={`${formatNumber(
-              data.overview
-                .completedTaskCount,
-            )} از ${formatNumber(
-              data.overview.taskTotal,
-            )} Task`}
+            value={data.overview.completionRate}
+            suffix={`${formatNumber(data.overview.completedTaskCount)} از ${formatNumber(data.overview.taskTotal)} Task`}
             icon={CheckCircle2}
             tone="emerald"
           />
 
           <StatCard
             label="Taskهای عقب‌افتاده"
-            value={
-              data.overview
-                .overdueTaskCount
-            }
+            value={data.overview.overdueTaskCount}
             suffix="نیازمند پیگیری"
             icon={AlertTriangle}
             tone="red"
           />
         </section>
 
+        {/* Employee report */}
         {selectedEmployeeName ? (
-          <section className="glass-card overflow-hidden rounded-[2rem]">
-            <div className="border-b border-white/40 p-5 sm:p-6">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex min-w-0 items-start gap-3">
-                  <div className="glass-icon flex size-11 shrink-0 items-center justify-center rounded-2xl">
-                    <UserCheck className="size-5 text-slate-600" />
-                  </div>
-
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-slate-400">
-                      گزارش کارمند
-                    </p>
-
-                    <h2 className="mt-1 truncate text-xl font-extrabold text-slate-900">
-                      {
-                        selectedEmployeeName
-                      }
-                    </h2>
-
-                    {data.details
-                      .employee
-                      ?.email ? (
-                      <p
-                        dir="ltr"
-                        className="mt-1 flex items-center gap-2 truncate text-sm text-slate-400"
-                      >
-                        <Mail className="size-3.5" />
-                        {
-                          data.details
-                            .employee
-                            .email
-                        }
-                      </p>
-                    ) : null}
-                  </div>
+          <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex flex-col gap-4 border-b border-emerald-200 bg-gradient-to-l from-emerald-50 to-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+              <div className="flex min-w-0 items-start gap-3">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm">
+                  <UserCheck className="size-6" />
                 </div>
 
-                <span
-                  className={`w-fit rounded-full border px-3 py-1.5 text-[11px] font-bold ${
-                    data.details
-                      .employee
-                      ?.isActive
-                      ? "border-emerald-200/40 bg-emerald-50/45 text-emerald-700"
-                      : "border-slate-200/50 bg-slate-500/7 text-slate-500"
-                  }`}
-                >
-                  {data.details
-                    .employee
-                    ?.isActive
-                    ? "فعال"
-                    : "غیرفعال"}
-                </span>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-emerald-800">
+                    گزارش اختصاصی کارمند
+                  </p>
+                  <h2 className="mt-1 break-words text-xl font-black text-slate-950">
+                    {selectedEmployeeName}
+                  </h2>
+
+                  {data.details.employee?.email ? (
+                    <p
+                      dir="ltr"
+                      className="mt-2 flex w-fit items-center gap-2 text-sm text-slate-500"
+                    >
+                      <Mail className="size-3.5 text-emerald-600" />
+                      {data.details.employee.email}
+                    </p>
+                  ) : null}
+                </div>
               </div>
+
+              <span
+                className={`inline-flex w-fit items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-extrabold ${
+                  data.details.employee?.isActive
+                    ? "border-emerald-300 bg-emerald-100 text-emerald-800"
+                    : "border-slate-300 bg-slate-100 text-slate-700"
+                }`}
+              >
+                <span
+                  className={`size-2 rounded-full ${
+                    data.details.employee?.isActive
+                      ? "bg-emerald-600"
+                      : "bg-slate-400"
+                  }`}
+                />
+                {data.details.employee?.isActive ? "فعال" : "غیرفعال"}
+              </span>
             </div>
 
             {data.details.employee ? (
               <>
-                <div className="grid gap-3 p-5 sm:grid-cols-2 sm:p-6 lg:grid-cols-4">
+                <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-4">
                   <DetailMetric
                     label="کل Task"
-                    value={
-                      data.details
-                        .employee
-                        .totalTasks
-                    }
+                    value={data.details.employee.totalTasks}
                   />
 
                   <DetailMetric
                     label="فعال"
-                    value={
-                      data.details
-                        .employee
-                        .activeTasks
-                    }
+                    value={data.details.employee.activeTasks}
                     tone="blue"
                   />
 
                   <DetailMetric
                     label="تکمیل شده"
-                    value={
-                      data.details
-                        .employee
-                        .completedTasks
-                    }
+                    value={data.details.employee.completedTasks}
                     tone="emerald"
                   />
 
                   <DetailMetric
                     label="عقب‌افتاده"
-                    value={
-                      data.details
-                        .employee
-                        .overdueTasks
-                    }
+                    value={data.details.employee.overdueTasks}
                     tone="red"
                   />
                 </div>
 
-                <div className="border-t border-white/35 p-5 sm:p-6">
-                  <div className="flex items-center gap-3">
-                    <div className="glass-icon flex size-9 items-center justify-center rounded-xl">
-                      <FolderKanban className="size-4 text-slate-600" />
+                <div className="border-t border-slate-200 p-4 sm:p-6">
+                  <SectionHeader
+                    icon={FolderKanban}
+                    title="پروژه‌های این کارمند"
+                    description="مقایسه تعداد و پیشرفت Taskهای هر پروژه"
+                    tone="emerald"
+                  />
+
+                  {data.details.employee.projects.length === 0 ? (
+                    <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-7 text-center text-sm font-medium leading-7 text-slate-500">
+                      در این بازه یا با این فیلترها Taskی برای این کارمند
+                      وجود ندارد.
                     </div>
-
-                    <h3 className="font-extrabold text-slate-800">
-                      پروژه‌های این کارمند
-                    </h3>
-                  </div>
-
-                  {data.details
-                    .employee
-                    .projects
-                    .length ===
-                  0 ? (
-                    <p className="mt-5 rounded-2xl border border-dashed border-slate-300/50 bg-white/20 p-6 text-center text-sm text-slate-400">
-                      در این بازه یا با این فیلترها Taskی برای این کارمند وجود ندارد.
-                    </p>
                   ) : (
-                    <div className="thin-scrollbar mt-5 overflow-x-auto">
+                    <div className="mt-5 overflow-x-auto rounded-2xl border border-slate-200">
                       <table className="w-full min-w-[650px]">
                         <thead>
-                          <tr className="border-b border-white/35 text-right text-xs font-bold text-slate-400">
-                            <th className="px-4 py-3">
-                              پروژه
-                            </th>
-
-                            <th className="px-4 py-3">
-                              کل Task
-                            </th>
-
-                            <th className="px-4 py-3">
-                              تکمیل شده
-                            </th>
-
-                            <th className="px-4 py-3">
-                              پیشرفت
-                            </th>
+                          <tr className="border-b border-slate-200 bg-slate-50 text-right text-xs font-extrabold text-slate-600">
+                            <th className="px-4 py-4">پروژه</th>
+                            <th className="px-4 py-4">کل Task</th>
+                            <th className="px-4 py-4">تکمیل شده</th>
+                            <th className="px-4 py-4">پیشرفت</th>
                           </tr>
                         </thead>
 
-                        <tbody>
-                          {data.details
-                            .employee
-                            .projects
-                            .map(
-                              (
-                                project,
-                              ) => (
-                                <tr
-                                  key={
-                                    project.id
-                                  }
-                                  className="border-b border-white/25 last:border-0"
-                                >
-                                  <td className="px-4 py-4 font-bold text-slate-700">
-                                    {
-                                      project.title
-                                    }
-                                  </td>
+                        <tbody className="divide-y divide-slate-100">
+                          {data.details.employee.projects.map((project) => (
+                            <tr
+                              key={project.id}
+                              className="transition hover:bg-emerald-50/40"
+                            >
+                              <td className="px-4 py-4 font-extrabold text-slate-800">
+                                {project.title}
+                              </td>
 
-                                  <td className="px-4 py-4 text-sm text-slate-500">
-                                    {formatNumber(
-                                      project.totalTasks,
-                                    )}
-                                  </td>
+                              <td className="px-4 py-4 text-sm font-bold text-slate-600">
+                                {formatNumber(project.totalTasks)}
+                              </td>
 
-                                  <td className="px-4 py-4 text-sm text-slate-500">
-                                    {formatNumber(
-                                      project.completedTasks,
-                                    )}
-                                  </td>
+                              <td className="px-4 py-4">
+                                <span className="inline-flex rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-sm font-extrabold text-emerald-800">
+                                  {formatNumber(project.completedTasks)}
+                                </span>
+                              </td>
 
-                                  <td className="px-4 py-4">
-                                    <div className="flex items-center gap-3">
-                                      <div className="h-2 w-24 overflow-hidden rounded-full bg-slate-900/7">
-                                        <div
-                                          className="h-full rounded-full bg-slate-800 transition-all"
-                                          style={{
-                                            width: `${project.progress}%`,
-                                          }}
-                                        />
-                                      </div>
-
-                                      <span className="text-xs font-bold text-slate-600">
-                                        {formatNumber(
-                                          project.progress,
-                                        )}
-                                        ٪
-                                      </span>
-                                    </div>
-                                  </td>
-                                </tr>
-                              ),
-                            )}
+                              <td className="px-4 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="h-2.5 w-24 overflow-hidden rounded-full bg-slate-100">
+                                    <div
+                                      className="h-full rounded-full bg-emerald-500"
+                                      style={{
+                                        width: `${project.progress}%`,
+                                      }}
+                                    />
+                                  </div>
+                                  <span className="text-xs font-extrabold text-slate-700">
+                                    {formatNumber(project.progress)}٪
+                                  </span>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
                         </tbody>
                       </table>
                     </div>
@@ -598,118 +585,77 @@ export default async function AdminReportsPage({
           </section>
         ) : null}
 
+        {/* Project report */}
         {selectedProjectTitle ? (
-          <section className="glass-card overflow-hidden rounded-[2rem]">
-            <div className="border-b border-white/40 p-5 sm:p-6">
-              <div className="flex items-center gap-3">
-                <div className="glass-icon flex size-11 items-center justify-center rounded-2xl">
-                  <FolderKanban className="size-5 text-slate-600" />
-                </div>
+          <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex flex-col gap-4 border-b border-indigo-200 bg-gradient-to-l from-indigo-50 to-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+              <SectionHeader
+                icon={FolderKanban}
+                title={selectedProjectTitle}
+                description="گزارش عملکرد و توزیع Taskهای پروژه انتخاب‌شده"
+                tone="violet"
+              />
 
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-slate-400">
-                    گزارش پروژه
-                  </p>
-
-                  <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-                    <h2 className="truncate text-xl font-extrabold text-slate-900">
-                      {
-                        selectedProjectTitle
-                      }
-                    </h2>
-
-                    {data.details
-                      .project ? (
-                      <span className="w-fit rounded-full border border-white/50 bg-white/25 px-3 py-1.5 text-[11px] font-bold text-slate-500">
-                        {getProjectStatusLabel(
-                          data.details
-                            .project
-                            .status,
-                        )}
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
+              {data.details.project ? (
+                <span
+                  className={`w-fit shrink-0 rounded-xl border px-3.5 py-2 text-xs font-extrabold ${getProjectStatusClass(data.details.project.status)}`}
+                >
+                  {getProjectStatusLabel(data.details.project.status)}
+                </span>
+              ) : null}
             </div>
 
             {data.details.project ? (
               <>
-                <div className="grid gap-3 p-5 sm:grid-cols-2 sm:p-6 lg:grid-cols-5">
+                <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-5">
                   <DetailMetric
                     label="کل Task"
-                    value={
-                      data.details
-                        .project
-                        .totalTasks
-                    }
+                    value={data.details.project.totalTasks}
                   />
 
                   <DetailMetric
                     label="در انتظار"
-                    value={
-                      data.details
-                        .project
-                        .todoTasks
-                    }
+                    value={data.details.project.todoTasks}
                   />
 
                   <DetailMetric
                     label="در حال انجام"
-                    value={
-                      data.details
-                        .project
-                        .inProgressTasks
-                    }
+                    value={data.details.project.inProgressTasks}
                     tone="blue"
                   />
 
                   <DetailMetric
                     label="تکمیل شده"
-                    value={
-                      data.details
-                        .project
-                        .completedTasks
-                    }
+                    value={data.details.project.completedTasks}
                     tone="emerald"
                   />
 
                   <DetailMetric
                     label="عقب‌افتاده"
-                    value={
-                      data.details
-                        .project
-                        .overdueTasks
-                    }
+                    value={data.details.project.overdueTasks}
                     tone="red"
                   />
                 </div>
 
-                <div className="border-t border-white/35 p-5 sm:p-6">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="border-t border-slate-200 p-5 sm:p-6">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="text-sm font-extrabold text-slate-800">
+                      <h3 className="text-base font-black text-slate-950">
                         پیشرفت پروژه
-                      </p>
-
-                      <p className="mt-1 text-xs text-slate-400">
+                      </h3>
+                      <p className="mt-1 text-sm text-slate-500">
                         بر اساس Taskهای منطبق با فیلتر فعلی
                       </p>
                     </div>
 
-                    <span className="text-2xl font-extrabold text-slate-900">
-                      {formatNumber(
-                        data.details
-                          .project
-                          .progress,
-                      )}
-                      ٪
+                    <span className="text-2xl font-black text-indigo-800">
+                      {formatNumber(data.details.project.progress)}٪
                     </span>
                   </div>
 
-                  <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-900/7">
+                  <div className="mt-4 h-3 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
                     <div
-                      className="h-full rounded-full bg-slate-800 transition-all"
+                      className="h-full rounded-full bg-gradient-to-l from-indigo-600 to-blue-500 transition-all"
                       style={{
                         width: `${data.details.project.progress}%`,
                       }}
@@ -717,132 +663,90 @@ export default async function AdminReportsPage({
                   </div>
                 </div>
 
-                <div className="border-t border-white/35 p-5 sm:p-6">
-                  <div className="flex items-center gap-3">
-                    <div className="glass-icon flex size-9 items-center justify-center rounded-xl">
-                      <Users className="size-4 text-slate-600" />
-                    </div>
+                <div className="border-t border-slate-200 p-5 sm:p-6">
+                  <SectionHeader
+                    icon={Users}
+                    title="توزیع Task بین کارمندان"
+                    description="مقایسه سهم و درصد تکمیل Taskهای کارمندان پروژه"
+                    tone="violet"
+                  />
 
-                    <h3 className="font-extrabold text-slate-800">
-                      توزیع Task بین کارمندان
-                    </h3>
-                  </div>
-
-                  {data.details
-                    .project
-                    .employees
-                    .length ===
-                  0 ? (
-                    <p className="mt-5 rounded-2xl border border-dashed border-slate-300/50 bg-white/20 p-6 text-center text-sm text-slate-400">
+                  {data.details.project.employees.length === 0 ? (
+                    <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-7 text-center text-sm font-medium leading-7 text-slate-500">
                       با فیلترهای فعلی Taskی برای این پروژه پیدا نشد.
-                    </p>
+                    </div>
                   ) : (
-                    <div className="thin-scrollbar mt-5 overflow-x-auto">
+                    <div className="mt-5 overflow-x-auto rounded-2xl border border-slate-200">
                       <table className="w-full min-w-[600px]">
                         <thead>
-                          <tr className="border-b border-white/35 text-right text-xs font-bold text-slate-400">
-                            <th className="px-4 py-3">
-                              کارمند
-                            </th>
-
-                            <th className="px-4 py-3">
-                              کل Task
-                            </th>
-
-                            <th className="px-4 py-3">
-                              تکمیل شده
-                            </th>
-
-                            <th className="px-4 py-3">
-                              درصد تکمیل
-                            </th>
+                          <tr className="border-b border-slate-200 bg-slate-50 text-right text-xs font-extrabold text-slate-600">
+                            <th className="px-4 py-4">کارمند</th>
+                            <th className="px-4 py-4">کل Task</th>
+                            <th className="px-4 py-4">تکمیل شده</th>
+                            <th className="px-4 py-4">درصد تکمیل</th>
                           </tr>
                         </thead>
 
-                        <tbody>
-                          {data.details
-                            .project
-                            .employees
-                            .map(
-                              (
-                                employee,
-                              ) => {
-                                const percentage =
-                                  employee.totalTasks ===
-                                  0
-                                    ? 0
-                                    : Math.round(
-                                        (employee.completedTasks /
-                                          employee.totalTasks) *
-                                          100,
-                                      );
+                        <tbody className="divide-y divide-slate-100">
+                          {data.details.project.employees.map((employee) => {
+                            const percentage =
+                              employee.totalTasks === 0
+                                ? 0
+                                : Math.round(
+                                    (employee.completedTasks /
+                                      employee.totalTasks) *
+                                      100,
+                                  );
 
-                                return (
-                                  <tr
-                                    key={
-                                      employee.id
-                                    }
-                                    className="border-b border-white/25 last:border-0"
-                                  >
-                                    <td className="px-4 py-4 font-bold text-slate-700">
-                                      {
-                                        employee.name
-                                      }
-                                    </td>
+                            return (
+                              <tr
+                                key={employee.id}
+                                className="transition hover:bg-indigo-50/40"
+                              >
+                                <td className="px-4 py-4 font-extrabold text-slate-800">
+                                  {employee.name}
+                                </td>
 
-                                    <td className="px-4 py-4 text-sm text-slate-500">
-                                      {formatNumber(
-                                        employee.totalTasks,
-                                      )}
-                                    </td>
+                                <td className="px-4 py-4 text-sm font-bold text-slate-600">
+                                  {formatNumber(employee.totalTasks)}
+                                </td>
 
-                                    <td className="px-4 py-4 text-sm text-slate-500">
-                                      {formatNumber(
-                                        employee.completedTasks,
-                                      )}
-                                    </td>
+                                <td className="px-4 py-4">
+                                  <span className="inline-flex rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-sm font-extrabold text-emerald-800">
+                                    {formatNumber(employee.completedTasks)}
+                                  </span>
+                                </td>
 
-                                    <td className="px-4 py-4">
-                                      <div className="flex items-center gap-3">
-                                        <div className="h-2 w-24 overflow-hidden rounded-full bg-slate-900/7">
-                                          <div
-                                            className="h-full rounded-full bg-emerald-500 transition-all"
-                                            style={{
-                                              width: `${percentage}%`,
-                                            }}
-                                          />
-                                        </div>
-
-                                        <span className="text-xs font-bold text-slate-600">
-                                          {formatNumber(
-                                            percentage,
-                                          )}
-                                          ٪
-                                        </span>
-                                      </div>
-                                    </td>
-                                  </tr>
-                                );
-                              },
-                            )}
+                                <td className="px-4 py-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="h-2.5 w-24 overflow-hidden rounded-full bg-slate-100">
+                                      <div
+                                        className="h-full rounded-full bg-emerald-500 transition-all"
+                                        style={{
+                                          width: `${percentage}%`,
+                                        }}
+                                      />
+                                    </div>
+                                    <span className="text-xs font-extrabold text-slate-700">
+                                      {formatNumber(percentage)}٪
+                                    </span>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
                   )}
                 </div>
 
-                <div className="border-t border-white/35 p-5 sm:p-6">
-                  <div className="inline-flex items-center gap-2 rounded-2xl border border-white/50 bg-white/24 px-4 py-3 text-sm text-slate-500">
-                    <CalendarDays className="size-4" />
-                    Deadline پروژه:
-                    <span className="font-bold text-slate-700">
-                      {formatDate(
-                        new Date(
-                          data.details
-                            .project
-                            .deadline,
-                        ),
-                      )}
+                <div className="border-t border-slate-200 bg-slate-50/70 p-5 sm:p-6">
+                  <div className="inline-flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+                    <CalendarDays className="size-4 text-indigo-600" />
+                    <span className="font-semibold">Deadline پروژه:</span>
+                    <span className="font-extrabold text-slate-900">
+                      {formatDate(new Date(data.details.project.deadline))}
                     </span>
                   </div>
                 </div>
@@ -851,29 +755,48 @@ export default async function AdminReportsPage({
           </section>
         ) : null}
 
-        <ReportCharts
-          taskStatusData={
-            data.tasks
-              .statusData
-          }
-          projectStatusData={
-            data.projects
-              .statusData
-          }
-          employeeWorkload={
-            data.employees
-              .workload
-          }
-          projectProgress={
-            data.projects
-              .progress
-          }
-          taskTrend={
-            data.trend
-              .taskTrend
-          }
-        />
-                <RecurringTasksToday />
+        {/* Charts */}
+        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 bg-gradient-to-l from-violet-50 to-white p-5 sm:p-6">
+            <SectionHeader
+              icon={Sparkles}
+              title="نمودارها و تحلیل عملکرد"
+              description="نمایی بصری از وضعیت Taskها، پروژه‌ها، بار کاری و روند زمانی"
+              tone="violet"
+            />
+          </div>
+
+          <div className="min-w-0 p-4 sm:p-6">
+            <ReportCharts
+              taskStatusData={data.tasks.statusData}
+              projectStatusData={data.projects.statusData}
+              employeeWorkload={data.employees.workload}
+              projectProgress={data.projects.progress}
+              taskTrend={data.trend.taskTrend}
+            />
+          </div>
+        </section>
+
+        {/* Recurring tasks */}
+        <section className="overflow-hidden rounded-3xl border border-amber-200 bg-white shadow-sm">
+          <div className="border-b border-amber-200 bg-gradient-to-l from-amber-50 to-white p-5 sm:p-6">
+            <SectionHeader
+              icon={CalendarDays}
+              title="Taskهای تکرارشونده امروز"
+              description="بررسی برنامه روزانه Taskهایی که به‌صورت تکرارشونده تعریف شده‌اند"
+              tone="amber"
+            />
+          </div>
+
+          <div className="min-w-0 p-4 sm:p-6">
+            <RecurringTasksToday />
+          </div>
+        </section>
+
+        <div className="flex items-center justify-center gap-2 pb-2 text-xs font-semibold text-slate-400">
+          <span className="size-2 rounded-full bg-indigo-500" />
+          گزارش‌گیری مدیریتی فرتاک تسکینگ
+        </div>
       </div>
     </main>
   );

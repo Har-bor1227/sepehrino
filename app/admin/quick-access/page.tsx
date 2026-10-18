@@ -4,7 +4,6 @@ import {
   ArrowUpLeft,
   CalendarDays,
   CheckCircle2,
-  Circle,
   Clock3,
   ListChecks,
   Repeat2,
@@ -36,52 +35,32 @@ const DAY_OPTIONS = [
   },
 ] as const;
 
-type DayValue =
-  (typeof DAY_OPTIONS)[number]["value"];
+type DayValue = (typeof DAY_OPTIONS)[number]["value"];
 
-function getSelectedDayIndex(
-  value: string | undefined,
-) {
-  return (
-    DAY_OPTIONS.find(
-      (option) =>
-        option.value === value,
-    )?.index ?? 0
-  );
+function getSelectedDayIndex(value: string | undefined) {
+  return DAY_OPTIONS.find((option) => option.value === value)?.index ?? 0;
 }
 
 function formatDate(date: Date) {
-  return new Intl.DateTimeFormat(
-    "fa-IR",
-    {
-      calendar: "persian",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    },
-  ).format(date);
+  return new Intl.DateTimeFormat("fa-IR", {
+    calendar: "persian",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(date);
 }
 
 function formatTime(date: Date | null) {
-  if (!date) {
-    return null;
-  }
+  if (!date) return null;
 
-  return new Intl.DateTimeFormat(
-    "fa-IR",
-    {
-      hour: "2-digit",
-      minute: "2-digit",
-    },
-  ).format(date);
+  return new Intl.DateTimeFormat("fa-IR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }
 
 function getPriorityLabel(
-  priority:
-    | "LOW"
-    | "MEDIUM"
-    | "HIGH"
-    | "URGENT",
+  priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT",
 ) {
   const labels = {
     LOW: "کم",
@@ -94,32 +73,20 @@ function getPriorityLabel(
 }
 
 function getPriorityClass(
-  priority:
-    | "LOW"
-    | "MEDIUM"
-    | "HIGH"
-    | "URGENT",
+  priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT",
 ) {
   const classes = {
-    LOW:
-      "border-slate-200/70 bg-slate-50 text-slate-600",
-    MEDIUM:
-      "border-amber-200/70 bg-amber-50 text-amber-700",
-    HIGH:
-      "border-orange-200/70 bg-orange-50 text-orange-700",
-    URGENT:
-      "border-red-200/70 bg-red-50 text-red-700",
+    LOW: "border-slate-300 bg-slate-100 text-slate-700",
+    MEDIUM: "border-amber-300 bg-amber-100 text-amber-800",
+    HIGH: "border-orange-300 bg-orange-100 text-orange-800",
+    URGENT: "border-red-300 bg-red-100 text-red-800",
   };
 
   return classes[priority];
 }
 
 function getStatusLabel(
-  status:
-    | "TODO"
-    | "IN_PROGRESS"
-    | "COMPLETED"
-    | "CANCELLED",
+  status: "TODO" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED",
 ) {
   const labels = {
     TODO: "در انتظار",
@@ -131,64 +98,51 @@ function getStatusLabel(
   return labels[status];
 }
 
-function getOverallStatus(
-  day: AdminQuickAccessDay,
-) {
-  if (
-    day.overview.planned === 0
-  ) {
+function getOverallStatus(day: AdminQuickAccessDay) {
+  if (day.overview.planned === 0) {
     return {
       label: "برنامه‌ای برای این روز ثبت نشده",
-      className:
-        "border-slate-200 bg-slate-50 text-slate-600",
+      className: "border-slate-300 bg-slate-100 text-slate-700",
+      iconClassName: "text-slate-500",
     };
   }
 
   if (day.overview.overdue > 0) {
     return {
       label: "نیازمند پیگیری",
-      className:
-        "border-red-200 bg-red-50 text-red-700",
+      className: "border-red-300 bg-red-100 text-red-800",
+      iconClassName: "text-red-600",
     };
   }
 
-  if (
-    day.overview.pending === 0
-  ) {
+  if (day.overview.pending === 0) {
     return {
       label: "روز کامل انجام شده",
-      className:
-        "border-emerald-200 bg-emerald-50 text-emerald-700",
+      className: "border-emerald-300 bg-emerald-100 text-emerald-800",
+      iconClassName: "text-emerald-600",
     };
   }
 
-  if (
-    day.key !==
-    getDateKey(new Date())
-  ) {
+  if (day.key !== getDateKey(new Date())) {
     return {
       label: "بخشی از برنامه انجام نشده",
-      className:
-        "border-amber-200 bg-amber-50 text-amber-700",
+      className: "border-amber-300 bg-amber-100 text-amber-800",
+      iconClassName: "text-amber-600",
     };
   }
 
   return {
     label: "در حال پیگیری",
-    className:
-      "border-blue-200 bg-blue-50 text-blue-700",
+    className: "border-blue-300 bg-blue-100 text-blue-800",
+    iconClassName: "text-blue-600",
   };
 }
 
 function getDateKey(date: Date) {
   return [
     date.getUTCFullYear(),
-    String(
-      date.getUTCMonth() + 1,
-    ).padStart(2, "0"),
-    String(
-      date.getUTCDate(),
-    ).padStart(2, "0"),
+    String(date.getUTCMonth() + 1).padStart(2, "0"),
+    String(date.getUTCDate()).padStart(2, "0"),
   ].join("-");
 }
 
@@ -201,69 +155,75 @@ function StatCard({
   label: string;
   value: number;
   icon: typeof ListChecks;
-  tone:
-    | "slate"
-    | "emerald"
-    | "amber"
-    | "red";
+  tone: "slate" | "emerald" | "amber" | "red";
 }) {
   const toneClasses = {
     slate: {
-      icon: "bg-slate-900/7 text-slate-600",
+      card: "border-slate-300 bg-gradient-to-br from-white to-slate-100",
+      icon: "bg-slate-200 text-slate-700 ring-slate-300",
+      label: "text-slate-600",
       value: "text-slate-900",
+      accent: "bg-slate-500",
     },
     emerald: {
-      icon: "bg-emerald-500/8 text-emerald-600",
-      value: "text-slate-900",
+      card: "border-emerald-300 bg-gradient-to-br from-white to-emerald-50",
+      icon: "bg-emerald-100 text-emerald-700 ring-emerald-200",
+      label: "text-emerald-800",
+      value: "text-emerald-800",
+      accent: "bg-emerald-500",
     },
     amber: {
-      icon: "bg-amber-500/8 text-amber-600",
-      value: "text-slate-900",
+      card: "border-amber-300 bg-gradient-to-br from-white to-amber-50",
+      icon: "bg-amber-100 text-amber-700 ring-amber-200",
+      label: "text-amber-800",
+      value: "text-amber-800",
+      accent: "bg-amber-500",
     },
     red: {
-      icon: "bg-red-500/8 text-red-600",
-      value: "text-red-700",
+      card: "border-red-300 bg-gradient-to-br from-white to-red-50",
+      icon: "bg-red-100 text-red-700 ring-red-200",
+      label: "text-red-800",
+      value: "text-red-800",
+      accent: "bg-red-500",
     },
   };
 
+  const styles = toneClasses[tone];
+
   return (
-    <div className="glass-card rounded-3xl p-4 sm:p-5">
+    <article
+      className={`relative overflow-hidden rounded-3xl border p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${styles.card}`}
+    >
+      <div className={`absolute inset-x-0 top-0 h-1 ${styles.accent}`} />
+
       <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className={`text-sm font-bold ${styles.label}`}>{label}</p>
+
+          <p className={`mt-3 text-3xl font-black tracking-tight sm:text-4xl ${styles.value}`}>
+            {value.toLocaleString("fa-IR")}
+          </p>
+        </div>
+
         <div
-          className={`glass-icon flex size-11 items-center justify-center rounded-2xl ${toneClasses[tone].icon}`}
+          className={`flex size-12 shrink-0 items-center justify-center rounded-2xl ring-1 ${styles.icon}`}
         >
-          <Icon className="size-5" />
+          <Icon className="size-6" />
         </div>
       </div>
-
-      <p className="mt-4 text-xs font-semibold text-slate-400">
-        {label}
-      </p>
-
-      <p
-        className={`mt-1 text-3xl font-extrabold tracking-tight ${toneClasses[tone].value}`}
-      >
-        {value.toLocaleString(
-          "fa-IR",
-        )}
-      </p>
-    </div>
+    </article>
   );
 }
 
-function TaskTypeBadge({
-  recurring,
-}: {
-  recurring: boolean;
-}) {
+function TaskTypeBadge({ recurring }: { recurring: boolean }) {
   return recurring ? (
-    <span className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-[10px] font-bold text-violet-700">
-      <Repeat2 className="size-3" />
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-300 bg-violet-100 px-3 py-1.5 text-xs font-bold text-violet-800">
+      <Repeat2 className="size-3.5" />
       تکرارشونده
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-600">
-      <ListChecks className="size-3" />
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700">
+      <ListChecks className="size-3.5" />
       معمولی
     </span>
   );
@@ -276,143 +236,142 @@ function TaskRow({
   task: AdminQuickAccessDay["plannedTasks"][number];
   completedView?: boolean;
 }) {
-  const completionTime =
-    formatTime(
-      task.completedAt,
-    );
+  const completionTime = formatTime(task.completedAt);
+
+  const taskTone = task.completed
+    ? {
+        card: "border-emerald-300 bg-gradient-to-l from-white to-emerald-50/80",
+        accent: "bg-emerald-500",
+      }
+    : task.overdue
+      ? {
+          card: "border-red-300 bg-gradient-to-l from-white to-red-50/80",
+          accent: "bg-red-500",
+        }
+      : {
+          card: "border-slate-200 bg-white",
+          accent: "bg-blue-500",
+        };
 
   return (
     <article
-      className={`rounded-2xl border p-4 transition ${
-        task.completed
-          ? "border-emerald-200/60 bg-emerald-50/35"
-          : task.overdue
-            ? "border-red-200/70 bg-red-50/35"
-            : "border-white/55 bg-white/40"
-      }`}
+      className={`relative overflow-hidden rounded-2xl border shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${taskTone.card}`}
     >
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <TaskTypeBadge
-                recurring={
-                  task.isRecurring
-                }
-              />
+      <div className={`absolute inset-y-0 right-0 w-1 ${taskTone.accent}`} />
 
-              {task.overdue ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[10px] font-bold text-red-700">
-                  <AlertTriangle className="size-3" />
+      <div className="space-y-4 p-4 pr-5 sm:p-5 sm:pr-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <TaskTypeBadge recurring={task.isRecurring} />
+
+              {task.overdue && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-red-300 bg-red-100 px-3 py-1.5 text-xs font-bold text-red-800">
+                  <AlertTriangle className="size-3.5" />
                   عقب‌افتاده
                 </span>
-              ) : null}
+              )}
 
-              {!completedView &&
-              task.completed ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
-                  <CheckCircle2 className="size-3" />
+              {!completedView && task.completed && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-800">
+                  <CheckCircle2 className="size-3.5" />
                   انجام شده
                 </span>
-              ) : null}
+              )}
             </div>
 
             <Link
               href={`/admin/tasks/${task.id}`}
-              className="mt-3 block break-words text-base font-extrabold leading-7 text-slate-900 transition hover:text-slate-600"
+              className="mt-3 block break-words text-base font-black leading-8 text-slate-950 transition hover:text-blue-700 sm:text-lg"
             >
               {task.title}
             </Link>
 
             <Link
               href={`/admin/projects/${task.project.id}`}
-              className="mt-1 block truncate text-xs font-medium text-slate-400 transition hover:text-slate-700"
+              className="mt-1 inline-flex max-w-full items-center gap-1.5 truncate text-sm font-semibold text-slate-500 transition hover:text-blue-700"
             >
+              <span className="size-1.5 shrink-0 rounded-full bg-blue-500" />
               {task.project.title}
             </Link>
           </div>
 
           <span
-            className={`inline-flex w-fit shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold ${getPriorityClass(
-              task.priority,
-            )}`}
+            className={`inline-flex w-fit shrink-0 items-center rounded-full border px-3 py-1.5 text-xs font-extrabold ${getPriorityClass(task.priority)}`}
           >
-            اولویت{" "}
-            {getPriorityLabel(
-              task.priority,
-            )}
+            اولویت {getPriorityLabel(task.priority)}
           </span>
         </div>
 
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-white/55 bg-white/35 px-3 py-2.5">
-            <p className="text-[10px] font-medium text-slate-400">
-              مسئول Task
-            </p>
+          <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-3">
+            <p className="text-xs font-semibold text-blue-700">مسئول Task</p>
 
-            <p className="mt-1 flex items-center gap-1.5 truncate text-xs font-bold text-slate-700">
-              <UserRound className="size-3.5 shrink-0 text-slate-400" />
+            <p className="mt-2 flex items-center gap-2 truncate text-sm font-extrabold text-slate-900">
+              <UserRound className="size-4 shrink-0 text-blue-600" />
               {task.assignedTo.name}
             </p>
           </div>
 
-          <div className="rounded-xl border border-white/55 bg-white/35 px-3 py-2.5">
-            <p className="text-[10px] font-medium text-slate-400">
-              وضعیت
-            </p>
+          <div
+            className={`rounded-xl border p-3 ${
+              task.completed
+                ? "border-emerald-200 bg-emerald-50"
+                : task.overdue
+                  ? "border-red-200 bg-red-50"
+                  : "border-slate-200 bg-slate-50"
+            }`}
+          >
+            <p className="text-xs font-semibold text-slate-600">وضعیت</p>
 
-            <p className="mt-1 text-xs font-bold text-slate-700">
-              {task.completed
-                ? "تکمیل شده"
-                : getStatusLabel(
-                    task.status,
-                  )}
+            <p className="mt-2 text-sm font-extrabold text-slate-900">
+              {task.completed ? "تکمیل شده" : getStatusLabel(task.status)}
             </p>
           </div>
 
-          <div className="rounded-xl border border-white/55 bg-white/35 px-3 py-2.5">
-            <p className="text-[10px] font-medium text-slate-400">
-              {completedView
-                ? "زمان انجام"
-                : "Deadline"}
+          <div className="rounded-xl border border-violet-200 bg-violet-50/80 p-3">
+            <p className="text-xs font-semibold text-violet-700">
+              {completedView ? "زمان انجام" : "Deadline"}
             </p>
 
-            <p className="mt-1 text-xs font-bold text-slate-700">
+            <p className="mt-2 text-sm font-extrabold text-slate-900">
               {completedView
-                ? completionTime ||
-                  "ثبت شده"
+                ? completionTime || "ثبت شده"
                 : task.deadline
-                  ? formatTime(
-                      task.deadline,
-                    ) || "—"
+                  ? formatTime(task.deadline) || "—"
                   : task.occurrenceDate
                     ? "برنامه روز"
                     : "—"}
             </p>
           </div>
 
-          <div className="rounded-xl border border-white/55 bg-white/35 px-3 py-2.5">
-            <p className="text-[10px] font-medium text-slate-400">
-              {task.completed
-                ? "انجام‌دهنده"
-                : "وضعیت پیگیری"}
+          <div
+            className={`rounded-xl border p-3 ${
+              task.completed
+                ? "border-emerald-200 bg-emerald-50"
+                : task.overdue
+                  ? "border-red-200 bg-red-50"
+                  : "border-amber-200 bg-amber-50"
+            }`}
+          >
+            <p className="text-xs font-semibold text-slate-600">
+              {task.completed ? "انجام‌دهنده" : "وضعیت پیگیری"}
             </p>
 
-            <p className="mt-1 flex items-center gap-1.5 truncate text-xs font-bold text-slate-700">
+            <p className="mt-2 flex items-center gap-2 truncate text-sm font-extrabold text-slate-900">
               {task.completed ? (
                 <>
-                  <UserRound className="size-3.5 shrink-0 text-emerald-500" />
-                  {task.completedBy?.name ||
-                    task.assignedTo.name}
+                  <UserRound className="size-4 shrink-0 text-emerald-600" />
+                  {task.completedBy?.name || task.assignedTo.name}
                 </>
               ) : task.overdue ? (
                 <>
-                  <AlertTriangle className="size-3.5 shrink-0 text-red-500" />
+                  <AlertTriangle className="size-4 shrink-0 text-red-600" />
                   نیازمند پیگیری
                 </>
               ) : (
                 <>
-                  <Clock3 className="size-3.5 shrink-0 text-amber-500" />
+                  <Clock3 className="size-4 shrink-0 text-amber-600" />
                   در انتظار انجام
                 </>
               )}
@@ -420,34 +379,40 @@ function TaskRow({
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 border-t border-white/45 pt-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
           {task.completed && task.completedAt ? (
-            <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700">
-              <CheckCircle2 className="size-3.5" />
+            <div className="inline-flex items-center gap-2 text-sm font-bold text-emerald-700">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-emerald-100">
+                <CheckCircle2 className="size-4" />
+              </span>
               در {completionTime} تکمیل شد
             </div>
           ) : (
-            <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
-              {task.isRecurring ? (
-                <>
-                  <Repeat2 className="size-3.5" />
-                  نوبت این روز
-                </>
-              ) : (
-                <>
-                  <CalendarDays className="size-3.5" />
-                  Task معمولی
-                </>
-              )}
+            <div className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500">
+              <span
+                className={`flex size-7 items-center justify-center rounded-lg ${
+                  task.isRecurring
+                    ? "bg-violet-100 text-violet-700"
+                    : "bg-blue-100 text-blue-700"
+                }`}
+              >
+                {task.isRecurring ? (
+                  <Repeat2 className="size-4" />
+                ) : (
+                  <CalendarDays className="size-4" />
+                )}
+              </span>
+
+              {task.isRecurring ? "نوبت این روز" : "Task معمولی"}
             </div>
           )}
 
           <Link
             href={`/admin/tasks/${task.id}`}
-            className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border border-white/60 bg-white/55 px-3.5 text-xs font-bold text-slate-700 transition hover:bg-white/80"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-extrabold text-white shadow-sm transition hover:bg-blue-700 hover:shadow-md"
           >
             مشاهده Task
-            <ArrowUpLeft className="size-3.5" />
+            <ArrowUpLeft className="size-4" />
           </Link>
         </div>
       </div>
@@ -458,21 +423,54 @@ function TaskRow({
 function EmptyState({
   title,
   description,
+  tone = "slate",
 }: {
   title: string;
   description: string;
+  tone?: "slate" | "emerald" | "amber" | "red";
 }) {
+  const toneClasses = {
+    slate: {
+      box: "border-slate-300 bg-slate-50",
+      icon: "bg-slate-200 text-slate-600",
+      title: "text-slate-800",
+      description: "text-slate-500",
+    },
+    emerald: {
+      box: "border-emerald-300 bg-emerald-50",
+      icon: "bg-emerald-100 text-emerald-700",
+      title: "text-emerald-800",
+      description: "text-emerald-700",
+    },
+    amber: {
+      box: "border-amber-300 bg-amber-50",
+      icon: "bg-amber-100 text-amber-700",
+      title: "text-amber-800",
+      description: "text-amber-700",
+    },
+    red: {
+      box: "border-red-300 bg-red-50",
+      icon: "bg-red-100 text-red-700",
+      title: "text-red-800",
+      description: "text-red-700",
+    },
+  };
+
+  const styles = toneClasses[tone];
+
   return (
-    <div className="flex min-h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200/80 bg-slate-50/50 px-5 py-8 text-center">
-      <div className="glass-icon flex size-12 items-center justify-center rounded-2xl">
-        <ListChecks className="size-5 text-slate-400" />
+    <div
+      className={`flex min-h-48 flex-col items-center justify-center rounded-2xl border border-dashed px-5 py-8 text-center ${styles.box}`}
+    >
+      <div
+        className={`flex size-14 items-center justify-center rounded-2xl ${styles.icon}`}
+      >
+        <ListChecks className="size-6" />
       </div>
 
-      <p className="mt-3 text-sm font-bold text-slate-700">
-        {title}
-      </p>
+      <p className={`mt-4 text-sm font-extrabold ${styles.title}`}>{title}</p>
 
-      <p className="mt-1 max-w-md text-xs leading-6 text-slate-400">
+      <p className={`mt-2 max-w-md text-sm leading-7 ${styles.description}`}>
         {description}
       </p>
     </div>
@@ -488,195 +486,165 @@ export default async function AdminQuickAccessPage({
 }) {
   await requireAdmin();
 
-  const [
-    days,
-    params,
-  ] = await Promise.all([
+  const [days, params] = await Promise.all([
     getAdminQuickAccessData(),
     searchParams,
   ]);
 
-  const selectedIndex =
-    getSelectedDayIndex(
-      params.day,
-    );
-
-  const selectedDay =
-    days[selectedIndex];
-
-  const overallStatus =
-    getOverallStatus(
-      selectedDay,
-    );
+  const selectedIndex = getSelectedDayIndex(params.day);
+  const selectedDay = days[selectedIndex];
+  const overallStatus = getOverallStatus(selectedDay);
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-slate-100/90">
       <div className="mx-auto max-w-[1500px] space-y-6 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
-        <section className="glass-strong overflow-hidden rounded-[2rem] p-5 sm:p-6 lg:p-8">
+        <section className="relative isolate overflow-hidden rounded-[2rem] border border-blue-900/20 bg-gradient-to-l from-slate-950 via-blue-950 to-indigo-900 p-5 text-white shadow-lg sm:p-7 lg:p-9">
+          <div className="pointer-events-none absolute -left-16 -top-24 -z-10 size-72 rounded-full bg-cyan-400/15 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-32 right-1/3 -z-10 size-80 rounded-full bg-indigo-400/20 blur-3xl" />
+
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="min-w-0">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
-                <div className="glass-icon flex size-9 items-center justify-center rounded-xl">
-                  <Zap className="size-4 text-slate-600" />
-                </div>
-
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-2 text-xs font-bold text-blue-100">
+                <span className="flex size-7 items-center justify-center rounded-lg bg-cyan-300/20 text-cyan-200">
+                  <Zap className="size-4" />
+                </span>
                 مدیریت سریع وضعیت Taskها
               </div>
 
-              <h1 className="mt-4 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">
+              <h1 className="mt-5 text-2xl font-black tracking-tight sm:text-3xl lg:text-4xl">
                 دسترسی سریع
               </h1>
 
-              <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-500">
-                وضعیت انجام Taskها را برای امروز،
-                دیروز و روز قبلش در یک نگاه بررسی کنید.
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-blue-100/85 sm:text-base">
+                وضعیت انجام Taskها را برای امروز، دیروز و روز قبلش در یک
+                نگاه بررسی کنید.
               </p>
             </div>
 
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/60 bg-white/45 px-3.5 py-2 text-xs font-bold text-slate-600">
-              <CalendarDays className="size-4 text-slate-400" />
-              {formatDate(
-                selectedDay.date,
-              )}
+            <div className="inline-flex w-fit items-center gap-3 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur-sm">
+              <span className="flex size-10 items-center justify-center rounded-xl bg-white/10 text-cyan-200">
+                <CalendarDays className="size-5" />
+              </span>
+
+              <div>
+                <p className="text-xs font-semibold text-blue-100/70">
+                  تاریخ انتخاب‌شده
+                </p>
+                <p className="mt-1 text-sm font-extrabold text-white">
+                  {formatDate(selectedDay.date)}
+                </p>
+              </div>
             </div>
           </div>
         </section>
 
         <section
           aria-label="انتخاب روز"
-          className="glass-card rounded-[2rem] p-3 sm:p-4"
+          className="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4"
         >
-          <div className="grid grid-cols-3 gap-2">
-            {DAY_OPTIONS.map(
-              (option) => {
-                const active =
-                  option.index ===
-                  selectedIndex;
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {DAY_OPTIONS.map((option) => {
+              const active = option.index === selectedIndex;
 
-                return (
-                  <Link
-                    key={
-                      option.value
-                    }
-                    href={`/admin/quick-access?day=${option.value}`}
-                    className={`flex min-h-12 items-center justify-center rounded-2xl border px-3 text-sm font-extrabold transition sm:min-h-14 ${
-                      active
-                        ? "border-slate-900 bg-slate-900 text-white shadow-[0_12px_26px_rgba(15,23,42,0.16)]"
-                        : "border-white/60 bg-white/35 text-slate-600 hover:bg-white/70 hover:text-slate-950"
-                    }`}
-                    aria-current={
-                      active
-                        ? "page"
-                        : undefined
-                    }
-                  >
-                    {option.label}
-                  </Link>
-                );
-              },
-            )}
+              return (
+                <Link
+                  key={option.value}
+                  href={`/admin/quick-access?day=${option.value}`}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex min-h-12 items-center justify-center rounded-2xl border px-3 text-sm font-extrabold transition duration-200 sm:min-h-14 sm:text-base ${
+                    active
+                      ? "border-blue-700 bg-gradient-to-l from-blue-700 to-indigo-700 text-white shadow-md shadow-blue-900/15"
+                      : "border-slate-200 bg-slate-50 text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800"
+                  }`}
+                >
+                  {option.label}
+                </Link>
+              );
+            })}
           </div>
         </section>
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             label="کل برنامه روز"
-            value={
-              selectedDay
-                .overview
-                .planned
-            }
+            value={selectedDay.overview.planned}
             icon={ListChecks}
             tone="slate"
           />
 
           <StatCard
             label="تکمیل شده"
-            value={
-              selectedDay
-                .completedTasks
-                .length
-            }
-            icon={
-              CheckCircle2
-            }
+            value={selectedDay.completedTasks.length}
+            icon={CheckCircle2}
             tone="emerald"
           />
 
           <StatCard
             label="انجام نشده"
-            value={
-              selectedDay
-                .overview
-                .pending
-            }
+            value={selectedDay.overview.pending}
             icon={Clock3}
             tone="amber"
           />
 
           <StatCard
             label="عقب‌افتاده"
-            value={
-              selectedDay
-                .overview
-                .overdue
-            }
-            icon={
-              AlertTriangle
-            }
+            value={selectedDay.overview.overdue}
+            icon={AlertTriangle}
             tone="red"
           />
         </section>
 
-        <section className="glass-card rounded-[2rem] p-5 sm:p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-col gap-4 border-b border-slate-200 bg-gradient-to-l from-blue-50 to-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div>
-              <p className="text-xs font-bold text-slate-400">
+              <div className="flex items-center gap-2 text-sm font-bold text-blue-700">
+                <span className="size-2 rounded-full bg-blue-600" />
                 جمع‌بندی روز
-              </p>
+              </div>
 
-              <h2 className="mt-1 text-xl font-extrabold text-slate-900">
+              <h2 className="mt-2 text-xl font-black text-slate-950">
                 وضعیت کلی {selectedDay.label}
               </h2>
             </div>
 
             <span
-              className={`inline-flex w-fit items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-extrabold ${overallStatus.className}`}
+              className={`inline-flex w-fit items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-extrabold ${overallStatus.className}`}
             >
-              {selectedDay.overview.overdue >
-              0 ? (
-                <AlertTriangle className="size-3.5" />
-              ) : selectedDay.overview.pending ===
-                0 &&
-                selectedDay.overview.planned >
-                  0 ? (
-                <CheckCircle2 className="size-3.5" />
+              {selectedDay.overview.overdue > 0 ? (
+                <AlertTriangle className={`size-4 ${overallStatus.iconClassName}`} />
+              ) : selectedDay.overview.pending === 0 &&
+                selectedDay.overview.planned > 0 ? (
+                <CheckCircle2 className={`size-4 ${overallStatus.iconClassName}`} />
               ) : (
-                <Clock3 className="size-3.5" />
+                <Clock3 className={`size-4 ${overallStatus.iconClassName}`} />
               )}
 
               {overallStatus.label}
             </span>
           </div>
 
-          <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
-              <div className="flex items-center justify-between gap-3 text-xs">
-                <span className="font-semibold text-slate-500">
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span className="font-bold text-slate-600">
                   میزان تکمیل برنامه
                 </span>
 
-                <span className="font-extrabold text-slate-800">
-                  {selectedDay.overview.completionRate.toLocaleString(
-                    "fa-IR",
-                  )}
-                  ٪
+                <span className="font-black text-blue-800">
+                  {selectedDay.overview.completionRate.toLocaleString("fa-IR")}٪
                 </span>
               </div>
 
-              <div className="mt-2 h-3 overflow-hidden rounded-full bg-slate-100">
+              <div
+                className="mt-3 h-4 overflow-hidden rounded-full border border-slate-200 bg-slate-100"
+                role="progressbar"
+                aria-valuenow={selectedDay.overview.completionRate}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="میزان تکمیل برنامه"
+              >
                 <div
-                  className="h-full rounded-full bg-slate-900 transition-all"
+                  className="h-full rounded-full bg-gradient-to-l from-emerald-500 via-teal-500 to-blue-600 transition-all duration-500"
                   style={{
                     width: `${selectedDay.overview.completionRate}%`,
                   }}
@@ -684,172 +652,140 @@ export default async function AdminQuickAccessPage({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/55 bg-white/40 px-4 py-3 text-center">
-              <p className="text-[10px] font-medium text-slate-400">
-                تاریخ
-              </p>
+            <div className="flex items-center gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 lg:min-w-56">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
+                <CalendarDays className="size-5" />
+              </span>
 
-              <p className="mt-1 text-sm font-extrabold text-slate-800">
-                {formatDate(
-                  selectedDay.date,
-                )}
-              </p>
+              <div>
+                <p className="text-xs font-bold text-indigo-700">تاریخ</p>
+                <p className="mt-1 text-sm font-black text-slate-900">
+                  {formatDate(selectedDay.date)}
+                </p>
+              </div>
             </div>
           </div>
         </section>
 
         <div className="grid gap-6 xl:grid-cols-2">
-          <section className="glass-card rounded-[2rem] p-5 sm:p-6">
-            <div className="flex flex-col gap-3 border-b border-white/45 pb-5 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <div className="glass-icon flex size-10 items-center justify-center rounded-2xl bg-emerald-500/8">
-                    <CheckCircle2 className="size-5 text-emerald-600" />
-                  </div>
+          <section className="overflow-hidden rounded-3xl border border-emerald-200 bg-white shadow-sm">
+            <div className="flex flex-col gap-3 border-b border-emerald-200 bg-emerald-50/80 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+              <div className="flex items-center gap-3">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm shadow-emerald-900/15">
+                  <CheckCircle2 className="size-6" />
+                </div>
 
-                  <div>
-                    <h2 className="text-lg font-extrabold text-slate-900">
-                      تکمیل‌شده‌ها
-                    </h2>
-
-                    <p className="mt-1 text-xs text-slate-400">
-                      Taskهایی که واقعاً در این روز تکمیل شده‌اند
-                    </p>
-                  </div>
+                <div>
+                  <h2 className="text-lg font-black text-emerald-950">
+                    تکمیل‌شده‌ها
+                  </h2>
+                  <p className="mt-1 text-sm leading-6 text-emerald-800">
+                    Taskهایی که واقعاً در این روز تکمیل شده‌اند
+                  </p>
                 </div>
               </div>
 
-              <span className="glass-chip w-fit rounded-full px-3 py-1.5 text-xs font-bold text-slate-500">
-                {selectedDay.completedTasks.length.toLocaleString(
-                  "fa-IR",
-                )}{" "}
-                مورد
+              <span className="inline-flex w-fit items-center rounded-xl border border-emerald-300 bg-white px-3 py-2 text-sm font-extrabold text-emerald-800">
+                {selectedDay.completedTasks.length.toLocaleString("fa-IR")} مورد
               </span>
             </div>
 
-            <div className="mt-5 space-y-3">
-              {selectedDay.completedTasks.length ===
-              0 ? (
+            <div className="space-y-3 p-4 sm:p-5">
+              {selectedDay.completedTasks.length === 0 ? (
                 <EmptyState
                   title="هنوز Taskی در این روز تکمیل نشده است"
                   description="در صورت ثبت تکمیل Task، انجام‌دهنده و زمان ثبت آن اینجا نمایش داده می‌شود."
+                  tone="emerald"
                 />
               ) : (
-                selectedDay.completedTasks.map(
-                  (task) => (
-                    <TaskRow
-                      key={`${task.id}-${task.occurrenceDate?.toISOString() ?? "normal"}`}
-                      task={task}
-                      completedView
-                    />
-                  ),
-                )
+                selectedDay.completedTasks.map((task) => (
+                  <TaskRow
+                    key={`${task.id}-${task.occurrenceDate?.toISOString() ?? "normal"}`}
+                    task={task}
+                    completedView
+                  />
+                ))
               )}
             </div>
           </section>
 
-          <section className="glass-card rounded-[2rem] p-5 sm:p-6">
-            <div className="flex flex-col gap-3 border-b border-white/45 pb-5 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <div className="glass-icon flex size-10 items-center justify-center rounded-2xl bg-amber-500/8">
-                    <Clock3 className="size-5 text-amber-600" />
-                  </div>
+          <section className="overflow-hidden rounded-3xl border border-amber-200 bg-white shadow-sm">
+            <div className="flex flex-col gap-3 border-b border-amber-200 bg-amber-50/80 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+              <div className="flex items-center gap-3">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-sm shadow-amber-900/15">
+                  <Clock3 className="size-6" />
+                </div>
 
-                  <div>
-                    <h2 className="text-lg font-extrabold text-slate-900">
-                      برنامه روز
-                    </h2>
-
-                    <p className="mt-1 text-xs text-slate-400">
-                      Taskهایی که طبق برنامه باید انجام می‌شدند
-                    </p>
-                  </div>
+                <div>
+                  <h2 className="text-lg font-black text-amber-950">
+                    برنامه روز
+                  </h2>
+                  <p className="mt-1 text-sm leading-6 text-amber-800">
+                    Taskهایی که طبق برنامه باید انجام می‌شدند
+                  </p>
                 </div>
               </div>
 
-              <span className="glass-chip w-fit rounded-full px-3 py-1.5 text-xs font-bold text-slate-500">
-                {selectedDay.plannedTasks.length.toLocaleString(
-                  "fa-IR",
-                )}{" "}
-                مورد
+              <span className="inline-flex w-fit items-center rounded-xl border border-amber-300 bg-white px-3 py-2 text-sm font-extrabold text-amber-800">
+                {selectedDay.plannedTasks.length.toLocaleString("fa-IR")} مورد
               </span>
             </div>
 
-            <div className="mt-5 space-y-3">
-              {selectedDay.plannedTasks.length ===
-              0 ? (
+            <div className="space-y-3 p-4 sm:p-5">
+              {selectedDay.plannedTasks.length === 0 ? (
                 <EmptyState
                   title="برای این روز Task برنامه‌ریزی نشده است"
                   description="اگر Task معمولی با Deadline این روز یا Task تکرارشونده‌ای در برنامه وجود داشته باشد، اینجا نمایش داده می‌شود."
+                  tone="amber"
                 />
               ) : (
-                selectedDay.plannedTasks.map(
-                  (task) => (
-                    <TaskRow
-                      key={`${task.id}-${task.occurrenceDate?.toISOString() ?? "normal"}`}
-                      task={task}
-                    />
-                  ),
-                )
+                selectedDay.plannedTasks.map((task) => (
+                  <TaskRow
+                    key={`${task.id}-${task.occurrenceDate?.toISOString() ?? "normal"}`}
+                    task={task}
+                  />
+                ))
               )}
             </div>
           </section>
         </div>
 
-        <section className="glass-card rounded-[2rem] p-5 sm:p-6">
-          <div className="flex flex-col gap-3 border-b border-white/45 pb-5 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <div className="glass-icon flex size-10 items-center justify-center rounded-2xl bg-red-500/8">
-                  <AlertTriangle className="size-5 text-red-600" />
-                </div>
+        <section className="overflow-hidden rounded-3xl border border-red-200 bg-white shadow-sm">
+          <div className="flex flex-col gap-3 border-b border-red-200 bg-red-50/80 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+            <div className="flex items-center gap-3">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-red-600 text-white shadow-sm shadow-red-900/15">
+                <AlertTriangle className="size-6" />
+              </div>
 
-                <div>
-                  <h2 className="text-lg font-extrabold text-slate-900">
-                    Taskهای عقب‌افتاده
-                  </h2>
-
-                  <p className="mt-1 text-xs text-slate-400">
-                    مواردی که باید انجام می‌شدند اما هنوز تکمیل نشده‌اند
-                  </p>
-                </div>
+              <div>
+                <h2 className="text-lg font-black text-red-950">
+                  Taskهای عقب‌افتاده
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-red-800">
+                  مواردی که باید انجام می‌شدند اما هنوز تکمیل نشده‌اند
+                </p>
               </div>
             </div>
 
-            <span className="glass-chip w-fit rounded-full px-3 py-1.5 text-xs font-bold text-slate-500">
-              {selectedDay.overdueTasks.length.toLocaleString(
-                "fa-IR",
-              )}{" "}
-              مورد
+            <span className="inline-flex w-fit items-center rounded-xl border border-red-300 bg-white px-3 py-2 text-sm font-extrabold text-red-800">
+              {selectedDay.overdueTasks.length.toLocaleString("fa-IR")} مورد
             </span>
           </div>
 
-          <div className="mt-5 space-y-3">
-            {selectedDay.overdueTasks.length ===
-            0 ? (
-              <div className="flex min-h-36 items-center justify-center rounded-2xl border border-dashed border-emerald-200/70 bg-emerald-50/35 px-5 text-center">
-                <div>
-                  <CheckCircle2 className="mx-auto size-7 text-emerald-500" />
-
-                  <p className="mt-2 text-sm font-bold text-emerald-700">
-                    مورد عقب‌افتاده‌ای وجود ندارد
-                  </p>
-
-                  <p className="mt-1 text-xs text-emerald-600/70">
-                    وضعیت این روز از نظر تأخیر مناسب است.
-                  </p>
-                </div>
-              </div>
+          <div className="space-y-3 p-4 sm:p-5">
+            {selectedDay.overdueTasks.length === 0 ? (
+              <EmptyState
+                title="مورد عقب‌افتاده‌ای وجود ندارد"
+                description="وضعیت این روز از نظر تأخیر مناسب است."
+                tone="emerald"
+              />
             ) : (
-              selectedDay.overdueTasks.map(
-                (task) => (
-                  <TaskRow
-                    key={`${task.id}-${task.occurrenceDate?.toISOString() ?? "normal"}`}
-                    task={task}
-                  />
-                ),
-              )
+              selectedDay.overdueTasks.map((task) => (
+                <TaskRow
+                  key={`${task.id}-${task.occurrenceDate?.toISOString() ?? "normal"}`}
+                  task={task}
+                />
+              ))
             )}
           </div>
         </section>

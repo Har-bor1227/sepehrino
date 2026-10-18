@@ -21,6 +21,12 @@ export const taskRecurrenceTypeSchema = z.enum([
   "MONTHLY",
 ]);
 
+export const taskStageStatusSchema = z.enum([
+  "LOCKED",
+  "IN_PROGRESS",
+  "COMPLETED",
+]);
+
 const idSchema = z
   .string()
   .trim()
@@ -78,6 +84,88 @@ export const taskStageSchema = z.object({
 export type TaskStageInput = z.infer<
   typeof taskStageSchema
 >;
+
+/**
+ * ورودی مدیریت کامل یک مرحله در پنل ادمین.
+ *
+ * id:
+ * - برای مرحله موجود ارسال می‌شود.
+ * - برای مرحله جدید می‌تواند حذف شود.
+ *
+ * position:
+ * ترتیب مرحله در جریان اجرای تسک است.
+ *
+ * status و زمان‌ها:
+ * توسط ادمین قابل اصلاح هستند؛ سرویس باید مجازبودن
+ * عملیات و سازگاری وضعیت مراحل را بررسی کند.
+ */
+export const updateTaskStageSchema = z.object({
+  id: idSchema.optional(),
+
+  title: z
+    .string()
+    .trim()
+    .min(2, "عنوان مرحله باید حداقل ۲ کاراکتر باشد.")
+    .max(255, "عنوان مرحله بیش از حد طولانی است."),
+
+  description: z
+    .string()
+    .trim()
+    .max(5000, "توضیحات مرحله بیش از حد طولانی است.")
+    .nullable()
+    .optional(),
+
+  assigneeId: idSchema,
+
+  position: z
+    .number()
+    .int("ترتیب مرحله باید عدد صحیح باشد.")
+    .min(1, "ترتیب مرحله باید حداقل ۱ باشد."),
+
+  status: taskStageStatusSchema,
+
+  activatedAt: dateSchema
+    .nullable()
+    .optional(),
+
+  completedAt: dateSchema
+    .nullable()
+    .optional(),
+
+  completedById: idSchema
+    .nullable()
+    .optional(),
+});
+
+/**
+ * فهرست کامل مراحل بعد از ویرایش.
+ *
+ * مراحل موجود با id شناسایی می‌شوند.
+ * مراحل بدون id، مراحل جدید هستند.
+ * حذف مراحل موجود و ترتیب جدید باید در سرویس اعمال شود.
+ */
+export const updateTaskStagesSchema = z
+  .array(updateTaskStageSchema)
+  .min(
+    2,
+    "تسک چندمرحله‌ای باید حداقل دو مرحله داشته باشد.",
+  )
+  .refine(
+    (stages) => {
+      const ids = stages
+        .map((stage) => stage.id)
+        .filter((id): id is string => Boolean(id));
+
+      return new Set(ids).size === ids.length;
+    },
+    "شناسه مراحل موجود نمی‌تواند تکراری باشد.",
+  )
+  .refine(
+    (stages) =>
+      new Set(stages.map((stage) => stage.position)).size ===
+      stages.length,
+    "ترتیب مراحل نمی‌تواند تکراری باشد.",
+  );
 
 export const createTaskSchema = z
   .object({
@@ -160,7 +248,6 @@ export const createTaskSchema = z
   })
   .superRefine((data, ctx) => {
     const stageCount = data.stages?.length ?? 0;
-
     const hasStages = stageCount > 0;
 
     if (hasStages && stageCount < 2) {
@@ -180,6 +267,7 @@ export const createTaskSchema = z
           "برای Task معمولی حداقل یک مسئول انتخاب کنید.",
       });
     }
+
     if (!data.isRecurring) {
       if (data.recurrenceType !== "NONE") {
         ctx.addIssue({
@@ -288,6 +376,12 @@ export const updateTaskSchema = z.object({
 
   assigneeIds: assigneeIdsSchema.optional(),
 
+  /**
+   * در صورت ارسال stages، سرور باید فهرست مراحل فعلی
+   * را با این فهرست تطبیق داده و تغییرات را ذخیره کند.
+   */
+  stages: updateTaskStagesSchema.optional(),
+
   priority: taskPrioritySchema.optional(),
 
   deadline: dateSchema
@@ -340,9 +434,7 @@ export const updateTaskStatusSchema =
 export const setTaskOccurrenceStatusSchema =
   z.object({
     taskId: idSchema,
-
     occurrenceDate: dateSchema,
-
     completed: z.boolean(),
   });
 
@@ -370,13 +462,15 @@ export type UpdateTaskInput = z.infer<
   typeof updateTaskSchema
 >;
 
+export type UpdateTaskStageInput = z.infer<
+  typeof updateTaskStageSchema
+>;
+
 export type UpdateTaskStatusInput =
   z.infer<typeof updateTaskStatusSchema>;
 
 export type SetTaskOccurrenceStatusInput =
-  z.infer<
-    typeof setTaskOccurrenceStatusSchema
-  >;
+  z.infer<typeof setTaskOccurrenceStatusSchema>;
 
 export type CreateCommentInput = z.infer<
   typeof createCommentSchema
