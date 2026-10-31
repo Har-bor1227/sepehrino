@@ -357,7 +357,7 @@ function AttendanceContent({
         {!attendance.isWorkingDay &&
         !attendance.isHoliday &&
         !attendance.isLeave ? (
-          <div className="mt-6 rounded-2xl border border-slate-200 bg-white/50 p-4">
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-card p-4">
             <p className="text-sm leading-7 text-slate-600">
               امروز طبق برنامه ثبت‌شده در حضورینو روز کاری شما نیست.
             </p>
@@ -396,7 +396,7 @@ function AttendanceContent({
       </section>
 
       <section className="glass-card overflow-hidden rounded-[2rem]">
-        <div className="border-b border-white/50 p-5 sm:p-6">
+        <div className="border-b border-border p-5 sm:p-6">
           <div className="flex items-center gap-3">
             <div className="glass-icon flex size-10 items-center justify-center rounded-2xl">
               <CalendarDays className="size-5 text-slate-600" />
@@ -415,7 +415,7 @@ function AttendanceContent({
         </div>
 
         <div className="grid gap-px bg-slate-200/60 sm:grid-cols-2 xl:grid-cols-3">
-          <div className="bg-white/70 p-5">
+          <div className="bg-card p-5">
             <p className="text-sm text-slate-400">
               شروع برنامه
             </p>
@@ -424,7 +424,7 @@ function AttendanceContent({
             </p>
           </div>
 
-          <div className="bg-white/70 p-5">
+          <div className="bg-card p-5">
             <p className="text-sm text-slate-400">
               پایان برنامه
             </p>
@@ -433,7 +433,7 @@ function AttendanceContent({
             </p>
           </div>
 
-          <div className="bg-white/70 p-5">
+          <div className="bg-card p-5">
             <p className="text-sm text-slate-400">
               تأخیر ورود
             </p>
@@ -442,7 +442,7 @@ function AttendanceContent({
             </p>
           </div>
 
-          <div className="bg-white/70 p-5">
+          <div className="bg-card p-5">
             <p className="text-sm text-slate-400">
               تعجیل در خروج
             </p>
@@ -451,7 +451,7 @@ function AttendanceContent({
             </p>
           </div>
 
-          <div className="bg-white/70 p-5">
+          <div className="bg-card p-5">
             <p className="text-sm text-slate-400">
               اضافه‌کاری
             </p>
@@ -460,7 +460,7 @@ function AttendanceContent({
             </p>
           </div>
 
-          <div className="bg-white/70 p-5">
+          <div className="bg-card p-5">
             <p className="text-sm text-slate-400">
               تراز ساعات
             </p>
@@ -479,7 +479,7 @@ function AttendanceContent({
         </div>
 
         {attendance.note ? (
-          <div className="border-t border-white/50 p-5 sm:p-6">
+          <div className="border-t border-border p-5 sm:p-6">
             <p className="text-sm font-bold text-slate-700">
               توضیحات ثبت‌شده
             </p>
@@ -573,7 +573,7 @@ export default async function EmployeeAttendancePage() {
 
           <Link
             href="/employee/dashboard"
-            className="inline-flex h-11 w-fit items-center justify-center gap-2 rounded-xl border border-white/60 bg-white/45 px-4 text-sm font-semibold text-slate-700 transition hover:bg-white/70"
+            className="inline-flex h-11 w-fit items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold text-slate-700 transition hover:bg-muted"
           >
             <ArrowRight className="size-4" />
             بازگشت به داشبورد

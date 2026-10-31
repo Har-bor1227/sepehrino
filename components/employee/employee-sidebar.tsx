@@ -2,20 +2,28 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   Bell,
   CalendarDays,
   CheckCircle2,
-  ChevronLeft,
   ClipboardList,
   FolderKanban,
   LayoutDashboard,
   Menu,
   Search,
-  UserRound,
   X,
 } from "lucide-react";
+
+import {
+  Button,
+  buttonVariants,
+} from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 type EmployeeSidebarProps = {
   userName: string;
@@ -26,33 +34,48 @@ const navigationItems = [
   {
     href: "/employee/dashboard",
     label: "داشبورد",
+    shortLabel: "خانه",
     icon: LayoutDashboard,
   },
   {
     href: "/employee/attendance",
     label: "حضور و غیاب من",
+    shortLabel: "حضور",
     icon: CalendarDays,
   },
   {
     href: "/employee/projects",
     label: "پروژه‌های من",
+    shortLabel: "پروژه‌ها",
     icon: FolderKanban,
   },
   {
     href: "/employee/tasks",
     label: "Taskهای من",
+    shortLabel: "تسک‌ها",
     icon: ClipboardList,
   },
   {
     href: "/employee/search",
     label: "جست‌وجو",
+    shortLabel: "جست‌وجو",
     icon: Search,
   },
   {
     href: "/employee/notifications",
     label: "اعلان‌ها",
+    shortLabel: "اعلان‌ها",
     icon: Bell,
   },
+];
+
+/* ترتیب پنج مقصد اصلی در نوار پایین موبایل */
+const bottomNavigationHrefs = [
+  "/employee/dashboard",
+  "/employee/tasks",
+  "/employee/projects",
+  "/employee/attendance",
+  "/employee/notifications",
 ];
 
 function isActivePath(
@@ -66,6 +89,17 @@ function isActivePath(
   return (
     pathname === href ||
     pathname.startsWith(`${href}/`)
+  );
+}
+
+function BrandMark() {
+  return (
+    <div
+      aria-hidden="true"
+      className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground"
+    >
+      <CheckCircle2 className="size-5" />
+    </div>
   );
 }
 
@@ -83,8 +117,112 @@ function UserAvatar({
       .join("") || "ک";
 
   return (
-    <div className="glass-icon flex size-11 shrink-0 items-center justify-center rounded-2xl text-sm font-bold text-slate-700">
+    <div
+      aria-hidden="true"
+      className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-sm font-bold text-foreground"
+    >
       {initials}
+    </div>
+  );
+}
+
+function NavigationList({
+  pathname,
+  unreadNotifications,
+  onNavigate,
+}: {
+  pathname: string;
+  unreadNotifications: number;
+  onNavigate?: () => void;
+}) {
+  return (
+    <nav
+      aria-label="ناوبری پنل کارمند"
+    >
+      <ul className="space-y-1">
+        {navigationItems.map((item) => {
+          const Icon = item.icon;
+
+          const active = isActivePath(
+            pathname,
+            item.href,
+          );
+
+          const showBadge =
+            item.href ===
+              "/employee/notifications" &&
+            unreadNotifications > 0;
+
+          return (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                onClick={onNavigate}
+                aria-current={
+                  active ? "page" : undefined
+                }
+                className={`relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm transition-colors ${
+                  active
+                    ? "bg-accent font-bold text-accent-foreground"
+                    : "font-medium text-slate-600 hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                {active ? (
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-y-2 start-0 w-1 rounded-full bg-primary"
+                  />
+                ) : null}
+
+                <Icon
+                  aria-hidden="true"
+                  className="size-5 shrink-0"
+                />
+
+                <span className="min-w-0 flex-1 truncate">
+                  {item.label}
+                </span>
+
+                {showBadge ? (
+                  <span className="min-w-6 rounded-full bg-red-600 px-1.5 py-0.5 text-center text-xs font-bold leading-none text-white">
+                    {unreadNotifications.toLocaleString(
+                      "fa-IR",
+                    )}
+                    <span className="sr-only">
+                      {" "}
+                      اعلان خوانده‌نشده
+                    </span>
+                  </span>
+                ) : null}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
+
+function AccountBlock({
+  userName,
+}: {
+  userName: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <UserAvatar userName={userName} />
+
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-bold text-foreground">
+          {userName}
+        </p>
+
+        <p className="text-xs text-muted-foreground">
+          کارمند
+        </p>
+      </div>
+
+      <ThemeToggle />
     </div>
   );
 }
@@ -98,225 +236,302 @@ export function EmployeeSidebar({
   const [mobileOpen, setMobileOpen] =
     useState(false);
 
-  const navigation = (
-    <nav
-      aria-label="ناوبری پنل کارمند"
-      className="space-y-2"
-    >
-      {navigationItems.map((item) => {
-        const Icon = item.icon;
+  const drawerRef =
+    useRef<HTMLElement | null>(null);
 
-        const active = isActivePath(
-          pathname,
-          item.href,
+  const closeButtonRef =
+    useRef<HTMLButtonElement | null>(null);
+
+  /*
+    منوی موبایل مثل یک پنجره‌ی گفت‌وگو رفتار می‌کند:
+    فوکوس داخلش می‌ماند، Escape می‌بندد، اسکرول صفحه‌ی زیرین قفل
+    می‌شود و پس از بسته‌شدن فوکوس به دکمه‌ی منو برمی‌گردد.
+  */
+  useEffect(() => {
+    if (!mobileOpen) {
+      return;
+    }
+
+    const previouslyFocused =
+      document.activeElement as HTMLElement | null;
+
+    const originalOverflow =
+      document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+
+    closeButtonRef.current?.focus();
+
+    function handleKeyDown(
+      event: KeyboardEvent,
+    ) {
+      if (event.key === "Escape") {
+        setMobileOpen(false);
+        return;
+      }
+
+      if (
+        event.key !== "Tab" ||
+        !drawerRef.current
+      ) {
+        return;
+      }
+
+      const focusable =
+        drawerRef.current.querySelectorAll<HTMLElement>(
+          "a[href], button:not([disabled])",
         );
 
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={() =>
-              setMobileOpen(false)
-            }
-            aria-current={
-              active ? "page" : undefined
-            }
-            className={`group relative flex min-h-12 items-center gap-3 overflow-hidden rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-200 ${
-              active
-                ? "border border-white/55 bg-slate-900 text-white shadow-[0_14px_32px_rgba(15,23,42,0.18)]"
-                : "border border-transparent text-slate-600 hover:border-white/55 hover:bg-white/45 hover:text-slate-950 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]"
-            }`}
-          >
-            {active ? (
-              <span
-                aria-hidden="true"
-                className="absolute inset-y-2 right-0 w-1 rounded-l-full bg-white/80"
-              />
-            ) : null}
+      if (focusable.length === 0) {
+        return;
+      }
 
-            <span
-              className={`flex size-9 shrink-0 items-center justify-center rounded-xl transition ${
-                active
-                  ? "bg-white/12 text-white"
-                  : "bg-white/42 text-slate-500 group-hover:bg-white/70 group-hover:text-slate-900"
-              }`}
-            >
-              <Icon className="size-4.5" />
-            </span>
+      const first = focusable[0];
 
-            <span className="min-w-0 flex-1 truncate">
-              {item.label}
-            </span>
+      const last =
+        focusable[focusable.length - 1];
 
-            {item.href ===
-              "/employee/notifications" &&
-            unreadNotifications > 0 ? (
-              <span
-                className={`flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
-                  active
-                    ? "bg-white/15 text-white"
-                    : "bg-red-500 text-white shadow-[0_5px_14px_rgba(239,68,68,0.24)]"
-                }`}
-              >
-                {unreadNotifications.toLocaleString(
-                  "fa-IR",
-                )}
-              </span>
-            ) : active ? (
-              <ChevronLeft className="size-4 shrink-0 text-white/55" />
-            ) : null}
-          </Link>
-        );
-      })}
-    </nav>
-  );
+      if (
+        event.shiftKey &&
+        document.activeElement === first
+      ) {
+        event.preventDefault();
+        last.focus();
+      } else if (
+        !event.shiftKey &&
+        document.activeElement === last
+      ) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
 
-  const profileCard = (
-    <div className="rounded-3xl border border-white/55 bg-white/42 p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_24px_rgba(15,23,42,0.04)] backdrop-blur-xl">
-      <div className="flex items-center gap-3">
-        <UserAvatar userName={userName} />
+    document.addEventListener(
+      "keydown",
+      handleKeyDown,
+    );
 
-        <div className="min-w-0">
-          <p className="text-[11px] font-medium text-slate-400">
-            حساب کاربری
-          </p>
+    return () => {
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown,
+      );
 
-          <p className="mt-1 truncate text-sm font-bold text-slate-800">
-            {userName}
-          </p>
+      document.body.style.overflow =
+        originalOverflow;
 
-          <p className="mt-1 text-[11px] font-medium text-slate-400">
-            کارمند
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+      previouslyFocused?.focus();
+    };
+  }, [mobileOpen]);
 
   return (
     <>
-      <aside className="fixed inset-y-0 right-0 z-40 hidden w-64 border-l border-white/60 lg:block">
+      {/* دسکتاپ: ستون ثابت سمت راست */}
+      <aside className="fixed inset-y-0 right-0 z-40 hidden w-64 border-l lg:block">
         <div className="glass-sidebar flex h-full flex-col">
-          <div className="px-4 pb-4 pt-5">
-            <div className="rounded-3xl border border-white/65 bg-white/48 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),0_10px_28px_rgba(15,23,42,0.04)] backdrop-blur-xl">
-              <div className="flex items-center gap-3">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-[0_10px_24px_rgba(15,23,42,0.18)]">
-                  <CheckCircle2 className="size-5" />
-                </div>
+          <div className="flex items-center gap-3 px-4 py-5">
+            <BrandMark />
 
-                <div className="min-w-0">
-                  <p className="text-sm font-extrabold tracking-tight text-slate-900">
-                    فرتاک تسکینگ
-                  </p>
+            <div className="min-w-0">
+              <p className="text-base font-extrabold text-foreground">
+                فرتاک تسکینگ
+              </p>
 
-                  <p className="mt-1 text-[11px] font-medium text-slate-400">
-                    پنل کارمند
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-4 border-t border-white/50 pt-3">
-                <p className="truncate text-xs font-semibold text-slate-700">
-                  {userName}
-                </p>
-
-                <p className="mt-1 text-[11px] text-slate-400">
-                  دسترسی کارمند
-                </p>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                پنل کارمند
+              </p>
             </div>
           </div>
 
-          <div className="thin-scrollbar flex-1 overflow-y-auto px-4 py-2">
-            {navigation}
+          <div className="thin-scrollbar flex-1 overflow-y-auto px-3 py-2">
+            <NavigationList
+              pathname={pathname}
+              unreadNotifications={
+                unreadNotifications
+              }
+            />
           </div>
 
-          <div className="mt-auto border-t border-white/45 p-4">
-            {profileCard}
+          <div className="border-t border-border p-4">
+            <AccountBlock userName={userName} />
           </div>
         </div>
       </aside>
 
-      <div className="sticky top-0 z-30 border-b border-white/60 lg:hidden">
-        <div className="glass-sidebar px-3 py-3">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() =>
-                setMobileOpen(true)
-              }
-              aria-label="باز کردن منو"
-              aria-expanded={mobileOpen}
-              className="glass-icon flex size-11 shrink-0 items-center justify-center rounded-2xl text-slate-700 transition hover:bg-white/70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-900/10"
-            >
-              <Menu className="size-5" />
-            </button>
+      {/* موبایل و تبلت: نوار بالا */}
+      <header className="sticky top-0 z-30 border-b border-border bg-card pt-[env(safe-area-inset-top)] lg:hidden">
+        <div className="flex h-14 items-center gap-2 px-3">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => setMobileOpen(true)}
+            aria-label="باز کردن منو"
+            aria-haspopup="dialog"
+            aria-expanded={mobileOpen}
+            aria-controls="employee-mobile-menu"
+          >
+            <Menu
+              aria-hidden="true"
+              className="size-5"
+            />
+          </Button>
 
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-extrabold tracking-tight text-slate-900">
-                فرتاک تسکینگ
-              </p>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-extrabold text-foreground">
+              فرتاک تسکینگ
+            </p>
 
-              <p className="mt-0.5 truncate text-[11px] font-medium text-slate-400">
-                پنل کارمند · {userName}
-              </p>
-            </div>
-
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-white/55 bg-white/42 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-xl">
-              <UserRound className="size-5 text-slate-600" />
-            </div>
+            <p className="truncate text-xs text-muted-foreground">
+              پنل کارمند
+            </p>
           </div>
+
+          <Link
+            href="/employee/search"
+            aria-label="جست‌وجو"
+            className={buttonVariants({
+              variant: "ghost",
+              size: "icon",
+            })}
+          >
+            <Search
+              aria-hidden="true"
+              className="size-5"
+            />
+          </Link>
+
+          <ThemeToggle />
         </div>
-      </div>
+      </header>
+
+      <nav
+        aria-label="ناوبری اصلی موبایل"
+        className="employee-bottom-nav lg:hidden"
+      >
+        {bottomNavigationHrefs.map((href) => {
+          const item = navigationItems.find(
+            (entry) => entry.href === href,
+          );
+
+          if (!item) {
+            return null;
+          }
+
+          const Icon = item.icon;
+
+          const active = isActivePath(
+            pathname,
+            item.href,
+          );
+
+          const showBadge =
+            item.href ===
+              "/employee/notifications" &&
+            unreadNotifications > 0;
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={
+                active ? "page" : undefined
+              }
+              className={
+                active ? "is-active" : undefined
+              }
+            >
+              <Icon
+                aria-hidden="true"
+                size={22}
+                strokeWidth={active ? 2.4 : 1.8}
+              />
+
+              <span>{item.shortLabel}</span>
+
+              {showBadge ? (
+                <span className="employee-nav-count">
+                  {unreadNotifications > 99
+                    ? "۹۹+"
+                    : unreadNotifications.toLocaleString(
+                        "fa-IR",
+                      )}
+                  <span className="sr-only">
+                    {" "}
+                    اعلان خوانده‌نشده
+                  </span>
+                </span>
+              ) : null}
+            </Link>
+          );
+        })}
+      </nav>
 
       {mobileOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button
             type="button"
+            tabIndex={-1}
             aria-label="بستن منو"
-            onClick={() =>
-              setMobileOpen(false)
-            }
-            className="absolute inset-0 bg-slate-950/35 backdrop-blur-[3px]"
+            onClick={() => setMobileOpen(false)}
+            className="absolute inset-0 bg-slate-950/50"
           />
 
-          <aside className="absolute inset-y-0 right-0 flex w-[88%] max-w-sm flex-col overflow-hidden border-l border-white/65">
-            <div className="glass-sidebar flex h-full flex-col shadow-[0_0_80px_rgba(15,23,42,0.2)]">
-              <div className="border-b border-white/45 px-4 py-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-[0_10px_24px_rgba(15,23,42,0.18)]">
-                    <CheckCircle2 className="size-5" />
-                  </div>
+          <aside
+            id="employee-mobile-menu"
+            ref={drawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="منوی پنل کارمند"
+            className="absolute inset-y-0 right-0 flex w-[88%] max-w-sm flex-col border-l border-border shadow-[var(--shadow-float)]"
+          >
+            <div className="glass-sidebar flex h-full flex-col pb-[env(safe-area-inset-bottom)]">
+              <div className="flex items-center gap-3 border-b border-border px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
+                <BrandMark />
 
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-extrabold text-slate-900">
-                      فرتاک تسکینگ
-                    </p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-base font-extrabold text-foreground">
+                    فرتاک تسکینگ
+                  </p>
 
-                    <p className="mt-1 truncate text-[11px] font-medium text-slate-400">
-                      پنل کارمند · {userName}
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setMobileOpen(false)
-                    }
-                    aria-label="بستن منو"
-                    className="glass-icon flex size-10 shrink-0 items-center justify-center rounded-xl text-slate-700 transition hover:bg-white/75 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-900/10"
-                  >
-                    <X className="size-5" />
-                  </button>
+                  <p className="text-xs text-muted-foreground">
+                    پنل کارمند
+                  </p>
                 </div>
+
+                <Button
+                  ref={closeButtonRef}
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() =>
+                    setMobileOpen(false)
+                  }
+                  aria-label="بستن منو"
+                >
+                  <X
+                    aria-hidden="true"
+                    className="size-5"
+                  />
+                </Button>
               </div>
 
-              <div className="thin-scrollbar flex-1 overflow-y-auto px-4 py-5">
-                {navigation}
+              <div className="thin-scrollbar flex-1 overflow-y-auto px-3 py-4">
+                <NavigationList
+                  pathname={pathname}
+                  unreadNotifications={
+                    unreadNotifications
+                  }
+                  onNavigate={() =>
+                    setMobileOpen(false)
+                  }
+                />
               </div>
 
-              <div className="border-t border-white/45 p-4">
-                {profileCard}
+              <div className="border-t border-border p-4">
+                <AccountBlock
+                  userName={userName}
+                />
               </div>
             </div>
           </aside>

@@ -188,7 +188,7 @@ export default async function AdminProjectsPage() {
         >
           {/* فرم ایجاد پروژه */}
           <section className="relative min-w-0 overflow-visible rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-100/80 via-white to-blue-50 shadow-[0_8px_24px_rgba(49,46,129,0.06)] lg:sticky lg:top-6">
-            <header className="border-b border-indigo-100 bg-white/65 p-5 sm:p-6">
+            <header className="border-b border-indigo-100 bg-card p-5 sm:p-6">
               <div className="flex items-center gap-3">
                 <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
                   <Plus className="size-5" />
@@ -274,7 +274,7 @@ export default async function AdminProjectsPage() {
 
             <Link
               href="/admin/tasks"
-              className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white/85 px-4 text-sm font-extrabold text-emerald-900 transition hover:border-emerald-300 hover:bg-white sm:w-auto"
+              className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-card px-4 text-sm font-extrabold text-emerald-900 transition hover:border-emerald-300 hover:bg-white sm:w-auto"
             >
               مشاهده تسک‌ها
               <ArrowLeft className="size-4" />

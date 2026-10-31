@@ -2,6 +2,7 @@
 
 import {
   useState,
+  useEffect,
   useTransition,
 } from "react";
 
@@ -96,6 +97,15 @@ export function EmployeeTaskStatusActions({
     });
   }
 
+  useEffect(() => {
+    if (!open) return;
+    function dismiss(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("keydown", dismiss);
+    return () => document.removeEventListener("keydown", dismiss);
+  }, [open]);
+
   const currentLabel =
     STATUS_OPTIONS.find(
       (option) =>
@@ -105,7 +115,20 @@ export function EmployeeTaskStatusActions({
     "وضعیت";
 
   return (
-    <div className="relative">
+    <div className="relative w-full sm:w-auto">
+      <label className="relative block sm:hidden">
+        <span className="sr-only">تغییر وضعیت تسک</span>
+        <select
+          aria-label="تغییر وضعیت تسک"
+          value={currentStatus}
+          disabled={isPending}
+          onChange={(event) => changeStatus(event.target.value as TaskStatus)}
+          className="min-h-12 w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 pl-10 text-sm font-bold text-slate-800 shadow-sm disabled:opacity-60"
+        >
+          {STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+        </select>
+        <ChevronDown aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-500" />
+      </label>
       <button
         type="button"
         disabled={isPending}
@@ -114,7 +137,7 @@ export function EmployeeTaskStatusActions({
             (value) => !value,
           )
         }
-        className="inline-flex h-11 min-w-[168px] items-center justify-between gap-3 rounded-2xl border border-white/60 bg-white/42 px-3.5 text-sm font-semibold text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.72),0_7px_18px_rgba(15,23,42,0.05)] backdrop-blur-xl transition hover:bg-white/65 disabled:cursor-not-allowed disabled:opacity-60"
+        className="hidden h-11 min-w-[168px] items-center justify-between sm:inline-flex gap-3 rounded-2xl border border-border bg-card px-3.5 text-sm font-semibold text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.72),0_7px_18px_rgba(15,23,42,0.05)] transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -150,7 +173,7 @@ export function EmployeeTaskStatusActions({
             className="fixed inset-0 z-20 cursor-default"
           />
 
-          <div className="absolute left-0 top-[calc(100%+0.5rem)] z-30 w-52 overflow-hidden rounded-3xl border border-white/70 bg-white/88 p-2 shadow-[0_24px_60px_rgba(15,23,42,0.15)] backdrop-blur-2xl">
+          <div role="menu" aria-label="انتخاب وضعیت تسک" className="absolute left-0 top-[calc(100%+0.5rem)] z-30 w-52 overflow-hidden rounded-3xl border border-border bg-card p-2 shadow-[0_24px_60px_rgba(15,23,42,0.15)]">
             {STATUS_OPTIONS.map(
               (option) => {
                 const selected =
@@ -163,6 +186,8 @@ export function EmployeeTaskStatusActions({
                       option.value
                     }
                     type="button"
+                    role="menuitemradio"
+                    aria-checked={selected}
                     disabled={
                       isPending
                     }

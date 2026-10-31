@@ -309,7 +309,7 @@ const completedStageCount = stages.filter(
       <div className="mx-auto max-w-[1250px] space-y-6 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
         <Link
           href="/employee/tasks"
-          className="glass-icon inline-flex h-10 items-center gap-2 rounded-2xl px-4 text-sm font-semibold text-slate-600 transition hover:-translate-y-px hover:bg-white/70"
+          className="glass-icon inline-flex h-10 items-center gap-2 rounded-2xl px-4 text-sm font-semibold text-slate-600 transition hover:-translate-y-px hover:bg-muted"
         >
           <ArrowRight className="size-4" />
           بازگشت به تسک‌های من
@@ -424,7 +424,7 @@ const completedStageCount = stages.filter(
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-white/60 bg-white/65 px-4 py-3">
+                <div className="rounded-2xl border border-border bg-card px-4 py-3">
                   <p className="text-xs text-slate-400">
                     مراحل تکمیل‌شده
                   </p>
@@ -437,7 +437,7 @@ const completedStageCount = stages.filter(
                 </div>
               </div>
 
-              <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/80">
+              <div className="mt-5 h-2 overflow-hidden rounded-full bg-card">
                 <div
                   className="h-full rounded-full bg-indigo-600 transition-all"
                   style={{
@@ -451,7 +451,7 @@ const completedStageCount = stages.filter(
               </div>
 
               {activeStage ? (
-                <div className="mt-4 flex items-start gap-3 rounded-2xl border border-blue-100 bg-white/70 p-4">
+                <div className="mt-4 flex items-start gap-3 rounded-2xl border border-blue-100 bg-card p-4">
                   <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
                     <Clock3 className="size-4.5" />
                   </div>
@@ -490,8 +490,8 @@ const completedStageCount = stages.filter(
               </div>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-white/45 bg-white/30 p-4">
-                  <p className="text-[11px] text-slate-400">
+                <div className="rounded-2xl border border-border bg-white/30 p-4">
+                  <p className="text-xs text-slate-400">
                     نوع تکرار
                   </p>
 
@@ -500,8 +500,8 @@ const completedStageCount = stages.filter(
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-white/45 bg-white/30 p-4">
-                  <p className="text-[11px] text-slate-400">
+                <div className="rounded-2xl border border-border bg-white/30 p-4">
+                  <p className="text-xs text-slate-400">
                     برنامه
                   </p>
 
@@ -510,8 +510,8 @@ const completedStageCount = stages.filter(
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-white/45 bg-white/30 p-4">
-                  <p className="text-[11px] text-slate-400">
+                <div className="rounded-2xl border border-border bg-white/30 p-4">
+                  <p className="text-xs text-slate-400">
                     شروع
                   </p>
 
@@ -533,7 +533,7 @@ const completedStageCount = stages.filter(
           ) : null}
 
           <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="rounded-3xl border border-white/45 bg-white/25 p-5">
+            <div className="rounded-3xl border border-border bg-white/25 p-5">
               <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
                 <UserRound className="size-4" />
                 {isStaged ? "مسئولان مراحل" : "مسئول‌های تسک"}
@@ -560,7 +560,7 @@ const completedStageCount = stages.filter(
               )}
             </div>
 
-            <div className="rounded-3xl border border-white/45 bg-white/25 p-5">
+            <div className="rounded-3xl border border-border bg-white/25 p-5">
               <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
                 <CalendarDays className="size-4" />
                 {recurring ? "شروع تکرار" : "Deadline"}
@@ -579,7 +579,7 @@ const completedStageCount = stages.filter(
               </p>
             </div>
 
-            <div className="rounded-3xl border border-white/45 bg-white/25 p-5">
+            <div className="rounded-3xl border border-border bg-white/25 p-5">
               <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
                 <Clock3 className="size-4" />
                 آخرین بروزرسانی
@@ -672,7 +672,7 @@ const completedStageCount = stages.filter(
                         </p>
 
                         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                          <div className="rounded-2xl border border-white/70 bg-white/60 p-3">
+                          <div className="rounded-2xl border border-border bg-card p-3">
                             <p className="text-xs text-slate-400">
                               مسئول مرحله
                             </p>
@@ -690,7 +690,7 @@ const completedStageCount = stages.filter(
                           </div>
 
                           {stageStatus === "COMPLETED" ? (
-                            <div className="rounded-2xl border border-white/70 bg-white/60 p-3">
+                            <div className="rounded-2xl border border-border bg-card p-3">
                               <p className="text-xs text-slate-400">
                                 زمان تکمیل
                               </p>
@@ -708,7 +708,7 @@ const completedStageCount = stages.filter(
                               ) : null}
                             </div>
                           ) : stage.activatedAt ? (
-                            <div className="rounded-2xl border border-white/70 bg-white/60 p-3">
+                            <div className="rounded-2xl border border-border bg-card p-3">
                               <p className="text-xs text-slate-400">
                                 زمان فعال‌شدن
                               </p>
@@ -718,7 +718,7 @@ const completedStageCount = stages.filter(
                               </p>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-2 rounded-2xl border border-white/70 bg-white/50 p-3 text-xs leading-6 text-slate-500">
+                            <div className="flex items-center gap-2 rounded-2xl border border-border bg-card p-3 text-xs leading-6 text-slate-500">
                               <LockKeyhole className="size-4 shrink-0" />
                               منتظر تکمیل مرحله قبلی
                             </div>
@@ -726,7 +726,7 @@ const completedStageCount = stages.filter(
                         </div>
 
                         {stage.description ? (
-                          <div className="mt-3 rounded-2xl border border-white/70 bg-white/45 p-3">
+                          <div className="mt-3 rounded-2xl border border-border bg-card p-3">
                             <p className="text-xs font-semibold text-slate-500">
                               توضیحات مرحله
                             </p>
@@ -738,7 +738,7 @@ const completedStageCount = stages.filter(
                         ) : null}
 
                         {isMyActiveStage ? (
-                          <div className="mt-4 rounded-2xl border border-blue-100 bg-white/75 p-4">
+                          <div className="mt-4 rounded-2xl border border-blue-100 bg-card p-4">
                             <p className="text-sm font-bold text-blue-900">
                               اکنون نوبت شماست.
                             </p>
@@ -768,7 +768,7 @@ const completedStageCount = stages.filter(
 
                         {stageStatus === "IN_PROGRESS" &&
                         !isMyActiveStage ? (
-                          <div className="mt-4 rounded-2xl border border-blue-100 bg-white/60 p-3">
+                          <div className="mt-4 rounded-2xl border border-blue-100 bg-card p-3">
                             <p className="text-xs leading-6 text-slate-600">
                               این مرحله در حال انجام است و تکمیل آن فقط توسط
                               مسئول تعیین‌شده امکان‌پذیر است.
@@ -807,8 +807,8 @@ const completedStageCount = stages.filter(
               </div>
 
               {task.todayOccurrence ? (
-                <div className="rounded-2xl border border-white/50 bg-white/30 px-4 py-3 text-left">
-                  <p className="text-[11px] text-slate-400">
+                <div className="rounded-2xl border border-border bg-white/30 px-4 py-3 text-left">
+                  <p className="text-xs text-slate-400">
                     تاریخ نوبت
                   </p>
 
@@ -893,7 +893,7 @@ const completedStageCount = stages.filter(
                   است.
                 </p>
 
-                <div className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-white/50 bg-white/30 px-4 py-3 text-xs text-slate-400">
+                <div className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-border bg-white/30 px-4 py-3 text-xs text-slate-400">
                   <CalendarDays className="size-4" />
                   امروز:
                   <span className="font-bold text-slate-600">
@@ -1017,7 +1017,7 @@ const completedStageCount = stages.filter(
           </div>
 
           <div className="grid gap-4 text-sm sm:grid-cols-2">
-            <div className="rounded-2xl border border-white/40 bg-white/20 p-4">
+            <div className="rounded-2xl border border-border bg-white/20 p-4">
               <p className="text-xs text-slate-400">ایجادکننده</p>
 
               <p className="mt-1 font-bold text-slate-800">
@@ -1025,7 +1025,7 @@ const completedStageCount = stages.filter(
               </p>
             </div>
 
-            <div className="rounded-2xl border border-white/40 bg-white/20 p-4">
+            <div className="rounded-2xl border border-border bg-white/20 p-4">
               <p className="text-xs text-slate-400">تاریخ ایجاد</p>
 
               <p className="mt-1 font-bold text-slate-800">
@@ -1033,7 +1033,7 @@ const completedStageCount = stages.filter(
               </p>
             </div>
 
-            <div className="rounded-2xl border border-white/40 bg-white/20 p-4">
+            <div className="rounded-2xl border border-border bg-white/20 p-4">
               <p className="text-xs text-slate-400">آخرین بروزرسانی</p>
 
               <p className="mt-1 font-bold text-slate-800">
@@ -1041,7 +1041,7 @@ const completedStageCount = stages.filter(
               </p>
             </div>
 
-            <div className="rounded-2xl border border-white/40 bg-white/20 p-4">
+            <div className="rounded-2xl border border-border bg-white/20 p-4">
               <p className="text-xs text-slate-400">وضعیت پروژه</p>
 
               <p className="mt-1 font-bold text-slate-800">
@@ -1056,7 +1056,7 @@ const completedStageCount = stages.filter(
             </div>
 
             {isStaged ? (
-              <div className="rounded-2xl border border-white/40 bg-white/20 p-4 sm:col-span-2">
+              <div className="rounded-2xl border border-border bg-white/20 p-4 sm:col-span-2">
                 <p className="text-xs text-slate-400">پیشرفت مراحل</p>
 
                 <p className="mt-1 font-bold text-slate-800">
@@ -1067,7 +1067,7 @@ const completedStageCount = stages.filter(
             ) : null}
 
             {recurring ? (
-              <div className="rounded-2xl border border-white/40 bg-white/20 p-4 sm:col-span-2">
+              <div className="rounded-2xl border border-border bg-white/20 p-4 sm:col-span-2">
                 <p className="text-xs text-slate-400">وضعیت امروز</p>
 
                 <p className="mt-1 font-bold text-slate-800">

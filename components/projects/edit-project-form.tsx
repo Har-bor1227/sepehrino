@@ -403,7 +403,7 @@ export function EditProjectForm({
             </div>
           </div>
 
-          <div className="flex justify-end border-t border-white/40 pt-5">
+          <div className="flex justify-end border-t border-border pt-5">
             <Button
               type="submit"
               size="lg"

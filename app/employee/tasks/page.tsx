@@ -267,7 +267,7 @@ function SummaryCard({
           <Icon className="size-4.5" />
         </div>
 
-        <span className="text-[10px] font-bold text-slate-300">
+        <span className="text-xs font-bold text-slate-300">
           آمار
         </span>
       </div>
@@ -303,7 +303,7 @@ function RecurrenceBadge({
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200/60 bg-violet-50/70 px-3 py-1.5 text-[11px] font-bold text-violet-700">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200/60 bg-violet-50/70 px-3 py-1.5 text-xs font-bold text-violet-700">
       <Repeat2 className="size-3.5" />
       {RECURRENCE_LABELS[type]}
     </span>
@@ -368,42 +368,42 @@ function TaskCard({
 
   return (
     <article
-      className={`group relative flex h-full min-w-0 flex-col overflow-hidden rounded-[2rem] border p-5 text-center backdrop-blur-2xl transition duration-300 ease-out [perspective:1200px] sm:p-6 ${
+      className={`employee-task-card group relative flex h-full min-w-0 flex-col rounded-[1.5rem] border p-4 text-right transition duration-200 ease-out focus-within:z-10 hover:z-10 sm:p-5 ${
         isTodayCompleted || (!task.isRecurring && task.status === "COMPLETED")
           ? "border-emerald-200/60 bg-emerald-50/45 shadow-[0_20px_45px_rgba(16,185,129,0.09),inset_0_1px_0_rgba(255,255,255,0.9)]"
           : overdue
             ? "border-red-200/65 bg-red-50/40 shadow-[0_20px_45px_rgba(239,68,68,0.08),inset_0_1px_0_rgba(255,255,255,0.9)]"
-            : "border-white/65 bg-white/48 shadow-[0_18px_42px_rgba(15,23,42,0.07),inset_0_1px_0_rgba(255,255,255,0.9)]"
-      } hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(15,23,42,0.11),inset_0_1px_0_rgba(255,255,255,0.95)]`}
+            : "border-border bg-card shadow-[0_18px_42px_rgba(15,23,42,0.07),inset_0_1px_0_rgba(255,255,255,0.9)]"
+      } hover:border-blue-200 hover:shadow-[0_14px_34px_rgba(15,23,42,0.09)]`}
     >
-      <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-white/90" />
+      <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-card" />
 
-      <div className="flex min-h-[34px] flex-wrap items-center justify-center gap-2">
+      <div className="flex min-h-[34px] flex-wrap items-center justify-start gap-2">
         {task.isRecurring ? (
           <>
             <RecurrenceBadge type={recurrenceType} />
 
             {isStaged ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200/70 bg-indigo-50/80 px-3 py-1.5 text-[11px] font-bold text-indigo-700">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200/70 bg-indigo-50/80 px-3 py-1.5 text-xs font-bold text-indigo-700">
                 <ListOrdered className="size-3.5" />
                 چندمرحله‌ای
               </span>
             ) : null}
           </>
         ) : isStaged ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200/70 bg-indigo-50/80 px-3 py-1.5 text-[11px] font-bold text-indigo-700">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200/70 bg-indigo-50/80 px-3 py-1.5 text-xs font-bold text-indigo-700">
             <ListOrdered className="size-3.5" />
             تسک چندمرحله‌ای
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/70 bg-slate-50/80 px-3 py-1.5 text-[11px] font-bold text-slate-600">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/70 bg-slate-50/80 px-3 py-1.5 text-xs font-bold text-slate-600">
             <ListChecks className="size-3.5" />
             تسک معمولی
           </span>
         )}
 
         <span
-          className={`inline-flex items-center rounded-full border px-3 py-1.5 text-[11px] font-bold ${getPriorityClass(
+          className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-bold ${getPriorityClass(
             task.priority,
           )}`}
         >
@@ -411,7 +411,7 @@ function TaskCard({
         </span>
       </div>
 
-      <div className="mx-auto mt-5 flex size-16 items-center justify-center rounded-[1.35rem] border border-white/75 bg-white/55 text-slate-700 shadow-[0_12px_24px_rgba(15,23,42,0.07),inset_0_1px_0_rgba(255,255,255,0.95)] transition duration-300 group-hover:-translate-y-0.5 group-hover:rotate-1">
+      <div className="employee-task-icon mt-4 flex size-12 items-center justify-center rounded-[1rem] border border-border bg-card text-slate-700 shadow-[0_12px_24px_rgba(15,23,42,0.07),inset_0_1px_0_rgba(255,255,255,0.95)] transition duration-300 group-hover:-translate-y-0.5 group-hover:rotate-1">
         {task.isRecurring ? (
           <Repeat2 className="size-7 text-violet-600" />
         ) : isStaged ? (
@@ -425,7 +425,7 @@ function TaskCard({
         )}
       </div>
 
-      <div className="mt-5 min-w-0">
+      <div className="mt-3 min-w-0">
         <Link
           href={`/employee/tasks/${task.id}`}
           className="block break-words text-lg font-extrabold leading-8 text-slate-900 transition group-hover:text-slate-700"
@@ -442,15 +442,13 @@ function TaskCard({
       </div>
 
       {task.description ? (
-        <p className="mx-auto mt-4 line-clamp-3 max-w-[34rem] text-sm leading-7 text-slate-500">
+        <p className="mt-3 line-clamp-2 text-sm leading-7 text-slate-500">
           {task.description}
         </p>
-      ) : (
-        <div className="h-6" />
-      )}
+      ) : null}
 
       {isStaged ? (
-        <div className="mx-auto mt-5 w-full max-w-md rounded-2xl border border-indigo-100/80 bg-indigo-50/40 p-4 text-right">
+        <div className="mt-4 w-full rounded-2xl border border-indigo-100/80 bg-indigo-50/40 p-3 text-right sm:p-4">
           {task.isRecurring && !todayOccurrence ? (
             <div className="flex items-start gap-2 text-sm leading-7 text-slate-600">
               <CalendarDays className="mt-1 size-4 shrink-0 text-indigo-600" />
@@ -473,7 +471,7 @@ function TaskCard({
               </div>
 
               <div
-                className="mt-3 h-2 overflow-hidden rounded-full bg-white/90"
+                className="mt-3 h-2 overflow-hidden rounded-full bg-card"
                 role="progressbar"
                 aria-label="درصد پیشرفت مراحل"
                 aria-valuemin={0}
@@ -489,11 +487,11 @@ function TaskCard({
               </div>
 
               <div className="mt-2 flex items-center justify-between gap-3">
-                <span className="text-[10px] font-semibold text-slate-500">
+                <span className="text-xs font-semibold text-slate-500">
                   {stageProgress.toLocaleString("fa-IR")}٪ تکمیل شده
                 </span>
 
-                <span className="text-[10px] text-slate-400">
+                <span className="text-xs text-slate-400">
                   {stages.length.toLocaleString("fa-IR")} مرحله
                 </span>
               </div>
@@ -503,7 +501,7 @@ function TaskCard({
                   <Clock3 className="mt-0.5 size-4 shrink-0 text-blue-700" />
 
                   <div className="min-w-0">
-                    <p className="text-[10px] font-medium text-slate-500">
+                    <p className="text-xs font-medium text-slate-500">
                       مرحله فعال
                     </p>
 
@@ -511,7 +509,7 @@ function TaskCard({
                       {activeStage.title}
                     </p>
 
-                    <p className="mt-1 text-[10px] text-slate-500">
+                    <p className="mt-1 text-xs text-slate-500">
                       مسئول: {activeStage.assignee.name}
                     </p>
                   </div>
@@ -537,16 +535,16 @@ function TaskCard({
         </div>
       ) : null}
 
-      <div className="mx-auto mt-5 grid w-full max-w-md gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl border border-white/65 bg-white/38 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
-          <p className="text-[10px] font-semibold text-slate-400">
+      <div className="mt-4 grid w-full grid-cols-2 gap-2 sm:gap-3">
+        <div className="rounded-2xl border border-border bg-white/38 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
+          <p className="text-xs font-semibold text-slate-400">
             وضعیت
           </p>
 
-          <div className="mt-2 flex justify-center">
+          <div className="mt-2 flex justify-start">
             {task.isRecurring ? (
               <span
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-bold ${
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold ${
                   isTodayCompleted
                     ? "border-emerald-200/70 bg-emerald-50 text-emerald-700"
                     : todayOccurrence
@@ -568,7 +566,7 @@ function TaskCard({
               </span>
             ) : (
               <span
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-bold ${getStatusClass(
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold ${getStatusClass(
                   task.status,
                 )}`}
               >
@@ -590,14 +588,14 @@ function TaskCard({
               ? "border-red-200/65 bg-red-50/45"
               : dueSoon
                 ? "border-amber-200/65 bg-amber-50/45"
-                : "border-white/65 bg-white/38"
+                : "border-border bg-white/38"
           }`}
         >
-          <p className="text-[10px] font-semibold text-slate-400">
+          <p className="text-xs font-semibold text-slate-400">
             {task.isRecurring ? "برنامه" : "Deadline"}
           </p>
 
-          <div className="mt-2 flex items-center justify-center gap-1.5">
+          <div className="mt-2 flex flex-wrap items-center justify-start gap-1.5">
             <CalendarDays
               className={`size-3.5 ${
                 overdue
@@ -625,7 +623,7 @@ function TaskCard({
 
           {!task.isRecurring ? (
             <p
-              className={`mt-1 text-[10px] ${
+              className={`mt-1 text-xs ${
                 overdue
                   ? "text-red-500"
                   : dueSoon
@@ -640,7 +638,7 @@ function TaskCard({
                   : formatDateTime(task.deadline)}
             </p>
           ) : task.recurrenceStartDate ? (
-            <p className="mt-1 text-[10px] text-slate-400">
+            <p className="mt-1 text-xs text-slate-400">
               شروع از {formatDate(task.recurrenceStartDate)}
             </p>
           ) : null}
@@ -648,8 +646,8 @@ function TaskCard({
       </div>
 
       <div className="mt-4 grid w-full max-w-md grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-white/65 bg-white/32 px-3 py-3">
-          <p className="text-[10px] font-semibold text-slate-400">
+        <div className="rounded-2xl border border-border bg-white/32 px-3 py-3">
+          <p className="text-xs font-semibold text-slate-400">
             نوع
           </p>
 
@@ -662,8 +660,8 @@ function TaskCard({
           </p>
         </div>
 
-        <div className="rounded-2xl border border-white/65 bg-white/32 px-3 py-3">
-          <p className="text-[10px] font-semibold text-slate-400">
+        <div className="rounded-2xl border border-border bg-white/32 px-3 py-3">
+          <p className="text-xs font-semibold text-slate-400">
             ثبت شده
           </p>
 
@@ -673,16 +671,16 @@ function TaskCard({
         </div>
       </div>
 
-      <div className="mt-auto flex w-full flex-col items-center gap-3 pt-5">
+      <div className="mt-auto flex w-full flex-col items-stretch gap-3 pt-4">
         <Link
           href={`/employee/tasks/${task.id}`}
-          className="inline-flex min-h-11 w-full max-w-md items-center justify-center gap-2 rounded-2xl border border-white/70 bg-white/58 px-4 text-sm font-bold text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition hover:bg-white/80 hover:shadow-[0_14px_28px_rgba(15,23,42,0.08)]"
+          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card px-4 text-sm font-bold text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition hover:bg-muted hover:shadow-[0_14px_28px_rgba(15,23,42,0.08)]"
         >
           {isStaged ? "مشاهده مراحل و ادامه کار" : "مشاهده جزئیات"}
           <ArrowLeft className="size-4" />
         </Link>
 
-        <div className="flex w-full max-w-md justify-center">
+        <div className="flex w-full justify-stretch">
           {task.isRecurring && isStaged ? (
             <p className="w-full rounded-xl border border-indigo-100 bg-indigo-50/40 px-4 py-3 text-center text-xs leading-6 text-indigo-800">
               {!todayOccurrence
@@ -777,7 +775,7 @@ function Pagination({
   return (
     <nav
       aria-label="صفحه‌بندی تسک‌ها"
-      className="flex flex-col gap-4 rounded-[2rem] border border-white/60 bg-white/35 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:p-5"
+      className="flex flex-col gap-4 rounded-[2rem] border border-border bg-white/35 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] sm:flex-row sm:items-center sm:justify-between sm:p-5"
     >
       <div className="text-center text-xs font-semibold text-slate-400 sm:text-right">
         نمایش {startItem.toLocaleString("fa-IR")} تا{" "}
@@ -789,13 +787,13 @@ function Pagination({
         {currentPage > 1 ? (
           <Link
             href={buildPageHref(currentPage - 1, params)}
-            className="inline-flex size-10 items-center justify-center rounded-xl border border-white/70 bg-white/55 text-slate-600 shadow-sm transition hover:bg-white/80 hover:text-slate-900"
+            className="inline-flex size-10 items-center justify-center rounded-xl border border-border bg-card text-slate-600 shadow-sm transition hover:bg-muted hover:text-slate-900"
             aria-label="صفحه قبل"
           >
             <ChevronRight className="size-4" />
           </Link>
         ) : (
-          <span className="inline-flex size-10 items-center justify-center rounded-xl border border-white/40 bg-white/20 text-slate-300">
+          <span className="inline-flex size-10 items-center justify-center rounded-xl border border-border bg-white/20 text-slate-300">
             <ChevronRight className="size-4" />
           </span>
         )}
@@ -813,7 +811,7 @@ function Pagination({
                   className={`inline-flex size-10 items-center justify-center rounded-xl border text-xs font-extrabold transition ${
                     active
                       ? "border-slate-900 bg-slate-900 text-white shadow-[0_9px_20px_rgba(15,23,42,0.14)]"
-                      : "border-white/70 bg-white/50 text-slate-600 hover:bg-white/80 hover:text-slate-900"
+                      : "border-border bg-card text-slate-600 hover:bg-muted hover:text-slate-900"
                   }`}
                 >
                   {page.toLocaleString("fa-IR")}
@@ -826,13 +824,13 @@ function Pagination({
         {currentPage < totalPages ? (
           <Link
             href={buildPageHref(currentPage + 1, params)}
-            className="inline-flex size-10 items-center justify-center rounded-xl border border-white/70 bg-white/55 text-slate-600 shadow-sm transition hover:bg-white/80 hover:text-slate-900"
+            className="inline-flex size-10 items-center justify-center rounded-xl border border-border bg-card text-slate-600 shadow-sm transition hover:bg-muted hover:text-slate-900"
             aria-label="صفحه بعد"
           >
             <ChevronLeft className="size-4" />
           </Link>
         ) : (
-          <span className="inline-flex size-10 items-center justify-center rounded-xl border border-white/40 bg-white/20 text-slate-300">
+          <span className="inline-flex size-10 items-center justify-center rounded-xl border border-border bg-white/20 text-slate-300">
             <ChevronLeft className="size-4" />
           </span>
         )}
@@ -968,12 +966,11 @@ export default async function EmployeeTasksPage({
               </div>
 
               <h1 className="mt-4 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">
-                Workspace وظایف
+                مدیریت تسک‌های من
               </h1>
 
               <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-500">
-                تمام تسک‌های اختصاص‌یافته به شما، همراه با برنامه تکرار،
-                Deadline، اولویت و وضعیت.
+                تسک‌ها را جست‌وجو، فیلتر و با چند لمس مدیریت کنید؛ وضعیت و برنامه هر تسک اینجا مشخص است.
               </p>
             </div>
 
@@ -1058,10 +1055,10 @@ export default async function EmployeeTasksPage({
           />
         </section>
 
-        <section className="glass-card rounded-[2rem] p-4 sm:p-5">
+        <section className="glass-card rounded-[1.5rem] p-4 sm:p-5">
           <form
             method="GET"
-            className="grid gap-3 xl:grid-cols-[minmax(260px,1fr)_180px_180px_210px_auto]"
+            className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_180px_180px_210px_auto]"
           >
             <label className="relative block">
               <span className="sr-only">جست‌وجوی تسک</span>
@@ -1148,7 +1145,7 @@ export default async function EmployeeTasksPage({
               {hasFilters ? (
                 <Link
                   href="/employee/tasks"
-                  className="inline-flex h-11 items-center justify-center rounded-xl border border-white/60 bg-white/45 px-4 text-sm font-semibold text-slate-600 transition hover:bg-white/70"
+                  className="inline-flex h-11 items-center justify-center rounded-xl border border-border bg-card px-4 text-sm font-semibold text-slate-600 transition hover:bg-muted"
                 >
                   پاک کردن
                 </Link>
@@ -1157,8 +1154,8 @@ export default async function EmployeeTasksPage({
           </form>
         </section>
 
-        <section className="glass-card overflow-hidden rounded-[2rem]">
-          <div className="flex flex-col gap-3 border-b border-white/40 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <section className="glass-card rounded-[2rem]">
+          <div className="flex flex-col gap-3 border-b border-border p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div>
               <h2 className="text-xl font-extrabold tracking-tight text-slate-900">
                 تسک‌های من
@@ -1185,7 +1182,7 @@ export default async function EmployeeTasksPage({
             </div>
           ) : (
             <>
-              <div className="grid gap-5 p-5 sm:grid-cols-2 sm:p-6 xl:grid-cols-3">
+              <div className="grid min-w-0 gap-3 p-3 sm:grid-cols-2 sm:gap-4 sm:p-5 xl:grid-cols-3">
                 {paginatedTasks.map((task) => (
                   <TaskCard key={task.id} task={task} />
                 ))}

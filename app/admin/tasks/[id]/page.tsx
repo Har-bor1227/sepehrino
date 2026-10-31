@@ -589,7 +589,7 @@ export default async function AdminTaskPage({
                           </h3>
 
                           <span
-                            className={`rounded-full border px-2.5 py-1 text-[11px] font-extrabold ${getStageStatusClass(
+                            className={`rounded-full border px-2.5 py-1 text-xs font-extrabold ${getStageStatusClass(
                               stageStatus,
                             )}`}
                           >
@@ -605,7 +605,7 @@ export default async function AdminTaskPage({
                       <ChevronDown className="size-5 shrink-0 text-slate-400 transition-transform group-open:rotate-180" />
                     </summary>
 
-                    <div className="border-t border-slate-200/80 bg-white/75 p-4 sm:p-5">
+                    <div className="border-t border-slate-200/80 bg-card p-4 sm:p-5">
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div className="rounded-xl border border-slate-200 bg-white p-3.5">
                           <div className="flex items-center gap-2">

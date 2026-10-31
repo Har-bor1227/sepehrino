@@ -147,7 +147,7 @@ function ResultSection({
 
   return (
     <section className="glass-card overflow-hidden rounded-[2rem]">
-      <div className="flex flex-col gap-3 border-b border-white/40 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+      <div className="flex flex-col gap-3 border-b border-border p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div className="flex items-center gap-3">
           <div className="glass-icon flex size-10 items-center justify-center rounded-2xl">
             <Icon className="size-5 text-slate-600" />
@@ -167,7 +167,7 @@ function ResultSection({
           </div>
         </div>
 
-        <span className="glass-chip w-fit rounded-full px-3 py-1.5 text-[11px] font-bold text-slate-400">
+        <span className="glass-chip w-fit rounded-full px-3 py-1.5 text-xs font-bold text-slate-400">
           نتیجه‌های قابل دسترس
         </span>
       </div>
@@ -213,7 +213,7 @@ function ResultSection({
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     {item.status ? (
                       <span
-                        className={`rounded-full border px-2.5 py-1.5 text-[11px] font-bold ${getStatusClass(
+                        className={`rounded-full border px-2.5 py-1.5 text-xs font-bold ${getStatusClass(
                           item.status,
                         )}`}
                       >
@@ -226,7 +226,7 @@ function ResultSection({
 
                     {item.priority ? (
                       <span
-                        className={`rounded-full border px-2.5 py-1.5 text-[11px] font-bold ${getPriorityClass(
+                        className={`rounded-full border px-2.5 py-1.5 text-xs font-bold ${getPriorityClass(
                           item.priority,
                         )}`}
                       >
@@ -239,14 +239,14 @@ function ResultSection({
                       </span>
                     ) : null}
 
-                    <span className="glass-chip rounded-full px-2.5 py-1.5 text-[11px] font-medium text-slate-400">
+                    <span className="glass-chip rounded-full px-2.5 py-1.5 text-xs font-medium text-slate-400">
                       {
                         item.meta
                       }
                     </span>
 
                     {item.deadline ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/45 bg-white/22 px-2.5 py-1.5 text-[11px] font-medium text-slate-400">
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white/22 px-2.5 py-1.5 text-xs font-medium text-slate-400">
                         <CalendarDays className="size-3.5" />
                         {formatDate(
                           item.deadline,

@@ -521,7 +521,7 @@ export default async function AdminQuickAccessPage({
               </p>
             </div>
 
-            <div className="inline-flex w-fit items-center gap-3 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur-sm">
+            <div className="inline-flex w-fit items-center gap-3 rounded-2xl border border-white/20 bg-white/10 px-4 py-3">
               <span className="flex size-10 items-center justify-center rounded-xl bg-white/10 text-cyan-200">
                 <CalendarDays className="size-5" />
               </span>

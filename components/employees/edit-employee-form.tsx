@@ -346,7 +346,7 @@ export function EditEmployeeForm({
     <Card>
       <CardHeader className="pb-1">
         <div className="flex items-start gap-3">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-white/60 bg-slate-900 text-white shadow-[0_10px_24px_rgba(15,23,42,0.16)]">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-border bg-slate-900 text-white shadow-[0_10px_24px_rgba(15,23,42,0.16)]">
             <Save className="size-5" />
           </div>
 
@@ -429,7 +429,7 @@ export function EditEmployeeForm({
             </div>
           </div>
 
-          <div className="rounded-3xl border border-white/55 bg-white/24 p-5">
+          <div className="rounded-3xl border border-border bg-white/24 p-5">
             <div className="mb-4">
               <p className="text-sm font-bold text-slate-800">
                 امنیت حساب

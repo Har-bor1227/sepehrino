@@ -54,7 +54,7 @@ export default async function RecurringTasksToday() {
 
   return (
     <section
-      className="mt-8 rounded-[2rem] border border-slate-200/70 bg-white/75 p-4 shadow-sm backdrop-blur-xl sm:p-6"
+      className="mt-8 rounded-[2rem] border border-slate-200/70 bg-card p-4 shadow-sm sm:p-6"
       dir="rtl"
     >
       <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 sm:flex-row sm:items-center sm:justify-between">
@@ -118,7 +118,7 @@ export default async function RecurringTasksToday() {
                         {task.title}
                       </h3>
 
-                      <span className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2 py-1 text-[10px] font-bold text-violet-700">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2 py-1 text-xs font-bold text-violet-700">
                         <Repeat2 className="size-3" />
 
                         {
@@ -154,7 +154,7 @@ export default async function RecurringTasksToday() {
                                       .user
                                       .id
                                   }
-                                  className="inline-flex rounded-full bg-white/65 px-2 py-1 font-semibold text-slate-600"
+                                  className="inline-flex rounded-full bg-card px-2 py-1 font-semibold text-slate-600"
                                 >
                                   {
                                     assignee

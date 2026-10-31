@@ -294,7 +294,7 @@ export function EmployeeProfile({
     <div className="space-y-6">
       <section className="glass-card overflow-hidden rounded-[2rem]">
         <div className="relative p-5 sm:p-6 lg:p-7">
-          <div className="absolute inset-x-0 top-0 h-px bg-white/80" />
+          <div className="absolute inset-x-0 top-0 h-px bg-card" />
 
           <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
             <div className="flex min-w-0 items-center gap-4 sm:gap-5">
@@ -319,7 +319,7 @@ export function EmployeeProfile({
                   </h2>
 
                   <span
-                    className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${
+                    className={`rounded-full border px-2.5 py-1 text-xs font-bold ${
                       employee.isActive
                         ? "border-emerald-200/55 bg-emerald-50/50 text-emerald-700"
                         : "border-slate-200/55 bg-slate-500/7 text-slate-500"
@@ -354,7 +354,7 @@ export function EmployeeProfile({
             </div>
 
             <div className="glass-strong rounded-2xl px-5 py-4 sm:min-w-40">
-              <p className="text-[11px] font-medium text-slate-400">
+              <p className="text-xs font-medium text-slate-400">
                 نرخ تکمیل Task
               </p>
 
@@ -421,7 +421,7 @@ export function EmployeeProfile({
                     <Icon className="size-5" />
                   </div>
 
-                  <span className="text-[10px] font-bold text-slate-300">
+                  <span className="text-xs font-bold text-slate-300">
                     آمار
                   </span>
                 </div>
@@ -443,7 +443,7 @@ export function EmployeeProfile({
 
       <div className="grid gap-6 xl:grid-cols-2">
         <section className="glass-card overflow-hidden rounded-[2rem]">
-          <div className="border-b border-white/40 p-5 sm:p-6">
+          <div className="border-b border-border p-5 sm:p-6">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="glass-icon flex size-10 items-center justify-center rounded-2xl">
@@ -461,7 +461,7 @@ export function EmployeeProfile({
                 </div>
               </div>
 
-              <span className="glass-chip rounded-full px-3 py-1.5 text-[11px] font-bold text-slate-500">
+              <span className="glass-chip rounded-full px-3 py-1.5 text-xs font-bold text-slate-500">
                 {employee.projects.length.toLocaleString(
                   "fa-IR",
                 )}{" "}
@@ -490,7 +490,7 @@ export function EmployeeProfile({
                       key={
                         project.id
                       }
-                      className="group rounded-2xl border border-white/50 bg-white/25 p-4 transition hover:bg-white/42"
+                      className="group rounded-2xl border border-border bg-white/25 p-4 transition hover:bg-muted"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
@@ -501,7 +501,7 @@ export function EmployeeProfile({
                           </p>
 
                           <span
-                            className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold ${getProjectStatusClass(
+                            className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${getProjectStatusClass(
                               project.status,
                             )}`}
                           >
@@ -512,7 +512,7 @@ export function EmployeeProfile({
                         </div>
 
                         <div className="flex shrink-0 items-center gap-2">
-                          <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold text-white">
+                          <span className="rounded-full bg-slate-900 px-2.5 py-1 text-xs font-bold text-white">
                             {project.progress.toLocaleString(
                               "fa-IR",
                             )}
@@ -532,7 +532,7 @@ export function EmployeeProfile({
                         />
                       </div>
 
-                      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
                         <span>
                           {project.employeeCompletedTaskCount.toLocaleString(
                             "fa-IR",
@@ -560,7 +560,7 @@ export function EmployeeProfile({
         </section>
 
         <section className="glass-card overflow-hidden rounded-[2rem]">
-          <div className="border-b border-white/40 p-5 sm:p-6">
+          <div className="border-b border-border p-5 sm:p-6">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="glass-icon flex size-10 items-center justify-center rounded-2xl">
@@ -578,7 +578,7 @@ export function EmployeeProfile({
                 </div>
               </div>
 
-              <span className="glass-chip rounded-full px-3 py-1.5 text-[11px] font-bold text-slate-500">
+              <span className="glass-chip rounded-full px-3 py-1.5 text-xs font-bold text-slate-500">
                 ۱۰ مورد اخیر
               </span>
             </div>
@@ -615,7 +615,7 @@ export function EmployeeProfile({
                           key={
                             task.id
                           }
-                          className="rounded-2xl border border-white/50 bg-white/25 p-4 transition hover:bg-white/40"
+                          className="rounded-2xl border border-border bg-white/25 p-4 transition hover:bg-muted"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
@@ -633,7 +633,7 @@ export function EmployeeProfile({
                             </div>
 
                             <span
-                              className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold ${
+                              className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-bold ${
                                 overdue
                                   ? "border-red-200/55 bg-red-50/60 text-red-700"
                                   : getTaskStatusClass(
@@ -651,7 +651,7 @@ export function EmployeeProfile({
 
                           <div className="mt-3 flex flex-wrap gap-2">
                             <span
-                              className={`rounded-full border px-2.5 py-1 text-[10px] font-bold ${getPriorityClass(
+                              className={`rounded-full border px-2.5 py-1 text-xs font-bold ${getPriorityClass(
                                 task.priority,
                               )}`}
                             >
@@ -664,10 +664,10 @@ export function EmployeeProfile({
                             </span>
 
                             <span
-                              className={`rounded-full border px-2.5 py-1 text-[10px] font-medium ${
+                              className={`rounded-full border px-2.5 py-1 text-xs font-medium ${
                                 overdue
                                   ? "border-red-200/40 bg-red-50/45 text-red-600"
-                                  : "border-white/50 bg-white/25 text-slate-400"
+                                  : "border-border bg-white/25 text-slate-400"
                               }`}
                             >
                               {formatDate(
@@ -686,7 +686,7 @@ export function EmployeeProfile({
       </div>
 
       <section className="glass-card overflow-hidden rounded-[2rem]">
-        <div className="border-b border-white/40 p-5 sm:p-6">
+        <div className="border-b border-border p-5 sm:p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <div className="glass-icon flex size-10 items-center justify-center rounded-2xl">
@@ -704,7 +704,7 @@ export function EmployeeProfile({
               </div>
             </div>
 
-            <span className="glass-chip w-fit rounded-full px-3 py-1.5 text-[11px] font-bold text-slate-400">
+            <span className="glass-chip w-fit rounded-full px-3 py-1.5 text-xs font-bold text-slate-400">
               Activity Log
             </span>
           </div>
@@ -726,10 +726,10 @@ export function EmployeeProfile({
                     key={
                       activity.id
                     }
-                    className="flex flex-col gap-3 rounded-2xl border border-white/45 bg-white/22 p-4 transition hover:bg-white/38 sm:flex-row sm:items-center sm:justify-between"
+                    className="flex flex-col gap-3 rounded-2xl border border-border bg-white/22 p-4 transition hover:bg-white/38 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="flex min-w-0 items-center gap-3">
-                      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-900/7 text-[11px] font-extrabold text-slate-500">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-900/7 text-xs font-extrabold text-slate-500">
                         {activity.action.slice(
                           0,
                           1,

@@ -137,10 +137,10 @@ export default function TaskStatusActions({
                   option.value,
                 )
               }
-              className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-xl transition ${
+              className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] transition ${
                 isActive
                   ? option.activeClass
-                  : "border-white/55 bg-white/35 text-slate-600 hover:bg-white/65 hover:text-slate-900"
+                  : "border-border bg-white/35 text-slate-600 hover:bg-muted hover:text-slate-900"
               } disabled:cursor-not-allowed disabled:opacity-60`}
             >
               {isPending &&

@@ -330,7 +330,7 @@ export default async function AdminDashboardPage() {
             <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
               <Link
                 href="/admin/employees"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 text-sm font-bold text-white transition hover:border-white/40 hover:bg-white/20"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 text-sm font-bold text-white transition hover:border-slate-400 hover:bg-white/20"
               >
                 <Users className="size-4" />
                 کارمندان
@@ -451,7 +451,7 @@ export default async function AdminDashboardPage() {
                         </div>
 
                         <span
-                          className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-extrabold ${getProjectStatusClass(project.status)}`}
+                          className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-extrabold ${getProjectStatusClass(project.status)}`}
                         >
                           {PROJECT_STATUS_LABELS[project.status]}
                         </span>
@@ -550,7 +550,7 @@ export default async function AdminDashboardPage() {
                     <span>{item.percentage.toLocaleString("fa-IR")}٪</span>
                   </div>
 
-                  <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/90">
+                  <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-card">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${item.bar}`}
                       style={{

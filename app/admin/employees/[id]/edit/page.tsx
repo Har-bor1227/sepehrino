@@ -35,7 +35,7 @@ export default async function EditEmployeePage({
             <Link
               href={`/admin/employees/${employee.id}`}
               aria-label="بازگشت به پروفایل کارمند"
-              className="glass-icon flex size-10 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-white/70 hover:text-slate-900"
+              className="glass-icon flex size-10 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-muted hover:text-slate-900"
             >
               <ArrowRight className="size-5" />
             </Link>
@@ -58,7 +58,7 @@ export default async function EditEmployeePage({
         </section>
 
         <section className="glass-card overflow-hidden rounded-[2rem]">
-          <div className="border-b border-white/40 p-5 sm:p-6">
+          <div className="border-b border-border p-5 sm:p-6">
             <div className="flex items-center gap-3">
               <div className="glass-icon flex size-10 items-center justify-center rounded-2xl">
                 <Edit3 className="size-5 text-slate-600" />

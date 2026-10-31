@@ -92,7 +92,7 @@ export function ReportFilters({
           </div>
         </div>
 
-        <span className="glass-chip w-fit rounded-full px-3 py-1.5 text-[11px] font-bold text-slate-400">
+        <span className="glass-chip w-fit rounded-full px-3 py-1.5 text-xs font-bold text-slate-400">
           فیلترهای مدیریتی
         </span>
       </div>
@@ -274,7 +274,7 @@ export function ReportFilters({
             href="/admin/reports"
             aria-label="پاک کردن فیلترها"
             title="پاک کردن فیلترها"
-            className="inline-flex h-11 size-11 items-center justify-center rounded-xl border border-white/60 bg-white/38 text-slate-500 transition hover:bg-white/70"
+            className="inline-flex h-11 size-11 items-center justify-center rounded-xl border border-border bg-white/38 text-slate-500 transition hover:bg-muted"
           >
             <RotateCcw className="size-4" />
           </a>

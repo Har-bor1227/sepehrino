@@ -653,7 +653,7 @@ export function PersianDatePicker({
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-[calc(100%+0.6rem)] z-[9999] w-[min(340px,calc(100vw-2rem))] overflow-hidden rounded-3xl border border-white/70 bg-white/82 p-3 shadow-[0_28px_75px_rgba(15,23,42,0.16),inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-2xl">
+        <div className="absolute right-0 top-[calc(100%+0.6rem)] z-[9999] w-[min(340px,calc(100vw-2rem))] overflow-hidden rounded-3xl border border-border bg-card p-3 shadow-[0_28px_75px_rgba(15,23,42,0.16),inset_0_1px_0_rgba(255,255,255,0.8)]">
           <div className="flex items-center justify-between gap-2 px-1 pb-3">
             <button
               type="button"
@@ -661,7 +661,7 @@ export function PersianDatePicker({
                 setMonth(-1)
               }
               aria-label="ماه قبل"
-              className="glass-icon flex size-9 items-center justify-center rounded-xl text-slate-600 transition hover:bg-white/75"
+              className="glass-icon flex size-9 items-center justify-center rounded-xl text-slate-600 transition hover:bg-muted"
             >
               <ChevronRight className="size-4.5" />
             </button>
@@ -689,19 +689,19 @@ export function PersianDatePicker({
                 setMonth(1)
               }
               aria-label="ماه بعد"
-              className="glass-icon flex size-9 items-center justify-center rounded-xl text-slate-600 transition hover:bg-white/75"
+              className="glass-icon flex size-9 items-center justify-center rounded-xl text-slate-600 transition hover:bg-muted"
             >
               <ChevronLeft className="size-4.5" />
             </button>
           </div>
 
-          <div className="rounded-2xl border border-white/55 bg-white/35 p-2">
+          <div className="rounded-2xl border border-border bg-white/35 p-2">
             <div className="mb-1 grid grid-cols-7">
               {WEEK_DAYS.map(
                 (day) => (
                   <div
                     key={day}
-                    className="flex h-8 items-center justify-center text-[11px] font-bold text-slate-400"
+                    className="flex h-8 items-center justify-center text-xs font-bold text-slate-400"
                   >
                     {day}
                   </div>
@@ -755,7 +755,7 @@ export function PersianDatePicker({
                           ? "bg-slate-900 text-white shadow-[0_8px_18px_rgba(15,23,42,0.16)]"
                           : today
                             ? "border border-slate-300/70 bg-slate-100/80 text-slate-900"
-                            : "text-slate-600 hover:bg-white/75 hover:text-slate-950"
+                            : "text-slate-600 hover:bg-muted hover:text-slate-950"
                       }`}
                     >
                       {toPersianDigits(
@@ -780,7 +780,7 @@ export function PersianDatePicker({
           <button
             type="button"
             onClick={selectToday}
-            className="mt-3 flex h-9 w-full items-center justify-center rounded-xl border border-white/60 bg-white/45 text-xs font-bold text-slate-600 transition hover:bg-white/75 hover:text-slate-900"
+            className="mt-3 flex h-9 w-full items-center justify-center rounded-xl border border-border bg-card text-xs font-bold text-slate-600 transition hover:bg-muted hover:text-slate-900"
           >
             امروز
           </button>

@@ -60,7 +60,7 @@ export function ProjectRowActions({
     <div className="flex flex-wrap items-center justify-end gap-2">
       <Link
         href={`/admin/projects/${projectId}`}
-        className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-white/60 bg-white/38 px-3 text-sm font-semibold text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_5px_16px_rgba(15,23,42,0.04)] backdrop-blur-xl transition hover:-translate-y-px hover:bg-white/65 hover:text-slate-950"
+        className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-border bg-white/38 px-3 text-sm font-semibold text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_5px_16px_rgba(15,23,42,0.04)] transition hover:-translate-y-px hover:bg-muted hover:text-slate-950"
       >
         <Eye className="size-4" />
         مشاهده
@@ -68,7 +68,7 @@ export function ProjectRowActions({
 
       <Link
         href={`/admin/projects/${projectId}/edit`}
-        className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-white/60 bg-white/38 px-3 text-sm font-semibold text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_5px_16px_rgba(15,23,42,0.04)] backdrop-blur-xl transition hover:-translate-y-px hover:bg-white/65 hover:text-slate-950"
+        className="inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-border bg-white/38 px-3 text-sm font-semibold text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_5px_16px_rgba(15,23,42,0.04)] transition hover:-translate-y-px hover:bg-muted hover:text-slate-950"
       >
         <Edit className="size-4" />
         ویرایش

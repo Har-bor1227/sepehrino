@@ -6,25 +6,29 @@ import {
 
 import { cn } from "cn";
 
+/*
+  دکمه‌ها: سطح مات، حاشیه‌ی مشخص، فوکوس کیبورد از استایل سراسری
+  (:focus-visible در globals.css) می‌آید و عمداً outline-none ندارد.
+*/
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-xl border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all duration-200 outline-none select-none focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/30 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-4 aria-invalid:ring-destructive/15 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/30 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent text-sm font-semibold whitespace-nowrap transition-colors duration-150 select-none active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/30 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
         default:
-          "border-slate-900/10 bg-slate-900 text-white shadow-[0_10px_24px_rgba(15,23,42,0.15)] hover:-translate-y-px hover:bg-slate-800 hover:shadow-[0_14px_30px_rgba(15,23,42,0.18)]",
+          "bg-primary text-primary-foreground hover:bg-primary/90",
 
         outline:
-          "border-white/65 bg-white/45 text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),0_6px_18px_rgba(15,23,42,0.05)] backdrop-blur-xl hover:-translate-y-px hover:border-white/85 hover:bg-white/65 hover:text-slate-900",
+          "border-input bg-card text-foreground hover:bg-accent hover:text-accent-foreground aria-expanded:bg-accent",
 
         secondary:
-          "border-white/55 bg-slate-200/50 text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-xl hover:bg-slate-200/75 aria-expanded:bg-slate-200/75",
+          "bg-secondary text-secondary-foreground hover:bg-slate-200 aria-expanded:bg-slate-200",
 
         ghost:
-          "bg-transparent text-slate-600 hover:bg-white/48 hover:text-slate-900 aria-expanded:bg-white/55",
+          "bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground aria-expanded:bg-accent",
 
         destructive:
-          "border-red-200/50 bg-red-50/65 text-red-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] backdrop-blur-xl hover:bg-red-100/75 focus-visible:border-red-300/50 focus-visible:ring-red-300/20",
+          "border-red-200 bg-red-50 text-red-700 hover:bg-red-100",
 
         link:
           "h-auto bg-transparent p-0 text-primary underline-offset-4 hover:underline",
@@ -35,22 +39,22 @@ const buttonVariants = cva(
           "h-10 gap-2 px-3.5 has-data-[icon=inline-end]:pr-2.5 has-data-[icon=inline-start]:pl-2.5",
 
         xs:
-          "h-7 gap-1 rounded-lg px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
+          "h-7 gap-1 rounded-md px-2 text-xs in-data-[slot=button-group]:rounded-md has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
 
         sm:
-          "h-9 gap-1.5 rounded-xl px-3 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 [&_svg:not([class*='size-'])]:size-3.5",
+          "h-9 gap-1.5 px-3 text-sm in-data-[slot=button-group]:rounded-md has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 [&_svg:not([class*='size-'])]:size-3.5",
 
         lg:
           "h-11 gap-2 px-4.5 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
 
         icon:
-          "size-10",
+          "size-10 pointer-coarse:size-11",
 
         "icon-xs":
-          "size-7 rounded-lg [&_svg:not([class*='size-'])]:size-3",
+          "size-7 rounded-md [&_svg:not([class*='size-'])]:size-3",
 
         "icon-sm":
-          "size-9 rounded-xl",
+          "size-9 pointer-coarse:size-11",
 
         "icon-lg":
           "size-11",

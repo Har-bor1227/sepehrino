@@ -697,7 +697,7 @@ export default function CreateTaskForm({
                 "flex min-h-24 items-start gap-3 rounded-2xl border p-4 text-right transition",
                 !isStaged
                   ? "border-slate-900 bg-slate-900 text-white shadow-lg"
-                  : "border-white/60 bg-white/40 text-slate-700 hover:bg-white/60",
+                  : "border-border bg-card text-slate-700 hover:bg-muted",
               ].join(" ")}
             >
               <span
@@ -748,7 +748,7 @@ export default function CreateTaskForm({
                 "flex min-h-24 items-start gap-3 rounded-2xl border p-4 text-right transition",
                 isStaged
                   ? "border-slate-900 bg-slate-900 text-white shadow-lg"
-                  : "border-white/60 bg-white/40 text-slate-700 hover:bg-white/60",
+                  : "border-border bg-card text-slate-700 hover:bg-muted",
               ].join(" ")}
             >
               <span
@@ -820,7 +820,7 @@ export default function CreateTaskForm({
                 return (
                   <section
                     key={`task-stage-${index}`}
-                    className="relative rounded-2xl border border-slate-200/80 bg-white/45 p-4 sm:p-5"
+                    className="relative rounded-2xl border border-slate-200/80 bg-card p-4 sm:p-5"
                   >
                     <div className="mb-4 flex items-center gap-3">
                       <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-sm font-bold text-white">
@@ -974,7 +974,7 @@ export default function CreateTaskForm({
             <button
               type="button"
               onClick={handleAddStage}
-              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-white/30 px-4 text-sm font-semibold text-slate-600 transition hover:border-slate-500 hover:bg-white/60 hover:text-slate-900"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-white/30 px-4 text-sm font-semibold text-slate-600 transition hover:border-slate-500 hover:bg-muted hover:text-slate-900"
             >
               <Plus className="size-4" />
               افزودن مرحله جدید
@@ -1022,7 +1022,7 @@ export default function CreateTaskForm({
                         "flex min-h-16 items-center gap-3 rounded-2xl border px-3.5 py-3 text-right transition",
                         isSelected
                           ? "border-slate-900 bg-slate-900 text-white shadow-[0_12px_24px_rgba(15,23,42,0.12)]"
-                          : "border-white/60 bg-white/30 text-slate-700 hover:bg-white/50",
+                          : "border-border bg-white/30 text-slate-700 hover:bg-muted",
                       ].join(" ")}
                     >
                       <span
@@ -1030,7 +1030,7 @@ export default function CreateTaskForm({
                           "flex size-5 shrink-0 items-center justify-center rounded-md border",
                           isSelected
                             ? "border-white/20 bg-white text-slate-900"
-                            : "border-slate-300 bg-white/50",
+                            : "border-slate-300 bg-card",
                         ].join(" ")}
                       >
                         {isSelected ? (
@@ -1173,7 +1173,7 @@ export default function CreateTaskForm({
 />
 
       {selectedProject ? (
-        <div className="rounded-3xl border border-white/55 bg-white/24 p-4">
+        <div className="rounded-3xl border border-border bg-white/24 p-4">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
             <span className="text-slate-400">
               پروژه:

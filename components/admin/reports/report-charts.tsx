@@ -58,17 +58,17 @@ type ReportChartsProps = {
 };
 
 const TASK_STATUS_COLORS = {
-  TODO: "#94a3b8",
-  IN_PROGRESS: "#3b82f6",
-  COMPLETED: "#10b981",
-  CANCELLED: "#ef4444",
+  TODO: "var(--color-slate-400)",
+  IN_PROGRESS: "var(--color-blue-600)",
+  COMPLETED: "var(--color-emerald-600)",
+  CANCELLED: "var(--color-red-600)",
 } as const;
 
 const PROJECT_STATUS_COLORS = {
-  PLANNED: "#94a3b8",
-  IN_PROGRESS: "#3b82f6",
-  COMPLETED: "#10b981",
-  ARCHIVED: "#64748b",
+  PLANNED: "var(--color-slate-400)",
+  IN_PROGRESS: "var(--color-blue-600)",
+  COMPLETED: "var(--color-emerald-600)",
+  ARCHIVED: "var(--color-slate-500)",
 } as const;
 
 function formatNumber(
@@ -100,7 +100,7 @@ function ChartTooltip({
   }
 
   return (
-    <div className="rounded-2xl border border-white/70 bg-white/85 px-4 py-3 shadow-[0_18px_45px_rgba(15,23,42,0.14)] backdrop-blur-xl">
+    <div className="rounded-2xl border border-border bg-card px-4 py-3 shadow-[0_18px_45px_rgba(15,23,42,0.14)]">
       {label ? (
         <p className="mb-2 text-xs font-bold text-slate-500">
           {label}
@@ -150,7 +150,7 @@ function ChartCard({
     <section
       className={`glass-card overflow-hidden rounded-[2rem] ${className}`}
     >
-      <div className="border-b border-white/40 p-5 sm:p-6">
+      <div className="border-b border-border p-5 sm:p-6">
         <h2 className="text-lg font-extrabold text-slate-900">
           {title}
         </h2>
@@ -210,7 +210,7 @@ export function ReportCharts({
                           TASK_STATUS_COLORS[
                             item.status as keyof typeof TASK_STATUS_COLORS
                           ] ??
-                          "#94a3b8"
+                          "var(--color-slate-400)"
                         }
                       />
                     ),
@@ -269,7 +269,7 @@ export function ReportCharts({
                           PROJECT_STATUS_COLORS[
                             item.status as keyof typeof PROJECT_STATUS_COLORS
                           ] ??
-                          "#64748b"
+                          "var(--color-slate-500)"
                         }
                       />
                     ),
@@ -316,7 +316,7 @@ export function ReportCharts({
             >
               <CartesianGrid
                 strokeDasharray="3 3"
-                stroke="#cbd5e1"
+                stroke="var(--color-slate-300)"
                 vertical={false}
               />
 
@@ -324,7 +324,7 @@ export function ReportCharts({
                 dataKey="label"
                 tick={{
                   fontSize: 11,
-                  fill: "#64748b",
+                  fill: "var(--color-slate-500)",
                 }}
                 axisLine={false}
                 tickLine={false}
@@ -335,7 +335,7 @@ export function ReportCharts({
                 allowDecimals={false}
                 tick={{
                   fontSize: 11,
-                  fill: "#64748b",
+                  fill: "var(--color-slate-500)",
                 }}
                 axisLine={false}
                 tickLine={false}
@@ -361,7 +361,7 @@ export function ReportCharts({
                 type="monotone"
                 dataKey="created"
                 name="ایجاد شده"
-                stroke="#64748b"
+                stroke="var(--color-slate-500)"
                 strokeWidth={2.5}
                 dot={false}
                 activeDot={{
@@ -373,7 +373,7 @@ export function ReportCharts({
                 type="monotone"
                 dataKey="completed"
                 name="تکمیل شده"
-                stroke="#10b981"
+                stroke="var(--color-emerald-600)"
                 strokeWidth={2.5}
                 dot={false}
                 activeDot={{
@@ -409,7 +409,7 @@ export function ReportCharts({
               >
                 <CartesianGrid
                   strokeDasharray="3 3"
-                  stroke="#cbd5e1"
+                  stroke="var(--color-slate-300)"
                   vertical={false}
                 />
 
@@ -421,7 +421,7 @@ export function ReportCharts({
                   height={55}
                   tick={{
                     fontSize: 11,
-                    fill: "#64748b",
+                    fill: "var(--color-slate-500)",
                   }}
                   axisLine={false}
                   tickLine={false}
@@ -431,7 +431,7 @@ export function ReportCharts({
                   allowDecimals={false}
                   tick={{
                     fontSize: 11,
-                    fill: "#64748b",
+                    fill: "var(--color-slate-500)",
                   }}
                   axisLine={false}
                   tickLine={false}
@@ -456,7 +456,7 @@ export function ReportCharts({
                 <Bar
                   dataKey="activeTasks"
                   name="فعال"
-                  fill="#3b82f6"
+                  fill="var(--color-blue-600)"
                   radius={[
                     7, 7, 0, 0,
                   ]}
@@ -465,7 +465,7 @@ export function ReportCharts({
                 <Bar
                   dataKey="completedTasks"
                   name="تکمیل شده"
-                  fill="#10b981"
+                  fill="var(--color-emerald-600)"
                   radius={[
                     7, 7, 0, 0,
                   ]}
@@ -474,7 +474,7 @@ export function ReportCharts({
                 <Bar
                   dataKey="overdueTasks"
                   name="عقب‌افتاده"
-                  fill="#ef4444"
+                  fill="var(--color-red-600)"
                   radius={[
                     7, 7, 0, 0,
                   ]}
@@ -509,7 +509,7 @@ export function ReportCharts({
               >
                 <CartesianGrid
                   strokeDasharray="3 3"
-                  stroke="#cbd5e1"
+                  stroke="var(--color-slate-300)"
                   horizontal={false}
                 />
 
@@ -518,7 +518,7 @@ export function ReportCharts({
                   domain={[0, 100]}
                   tick={{
                     fontSize: 11,
-                    fill: "#64748b",
+                    fill: "var(--color-slate-500)",
                   }}
                   axisLine={false}
                   tickLine={false}
@@ -530,7 +530,7 @@ export function ReportCharts({
                   width={150}
                   tick={{
                     fontSize: 11,
-                    fill: "#64748b",
+                    fill: "var(--color-slate-500)",
                   }}
                   axisLine={false}
                   tickLine={false}
@@ -545,7 +545,7 @@ export function ReportCharts({
                 <Bar
                   dataKey="progress"
                   name="پیشرفت"
-                  fill="#0f172a"
+                  fill="var(--color-slate-900)"
                   radius={[
                     0, 7, 7, 0,
                   ]}

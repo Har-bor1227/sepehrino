@@ -25,9 +25,14 @@ export default async function AdminLayout({
         }
       />
 
-      <main className="min-h-screen lg:pr-64">
+      {/* هر صفحه <main> خودش را دارد؛ این div فقط هدف لینک «پرش به محتوا» است */}
+      <div
+        id="main-content"
+        tabIndex={-1}
+        className="min-h-screen outline-none lg:pr-64"
+      >
         {children}
-      </main>
+      </div>
     </PanelShell>
   );
 }

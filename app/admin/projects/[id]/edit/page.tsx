@@ -36,7 +36,7 @@ export default async function EditProjectPage({
             <Link
               href={`/admin/projects/${id}`}
               aria-label="بازگشت به پروژه"
-              className="glass-icon flex size-10 shrink-0 items-center justify-center rounded-2xl text-slate-600 transition hover:-translate-y-px hover:bg-white/80"
+              className="glass-icon flex size-10 shrink-0 items-center justify-center rounded-2xl text-slate-600 transition hover:-translate-y-px hover:bg-muted"
             >
               <ArrowRight className="size-5" />
             </Link>
@@ -65,7 +65,7 @@ export default async function EditProjectPage({
 
         <div className="mb-5 grid gap-3 sm:grid-cols-2">
           <div className="glass-card rounded-2xl px-4 py-3">
-            <p className="text-[11px] font-semibold text-slate-400">
+            <p className="text-xs font-semibold text-slate-400">
               نام پروژه
             </p>
 
@@ -75,7 +75,7 @@ export default async function EditProjectPage({
           </div>
 
           <div className="glass-card rounded-2xl px-4 py-3">
-            <p className="text-[11px] font-semibold text-slate-400">
+            <p className="text-xs font-semibold text-slate-400">
               مهلت فعلی
             </p>
 

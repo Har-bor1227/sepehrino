@@ -80,7 +80,7 @@ function getProjectStatusClass(
     COMPLETED:
       "border-emerald-200/60 bg-emerald-500/8 text-emerald-700",
     ARCHIVED:
-      "border-white/60 bg-white/40 text-slate-500",
+      "border-border bg-card text-slate-500",
   };
 
   return classes[status];
@@ -195,7 +195,7 @@ export default async function EmployeeProjectDetailPage({
       <div className="mx-auto max-w-[1400px] space-y-5 px-4 py-5 sm:px-6 lg:space-y-6 lg:px-8 lg:py-8">
         <Link
           href="/employee/projects"
-          className="glass-icon inline-flex h-10 items-center gap-2 rounded-2xl px-4 text-sm font-semibold text-slate-600 transition hover:-translate-y-px hover:bg-white/80"
+          className="glass-icon inline-flex h-10 items-center gap-2 rounded-2xl px-4 text-sm font-semibold text-slate-600 transition hover:-translate-y-px hover:bg-muted"
         >
           <ArrowRight className="size-4" />
           بازگشت به پروژه‌ها
@@ -235,7 +235,7 @@ export default async function EmployeeProjectDetailPage({
               )}
 
               <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div className="elevated-hover rounded-2xl border border-white/50 bg-white/28 p-4">
+                <div className="elevated-hover rounded-2xl border border-border bg-white/28 p-4">
                   <p className="text-xs font-medium text-slate-400">
                     کل Task
                   </p>
@@ -309,7 +309,7 @@ export default async function EmployeeProjectDetailPage({
                     progress,
                   )}
                 >
-                  <div className="flex size-full items-center justify-center rounded-full bg-white/90">
+                  <div className="flex size-full items-center justify-center rounded-full bg-card">
                     <CheckCircle2 className="size-5 text-slate-700" />
                   </div>
                 </div>
@@ -336,8 +336,8 @@ export default async function EmployeeProjectDetailPage({
               </p>
 
               <div className="mt-5 grid grid-cols-2 gap-2">
-                <div className="rounded-2xl border border-white/55 bg-white/35 p-3">
-                  <p className="text-[11px] font-medium text-slate-400">
+                <div className="rounded-2xl border border-border bg-white/35 p-3">
+                  <p className="text-xs font-medium text-slate-400">
                     در انتظار
                   </p>
 
@@ -348,8 +348,8 @@ export default async function EmployeeProjectDetailPage({
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-white/55 bg-white/35 p-3">
-                  <p className="text-[11px] font-medium text-slate-400">
+                <div className="rounded-2xl border border-border bg-white/35 p-3">
+                  <p className="text-xs font-medium text-slate-400">
                     در حال انجام
                   </p>
 
@@ -363,7 +363,7 @@ export default async function EmployeeProjectDetailPage({
             </div>
           </div>
 
-          <div className="mt-7 border-t border-white/40 pt-6">
+          <div className="mt-7 border-t border-border pt-6">
             <div className="flex flex-wrap items-center gap-2">
               <span className="glass-chip rounded-full px-3 py-1.5 text-xs font-semibold text-slate-500">
                 {todoTasks.toLocaleString(
@@ -396,7 +396,7 @@ export default async function EmployeeProjectDetailPage({
           </div>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <div className="elevated-hover flex items-center gap-3 rounded-2xl border border-white/45 bg-white/25 p-4">
+            <div className="elevated-hover flex items-center gap-3 rounded-2xl border border-border bg-white/25 p-4">
               <div className="glass-icon flex size-10 shrink-0 items-center justify-center rounded-xl">
                 <CalendarDays className="size-4.5 text-slate-500" />
               </div>
@@ -414,7 +414,7 @@ export default async function EmployeeProjectDetailPage({
               </div>
             </div>
 
-            <div className="elevated-hover flex items-center gap-3 rounded-2xl border border-white/45 bg-white/25 p-4">
+            <div className="elevated-hover flex items-center gap-3 rounded-2xl border border-border bg-white/25 p-4">
               <div className="glass-icon flex size-10 shrink-0 items-center justify-center rounded-xl">
                 <CalendarDays className="size-4.5 text-slate-500" />
               </div>
@@ -435,7 +435,7 @@ export default async function EmployeeProjectDetailPage({
         </section>
 
         <section className="glass-card overflow-hidden rounded-[2rem]">
-          <div className="border-b border-white/40 p-5 sm:p-6">
+          <div className="border-b border-border p-5 sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <div className="glass-icon flex size-11 items-center justify-center rounded-2xl">
@@ -518,13 +518,13 @@ export default async function EmployeeProjectDetailPage({
             </h3>
 
             {isStaged ? (
-              <span className="inline-flex items-center rounded-full border border-indigo-200/70 bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700">
+              <span className="inline-flex items-center rounded-full border border-indigo-200/70 bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700">
                 چندمرحله‌ای
               </span>
             ) : null}
 
             {overdue ? (
-              <span className="inline-flex items-center gap-1 rounded-full border border-red-200/55 bg-red-50/65 px-2.5 py-1 text-[11px] font-bold text-red-700">
+              <span className="inline-flex items-center gap-1 rounded-full border border-red-200/55 bg-red-50/65 px-2.5 py-1 text-xs font-bold text-red-700">
                 <AlertTriangle className="size-3" />
                 عقب‌افتاده
               </span>
@@ -579,11 +579,11 @@ export default async function EmployeeProjectDetailPage({
               </div>
 
               <div className="mt-2 flex items-center justify-between gap-3">
-                <span className="text-[11px] font-semibold text-slate-500">
+                <span className="text-xs font-semibold text-slate-500">
                   {stageProgress.toLocaleString("fa-IR")}٪ تکمیل شده
                 </span>
 
-                <span className="text-[11px] text-slate-400">
+                <span className="text-xs text-slate-400">
                   {stages.length.toLocaleString("fa-IR")} مرحله
                 </span>
               </div>
@@ -593,7 +593,7 @@ export default async function EmployeeProjectDetailPage({
                   <Clock3 className="mt-0.5 size-4 shrink-0 text-blue-700" />
 
                   <div className="min-w-0">
-                    <p className="text-[11px] font-semibold text-slate-500">
+                    <p className="text-xs font-semibold text-slate-500">
                       مرحله فعال
                     </p>
 

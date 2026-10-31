@@ -9,7 +9,7 @@ import { LoginForm } from "@/components/auth/login-form";
 
 export default function LoginPage() {
   return (
-    <main className="app-background relative min-h-screen overflow-hidden">
+    <main id="main-content" className="app-background relative min-h-screen overflow-hidden">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute right-[8%] top-[12%] size-72 rounded-full bg-sky-300/15 blur-3xl"
@@ -26,8 +26,8 @@ export default function LoginPage() {
       />
 
       <div className="relative z-10 flex min-h-screen items-center justify-center p-4 sm:p-6 lg:p-8">
-        <div className="grid w-full max-w-[1080px] overflow-hidden rounded-[2.25rem] border border-white/60 bg-white/25 shadow-[0_30px_90px_rgba(15,23,42,0.12)] backdrop-blur-2xl lg:grid-cols-[0.95fr_1.05fr]">
-          <section className="relative hidden overflow-hidden border-l border-white/45 bg-slate-900 p-8 text-white lg:flex lg:flex-col lg:justify-between lg:p-10">
+        <div className="grid w-full max-w-[1080px] overflow-hidden rounded-[2.25rem] border border-border bg-white/25 shadow-[0_30px_90px_rgba(15,23,42,0.12)] lg:grid-cols-[0.95fr_1.05fr]">
+          <section className="relative hidden overflow-hidden border-l border-border bg-slate-900 p-8 text-white lg:flex lg:flex-col lg:justify-between lg:p-10">
             <div
               aria-hidden="true"
               className="absolute -right-24 -top-24 size-72 rounded-full bg-white/8 blur-3xl"

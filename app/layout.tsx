@@ -1,4 +1,3 @@
-
 import type {
   Metadata,
   Viewport,
@@ -22,7 +21,25 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: [
+    {
+      media: "(prefers-color-scheme: light)",
+      color: "#f2f8f9",
+    },
+    {
+      media: "(prefers-color-scheme: dark)",
+      color: "#151818",
+    },
+  ],
 };
+
+/*
+  تم را قبل از اولین رندر تنظیم می‌کند تا هنگام بارگذاری
+  صفحه‌ی روشن برای لحظه‌ای دیده نشود.
+  اگر کاربر تمی انتخاب نکرده باشد، تنظیم سیستم‌عامل ملاک است.
+*/
+const themeInitScript =
+  '(function(){try{var s=localStorage.getItem("theme");var d=s==="dark"||(s!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);}catch(e){}})();';
 
 export default function RootLayout({
   children,
@@ -34,11 +51,26 @@ export default function RootLayout({
       lang="fa"
       dir="rtl"
       className="min-h-full antialiased"
+      suppressHydrationWarning
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: themeInitScript,
+          }}
+        />
+      </head>
+
       <body className="app-background min-h-screen">
+        <a
+          href="#main-content"
+          className="skip-link"
+        >
+          پرش به محتوای اصلی
+        </a>
+
         {children}
       </body>
     </html>
   );
 }
-

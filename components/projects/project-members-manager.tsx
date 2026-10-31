@@ -176,7 +176,7 @@ export function ProjectMembersManager({
           </div>
         ) : null}
 
-        <div className="rounded-3xl border border-white/55 bg-white/24 p-4">
+        <div className="rounded-3xl border border-border bg-white/24 p-4">
           <div className="flex flex-col gap-3 sm:flex-row">
             <select
               value={
@@ -255,7 +255,7 @@ export function ProjectMembersManager({
               (member) => (
                 <div
                   key={member.id}
-                  className="rounded-3xl border border-white/50 bg-white/26 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] transition hover:bg-white/38 sm:p-5"
+                  className="rounded-3xl border border-border bg-white/26 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] transition hover:bg-white/38 sm:p-5"
                 >
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex min-w-0 items-center gap-3">
@@ -273,11 +273,11 @@ export function ProjectMembersManager({
 
                           {member.user
                             .isActive ? (
-                            <span className="rounded-full border border-emerald-200/60 bg-emerald-50/65 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                            <span className="rounded-full border border-emerald-200/60 bg-emerald-50/65 px-2 py-0.5 text-xs font-bold text-emerald-700">
                               فعال
                             </span>
                           ) : (
-                            <span className="glass-chip rounded-full px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                            <span className="glass-chip rounded-full px-2 py-0.5 text-xs font-bold text-slate-500">
                               غیرفعال
                             </span>
                           )}

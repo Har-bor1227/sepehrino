@@ -70,7 +70,7 @@ function getPriorityClass(
   priority: keyof typeof PRIORITY_LABELS,
 ) {
   const classes = {
-    LOW: "border-slate-200 bg-white/80 text-slate-700",
+    LOW: "border-slate-200 bg-card text-slate-700",
     MEDIUM: "border-amber-300 bg-amber-100 text-amber-900",
     HIGH: "border-orange-300 bg-orange-100 text-orange-900",
     URGENT: "border-red-300 bg-red-100 text-red-900",
@@ -301,7 +301,7 @@ function TaskCard({
                 چندمرحله‌ای
               </span>
             ) : (
-              <span className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white/90 px-2.5 py-1 text-xs font-extrabold text-slate-700">
+              <span className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-card px-2.5 py-1 text-xs font-extrabold text-slate-700">
                 <ListChecks className="size-3.5" />
                 معمولی
               </span>
@@ -347,7 +347,7 @@ function TaskCard({
 
           {task.subProject && (
             <div className="mt-3">
-              <span className="inline-flex max-w-full items-center truncate rounded-lg border border-slate-200 bg-white/80 px-3 py-1.5 text-xs font-bold text-slate-700">
+              <span className="inline-flex max-w-full items-center truncate rounded-lg border border-slate-200 bg-card px-3 py-1.5 text-xs font-bold text-slate-700">
                 {SUB_PROJECT_LABELS[task.subProject.type]}
               </span>
             </div>
@@ -355,7 +355,7 @@ function TaskCard({
         </div>
 
         {/* توضیحات */}
-        <div className="mt-4 min-h-[4.5rem] rounded-xl border border-white/80 bg-white/65 p-3">
+        <div className="mt-4 min-h-[4.5rem] rounded-xl border border-border bg-card p-3">
           <p className="line-clamp-2 break-words text-sm font-medium leading-6 text-slate-700">
             {task.description || "توضیحاتی برای این تسک ثبت نشده است."}
           </p>
@@ -376,7 +376,7 @@ function TaskCard({
             </div>
 
             <div
-              className="mt-3 h-2.5 overflow-hidden rounded-full border border-white/80 bg-white"
+              className="mt-3 h-2.5 overflow-hidden rounded-full border border-border bg-white"
               role="progressbar"
               aria-label="درصد پیشرفت مراحل"
               aria-valuemin={0}
@@ -476,7 +476,7 @@ function TaskCard({
           </div>
 
           {/* وضعیت */}
-          <div className="min-w-0 rounded-xl border border-slate-200 bg-white/80 p-3">
+          <div className="min-w-0 rounded-xl border border-slate-200 bg-card p-3">
             <p className="flex items-center gap-1.5 text-xs font-extrabold text-slate-600">
               <CheckCircle2 className="size-4 shrink-0" />
               وضعیت
@@ -543,12 +543,12 @@ function TaskCard({
         {/* پایین کارت */}
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/80 pt-4">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs font-bold text-slate-600">
-            <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/75 px-2.5 py-2">
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-card px-2.5 py-2">
               <MessageSquare className="size-3.5 text-indigo-600" />
               {task._count.comments.toLocaleString("fa-IR")} کامنت
             </span>
 
-            <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/75 px-2.5 py-2">
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-card px-2.5 py-2">
               <Paperclip className="size-3.5 text-indigo-600" />
               {task._count.attachments.toLocaleString("fa-IR")} فایل
             </span>

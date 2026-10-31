@@ -163,7 +163,7 @@ export default function TaskRecurrenceFields({
   };
 
   return (
-    <section className="space-y-4 rounded-3xl border border-white/55 bg-white/24 p-4 sm:p-5">
+    <section className="space-y-4 rounded-3xl border border-border bg-white/24 p-4 sm:p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-slate-900/7 text-slate-700">
@@ -237,7 +237,7 @@ export default function TaskRecurrenceFields({
                     className={`rounded-2xl border p-4 text-right transition ${
                       selected
                         ? "border-slate-900 bg-slate-900 text-white shadow-[0_12px_24px_rgba(15,23,42,0.12)]"
-                        : "border-white/60 bg-white/35 text-slate-700 hover:bg-white/65"
+                        : "border-border bg-white/35 text-slate-700 hover:bg-muted"
                     } disabled:cursor-not-allowed disabled:opacity-60`}
                   >
                     <div className="flex items-center justify-between gap-3">
@@ -257,7 +257,7 @@ export default function TaskRecurrenceFields({
                     </div>
 
                     <p
-                      className={`mt-2 text-[11px] leading-5 ${
+                      className={`mt-2 text-xs leading-5 ${
                         selected
                           ? "text-white/70"
                           : "text-slate-400"
@@ -309,7 +309,7 @@ export default function TaskRecurrenceFields({
               </p>
             ) : null}
 
-            <p className="flex items-center gap-1.5 text-[11px] leading-5 text-slate-400">
+            <p className="flex items-center gap-1.5 text-xs leading-5 text-slate-400">
               <CalendarDays className="size-3.5" />
               Task از این تاریخ وارد برنامه تکرار می‌شود.
             </p>
@@ -353,7 +353,7 @@ export default function TaskRecurrenceFields({
                         className={`inline-flex min-h-11 items-center justify-center rounded-xl border px-3 py-2 text-xs font-bold transition ${
                           selected
                             ? "border-slate-900 bg-slate-900 text-white"
-                            : "border-white/60 bg-white/35 text-slate-600 hover:bg-white/65"
+                            : "border-border bg-white/35 text-slate-600 hover:bg-muted"
                         } disabled:cursor-not-allowed disabled:opacity-60`}
                       >
                         {
@@ -439,7 +439,7 @@ export default function TaskRecurrenceFields({
                 </p>
               ) : null}
 
-              <p className="text-[11px] leading-5 text-slate-400">
+              <p className="text-xs leading-5 text-slate-400">
                 اگر روز انتخاب‌شده در یک ماه وجود نداشته باشد،
                 برای آن ماه Occurrence ساخته نمی‌شود.
               </p>
@@ -451,7 +451,7 @@ export default function TaskRecurrenceFields({
               بدون تاریخ پایان
             </p>
 
-            <p className="mt-1 text-[11px] leading-5 text-sky-700/70">
+            <p className="mt-1 text-xs leading-5 text-sky-700/70">
               تکرار تا زمانی که مدیر آن را متوقف کند ادامه خواهد داشت
               و سابقه Occurrenceهای قبلی حفظ می‌شود.
             </p>
@@ -460,7 +460,7 @@ export default function TaskRecurrenceFields({
           {showActiveToggle &&
           onRecurrenceActiveChange ? (
             <label
-              className={`flex items-center justify-between gap-4 rounded-2xl border border-white/55 bg-white/30 p-4 ${
+              className={`flex items-center justify-between gap-4 rounded-2xl border border-border bg-white/30 p-4 ${
                 disabled
                   ? "cursor-not-allowed opacity-60"
                   : "cursor-pointer"

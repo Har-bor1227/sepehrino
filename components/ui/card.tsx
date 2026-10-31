@@ -14,7 +14,7 @@ function Card({
       data-slot="card"
       data-size={size}
       className={cn(
-        "glass-card group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-3xl py-(--card-spacing) text-sm text-card-foreground [--card-spacing:--spacing(5)] data-[size=sm]:[--card-spacing:--spacing(4)]",
+        "glass-card group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-xl py-(--card-spacing) text-sm text-card-foreground [--card-spacing:--spacing(5)] data-[size=sm]:[--card-spacing:--spacing(4)]",
         className,
       )}
       {...props}
@@ -46,7 +46,7 @@ function CardTitle({
     <div
       data-slot="card-title"
       className={cn(
-        "font-heading text-base leading-snug font-bold tracking-tight text-slate-900 group-data-[size=sm]/card:text-sm",
+        "font-heading text-base leading-snug font-bold tracking-tight text-card-foreground group-data-[size=sm]/card:text-sm",
         className,
       )}
       {...props}
@@ -62,7 +62,7 @@ function CardDescription({
     <div
       data-slot="card-description"
       className={cn(
-        "text-sm leading-7 text-slate-500",
+        "text-sm leading-7 text-muted-foreground",
         className,
       )}
       {...props}
@@ -110,7 +110,7 @@ function CardFooter({
     <div
       data-slot="card-footer"
       className={cn(
-        "flex items-center border-t border-white/35 bg-white/18 px-(--card-spacing) py-(--card-spacing)",
+        "flex items-center border-t border-border bg-muted/50 px-(--card-spacing) py-(--card-spacing)",
         className,
       )}
       {...props}

@@ -41,7 +41,7 @@ export default async function EmployeeSearchPage({
                     پنل کارمند
                   </p>
 
-                  <span className="inline-flex items-center gap-1 rounded-full border border-white/50 bg-white/25 px-2.5 py-1 text-[10px] font-bold text-slate-400">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-border bg-white/25 px-2.5 py-1 text-xs font-bold text-slate-400">
                     <ShieldCheck className="size-3" />
                     دسترسی محدود
                   </span>

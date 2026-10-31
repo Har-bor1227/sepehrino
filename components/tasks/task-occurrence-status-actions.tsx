@@ -86,7 +86,7 @@ export default function TaskOccurrenceStatusActions({
 
   if (disabled) {
     return (
-      <div className="rounded-2xl border border-white/50 bg-white/25 px-4 py-3 text-xs font-medium leading-6 text-slate-400">
+      <div className="rounded-2xl border border-border bg-white/25 px-4 py-3 text-xs font-medium leading-6 text-slate-400">
         این Task امروز در برنامه نیست.
       </div>
     );

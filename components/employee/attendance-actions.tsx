@@ -177,13 +177,13 @@ export function AttendanceActions({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           {!hasCheckedIn && isWorkingDay ? (
             <button
               type="button"
               disabled={isBusy}
               onClick={() => submitAction("checkIn")}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-[0_8px_20px_rgba(5,150,105,0.16)] transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-600/20 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 sm:w-auto px-5 py-3 text-sm font-bold text-white shadow-[0_8px_20px_rgba(5,150,105,0.16)] transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-600/20 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isBusy ? (
                 <LoaderCircle className="size-5 animate-spin" />
@@ -204,7 +204,7 @@ export function AttendanceActions({
               type="button"
               disabled={isBusy || hasOpenTemporaryExit}
               onClick={() => submitAction("checkOut")}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-900/20 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-900 sm:w-auto px-5 py-3 text-sm font-bold text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)] transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-900/20 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isBusy ? (
                 <LoaderCircle className="size-5 animate-spin" />
@@ -230,7 +230,7 @@ export function AttendanceActions({
       {!hasCheckedIn && !isWorkingDay ? (
         <div
           role="status"
-          className="mt-5 flex items-start gap-3 rounded-2xl border border-slate-200 bg-white/60 p-4"
+          className="mt-5 flex items-start gap-3 rounded-2xl border border-slate-200 bg-card p-4"
         >
           <Clock3 className="mt-0.5 size-5 shrink-0 text-slate-500" />
 

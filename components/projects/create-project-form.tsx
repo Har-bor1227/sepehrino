@@ -185,7 +185,7 @@ export function CreateProjectForm() {
                 ایجاد پروژه
               </CardTitle>
 
-              <span className="glass-chip rounded-full px-2.5 py-1 text-[10px] font-semibold text-slate-500">
+              <span className="glass-chip rounded-full px-2.5 py-1 text-xs font-semibold text-slate-500">
                 پروژه جدید
               </span>
             </div>
@@ -341,7 +341,7 @@ export function CreateProjectForm() {
             </div>
           </div>
 
-          <div className="flex items-start gap-3 rounded-2xl border border-white/55 bg-white/24 p-4">
+          <div className="flex items-start gap-3 rounded-2xl border border-border bg-white/24 p-4">
             <div className="glass-icon flex size-9 shrink-0 items-center justify-center rounded-xl">
               <CalendarDays className="size-4 text-slate-500" />
             </div>

@@ -124,7 +124,7 @@ export function CreateEmployeeForm() {
     <Card className="h-fit">
       <CardHeader className="pb-1">
         <div className="flex items-start gap-3">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-white/60 bg-slate-900 text-white shadow-[0_10px_24px_rgba(15,23,42,0.16)]">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-border bg-slate-900 text-white shadow-[0_10px_24px_rgba(15,23,42,0.16)]">
             <UserPlus className="size-5" />
           </div>
 
@@ -134,7 +134,7 @@ export function CreateEmployeeForm() {
                 افزودن کارمند
               </CardTitle>
 
-              <span className="glass-chip rounded-full px-2 py-1 text-[10px] font-semibold text-slate-500">
+              <span className="glass-chip rounded-full px-2 py-1 text-xs font-semibold text-slate-500">
                 حساب جدید
               </span>
             </div>
@@ -236,7 +236,7 @@ export function CreateEmployeeForm() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-white/55 bg-white/30 p-4">
+          <div className="rounded-2xl border border-border bg-white/30 p-4">
             <div className="flex items-start gap-3">
               <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
                 <CheckCircle2 className="size-4" />

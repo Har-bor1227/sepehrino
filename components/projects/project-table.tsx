@@ -57,7 +57,7 @@ function getStatusClass(status: Project["status"]) {
     COMPLETED:
       "border-emerald-200/55 bg-emerald-500/8 text-emerald-700",
     ARCHIVED:
-      "border-white/50 bg-white/30 text-slate-500",
+      "border-border bg-white/30 text-slate-500",
   };
 
   return classes[status];
@@ -126,7 +126,7 @@ export function ProjectTable({
             </div>
           </div>
 
-          <span className="glass-chip shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-bold text-slate-500">
+          <span className="glass-chip shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-500">
             {projects.length.toLocaleString("fa-IR")} پروژه
           </span>
         </div>
@@ -147,7 +147,7 @@ export function ProjectTable({
           </colgroup>
 
           <thead>
-            <tr className="border-y border-white/40 bg-white/25 text-right">
+            <tr className="border-y border-border bg-white/25 text-right">
               <th className="px-3 py-3 text-xs font-bold text-slate-500">
                 پروژه
               </th>
@@ -186,7 +186,7 @@ export function ProjectTable({
                       {project.title}
                     </p>
 
-                    <p className="mt-0.5 truncate text-[10px] text-slate-400">
+                    <p className="mt-0.5 truncate text-xs text-slate-400">
                       {project.description || "بدون توضیحات"}
                     </p>
                   </div>
@@ -194,7 +194,7 @@ export function ProjectTable({
 
                 <td className="px-2 py-3">
                   <span
-                    className={`inline-flex h-8 max-w-full items-center justify-center rounded-lg border px-2 text-[10px] font-bold whitespace-nowrap ${getStatusClass(
+                    className={`inline-flex h-8 max-w-full items-center justify-center rounded-lg border px-2 text-xs font-bold whitespace-nowrap ${getStatusClass(
                       project.status,
                     )}`}
                   >
@@ -204,7 +204,7 @@ export function ProjectTable({
 
                 <td className="px-2 py-3">
                   <div className="min-w-0">
-                    <div className="mb-1 flex items-center justify-between gap-1.5 text-[10px]">
+                    <div className="mb-1 flex items-center justify-between gap-1.5 text-xs">
                       <span className="font-extrabold text-slate-700">
                         {project.stats.progress.toLocaleString("fa-IR")}٪
                       </span>
@@ -228,7 +228,7 @@ export function ProjectTable({
                 </td>
 
                 <td className="px-2 py-3">
-                  <div className="flex min-w-0 flex-col gap-1 text-[10px]">
+                  <div className="flex min-w-0 flex-col gap-1 text-xs">
                     <div className="flex items-center gap-1.5 truncate text-slate-600">
                       <CheckCircle2 className="size-3 shrink-0 text-emerald-600" />
 
@@ -297,14 +297,14 @@ export function ProjectTable({
                       [&_button]:!rounded-lg
                       [&_button]:!px-2.5
                       [&_button]:!py-1
-                      [&_button]:!text-[10px]
+                      [&_button]:!text-xs
                       [&_button]:!whitespace-nowrap
                       [&_a]:!h-8
                       [&_a]:!min-h-8
                       [&_a]:!rounded-lg
                       [&_a]:!px-2.5
                       [&_a]:!py-1
-                      [&_a]:!text-[10px]
+                      [&_a]:!text-xs
                       [&_a]:!whitespace-nowrap
                     "
                   >

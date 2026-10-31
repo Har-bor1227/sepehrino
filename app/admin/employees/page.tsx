@@ -362,7 +362,7 @@ export default async function AdminEmployeesPage({
         {/* فرم ایجاد و فهرست کارمندان */}
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(300px,350px)_minmax(0,1fr)] lg:gap-6">
           <section className="relative min-w-0 overflow-visible rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-100/80 via-white to-teal-50 shadow-[0_8px_24px_rgba(6,95,70,0.055)] lg:sticky lg:top-6">
-            <header className="border-b border-emerald-100 bg-white/65 p-5 sm:p-6">
+            <header className="border-b border-emerald-100 bg-card p-5 sm:p-6">
               <div className="flex items-center gap-3">
                 <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm">
                   <Users className="size-5" />

@@ -296,7 +296,7 @@ export default async function AdminReportsPage({
 
             <Link
               href="/admin/dashboard"
-              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 text-sm font-bold text-white transition hover:border-white/40 hover:bg-white/20 sm:w-fit"
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 text-sm font-bold text-white transition hover:border-slate-400 hover:bg-white/20 sm:w-fit"
             >
               بازگشت به داشبورد
               <ArrowLeft className="size-4" />
@@ -309,7 +309,7 @@ export default async function AdminReportsPage({
                 <Users className="size-4 sm:size-5" />
               </span>
               <div className="min-w-0">
-                <p className="truncate text-[10px] font-semibold text-blue-100/70 sm:text-xs">
+                <p className="truncate text-xs font-semibold text-blue-100/70 sm:text-xs">
                   گزارش
                 </p>
                 <p className="mt-1 truncate text-xs font-extrabold text-white sm:text-sm">
@@ -323,7 +323,7 @@ export default async function AdminReportsPage({
                 <FolderKanban className="size-4 sm:size-5" />
               </span>
               <div className="min-w-0">
-                <p className="truncate text-[10px] font-semibold text-blue-100/70 sm:text-xs">
+                <p className="truncate text-xs font-semibold text-blue-100/70 sm:text-xs">
                   گزارش
                 </p>
                 <p className="mt-1 truncate text-xs font-extrabold text-white sm:text-sm">
@@ -337,7 +337,7 @@ export default async function AdminReportsPage({
                 <CheckCircle2 className="size-4 sm:size-5" />
               </span>
               <div className="min-w-0">
-                <p className="truncate text-[10px] font-semibold text-blue-100/70 sm:text-xs">
+                <p className="truncate text-xs font-semibold text-blue-100/70 sm:text-xs">
                   گزارش
                 </p>
                 <p className="mt-1 truncate text-xs font-extrabold text-white sm:text-sm">

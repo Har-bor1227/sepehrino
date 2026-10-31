@@ -236,7 +236,7 @@ export default function NotificationPanel({
         </div>
 
         {unreadCount > 0 && (
-          <div className="mt-5 flex items-start gap-3 rounded-2xl border border-indigo-100 bg-white/80 p-4 shadow-sm shadow-indigo-950/[0.02]">
+          <div className="mt-5 flex items-start gap-3 rounded-2xl border border-indigo-100 bg-card p-4 shadow-sm shadow-indigo-950/[0.02]">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
               <Bell className="size-4.5" />
             </div>
@@ -356,7 +356,7 @@ export default function NotificationPanel({
                           {config.label}
                         </span>
 
-                        <span className="inline-flex min-h-8 max-w-full items-center rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-xs font-semibold leading-5 text-slate-600 sm:text-sm">
+                        <span className="inline-flex min-h-8 max-w-full items-center rounded-full border border-slate-200 bg-card px-3 py-1 text-xs font-semibold leading-5 text-slate-600 sm:text-sm">
                           <Clock3 className="ml-1.5 size-3.5 shrink-0 text-slate-400" />
                           <span className="break-words">
                             {formatDate(notification.createdAt)}

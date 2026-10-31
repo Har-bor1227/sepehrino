@@ -1,190 +1,658 @@
-
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+/* =========================================================
+   فرتاک تسکینگ — هویت بصری جدید
+   پالت: فیروزه‌ای (برند)، زعفرانی (توجه)، اناری (خطر)،
+   خنثی‌های سبز-خاکستری. همه‌ی ترکیب‌های متن/پس‌زمینه
+   حداقل کنتراست AA دارند.
 
-  /* Typography */
+   نکته‌ی مهم: رمپ‌های رنگی Tailwind (slate, blue, emerald,
+   red, amber, ...) در اینجا بازتعریف شده‌اند. بنابراین
+   کلاس‌های موجود در صفحه‌ها (مثل text-slate-500 یا
+   bg-emerald-50) بدون ویرایش، رنگ جدید و تم دارک می‌گیرند.
+   ========================================================= */
+
+@theme static {
+  /* --- رمپ‌های رنگی (حالت روشن) --- */
+  --color-slate-50: #f2f8f9;
+  --color-slate-100: #eaf2f3;
+  --color-slate-200: #dce5e6;
+  --color-slate-300: #bdcacc;
+  --color-slate-400: #5f6f71;
+  --color-slate-500: #4d5f61;
+  --color-slate-600: #394c4e;
+  --color-slate-700: #25393c;
+  --color-slate-800: #15292b;
+  --color-slate-900: #091d1f;
+  --color-slate-950: #021012;
+  --color-gray-50: #f2f8f9;
+  --color-gray-100: #eaf2f3;
+  --color-gray-200: #dce5e6;
+  --color-gray-300: #bdcacc;
+  --color-gray-400: #5f6f71;
+  --color-gray-500: #4d5f61;
+  --color-gray-600: #394c4e;
+  --color-gray-700: #25393c;
+  --color-gray-800: #15292b;
+  --color-gray-900: #091d1f;
+  --color-gray-950: #021012;
+  --color-zinc-50: #f2f8f9;
+  --color-zinc-100: #eaf2f3;
+  --color-zinc-200: #dce5e6;
+  --color-zinc-300: #bdcacc;
+  --color-zinc-400: #5f6f71;
+  --color-zinc-500: #4d5f61;
+  --color-zinc-600: #394c4e;
+  --color-zinc-700: #25393c;
+  --color-zinc-800: #15292b;
+  --color-zinc-900: #091d1f;
+  --color-zinc-950: #021012;
+  --color-neutral-50: #f2f8f9;
+  --color-neutral-100: #eaf2f3;
+  --color-neutral-200: #dce5e6;
+  --color-neutral-300: #bdcacc;
+  --color-neutral-400: #5f6f71;
+  --color-neutral-500: #4d5f61;
+  --color-neutral-600: #394c4e;
+  --color-neutral-700: #25393c;
+  --color-neutral-800: #15292b;
+  --color-neutral-900: #091d1f;
+  --color-neutral-950: #021012;
+  --color-stone-50: #f2f8f9;
+  --color-stone-100: #eaf2f3;
+  --color-stone-200: #dce5e6;
+  --color-stone-300: #bdcacc;
+  --color-stone-400: #5f6f71;
+  --color-stone-500: #4d5f61;
+  --color-stone-600: #394c4e;
+  --color-stone-700: #25393c;
+  --color-stone-800: #15292b;
+  --color-stone-900: #091d1f;
+  --color-stone-950: #021012;
+  --color-blue-50: #eafbfc;
+  --color-blue-100: #d4f6f8;
+  --color-blue-200: #abecef;
+  --color-blue-300: #6fdbe1;
+  --color-blue-400: #00c2ca;
+  --color-blue-500: #00a0a6;
+  --color-blue-600: #007d82;
+  --color-blue-700: #005f63;
+  --color-blue-800: #004c50;
+  --color-blue-900: #003e41;
+  --color-blue-950: #002527;
+  --color-sky-50: #eafbfc;
+  --color-sky-100: #d4f6f8;
+  --color-sky-200: #abecef;
+  --color-sky-300: #6fdbe1;
+  --color-sky-400: #00c2ca;
+  --color-sky-500: #00a0a6;
+  --color-sky-600: #007d82;
+  --color-sky-700: #005f63;
+  --color-sky-800: #004c50;
+  --color-sky-900: #003e41;
+  --color-sky-950: #002527;
+  --color-cyan-50: #eafbfc;
+  --color-cyan-100: #d4f6f8;
+  --color-cyan-200: #abecef;
+  --color-cyan-300: #6fdbe1;
+  --color-cyan-400: #00c2ca;
+  --color-cyan-500: #00a0a6;
+  --color-cyan-600: #007d82;
+  --color-cyan-700: #005f63;
+  --color-cyan-800: #004c50;
+  --color-cyan-900: #003e41;
+  --color-cyan-950: #002527;
+  --color-teal-50: #eafbfc;
+  --color-teal-100: #d4f6f8;
+  --color-teal-200: #abecef;
+  --color-teal-300: #6fdbe1;
+  --color-teal-400: #00c2ca;
+  --color-teal-500: #00a0a6;
+  --color-teal-600: #007d82;
+  --color-teal-700: #005f63;
+  --color-teal-800: #004c50;
+  --color-teal-900: #003e41;
+  --color-teal-950: #002527;
+  --color-indigo-50: #f3f7ff;
+  --color-indigo-100: #e8eeff;
+  --color-indigo-200: #d0deff;
+  --color-indigo-300: #b0c6ff;
+  --color-indigo-400: #89a7f9;
+  --color-indigo-500: #6786e2;
+  --color-indigo-600: #4b68c1;
+  --color-indigo-700: #38509a;
+  --color-indigo-800: #2d407c;
+  --color-indigo-900: #233261;
+  --color-indigo-950: #141d3a;
+  --color-violet-50: #fdf3fd;
+  --color-violet-100: #fae8fa;
+  --color-violet-200: #f3d1f4;
+  --color-violet-300: #e6b4e8;
+  --color-violet-400: #d091d3;
+  --color-violet-500: #b56db9;
+  --color-violet-600: #954f99;
+  --color-violet-700: #783e7b;
+  --color-violet-800: #5f3062;
+  --color-violet-900: #4a254c;
+  --color-violet-950: #2c152d;
+  --color-purple-50: #fdf3fd;
+  --color-purple-100: #fae8fa;
+  --color-purple-200: #f3d1f4;
+  --color-purple-300: #e6b4e8;
+  --color-purple-400: #d091d3;
+  --color-purple-500: #b56db9;
+  --color-purple-600: #954f99;
+  --color-purple-700: #783e7b;
+  --color-purple-800: #5f3062;
+  --color-purple-900: #4a254c;
+  --color-purple-950: #2c152d;
+  --color-fuchsia-50: #fdf3fd;
+  --color-fuchsia-100: #fae8fa;
+  --color-fuchsia-200: #f3d1f4;
+  --color-fuchsia-300: #e6b4e8;
+  --color-fuchsia-400: #d091d3;
+  --color-fuchsia-500: #b56db9;
+  --color-fuchsia-600: #954f99;
+  --color-fuchsia-700: #783e7b;
+  --color-fuchsia-800: #5f3062;
+  --color-fuchsia-900: #4a254c;
+  --color-fuchsia-950: #2c152d;
+  --color-emerald-50: #eefaf2;
+  --color-emerald-100: #def6e5;
+  --color-emerald-200: #bfebcc;
+  --color-emerald-300: #95daac;
+  --color-emerald-400: #64c288;
+  --color-emerald-500: #2ca564;
+  --color-emerald-600: #008249;
+  --color-emerald-700: #006236;
+  --color-emerald-800: #004f2a;
+  --color-emerald-900: #004021;
+  --color-emerald-950: #022713;
+  --color-green-50: #eefaf2;
+  --color-green-100: #def6e5;
+  --color-green-200: #bfebcc;
+  --color-green-300: #95daac;
+  --color-green-400: #64c288;
+  --color-green-500: #2ca564;
+  --color-green-600: #008249;
+  --color-green-700: #006236;
+  --color-green-800: #004f2a;
+  --color-green-900: #004021;
+  --color-green-950: #022713;
+  --color-amber-50: #fcf6eb;
+  --color-amber-100: #f9edd7;
+  --color-amber-200: #f2dbb3;
+  --color-amber-300: #e5c283;
+  --color-amber-400: #d0a34c;
+  --color-amber-500: #b48300;
+  --color-amber-600: #8f6700;
+  --color-amber-700: #6e4f00;
+  --color-amber-800: #5a3f00;
+  --color-amber-900: #473100;
+  --color-amber-950: #2b1c00;
+  --color-yellow-50: #fcf6eb;
+  --color-yellow-100: #f9edd7;
+  --color-yellow-200: #f2dbb3;
+  --color-yellow-300: #e5c283;
+  --color-yellow-400: #d0a34c;
+  --color-yellow-500: #b48300;
+  --color-yellow-600: #8f6700;
+  --color-yellow-700: #6e4f00;
+  --color-yellow-800: #5a3f00;
+  --color-yellow-900: #473100;
+  --color-yellow-950: #2b1c00;
+  --color-orange-50: #fff4ee;
+  --color-orange-100: #ffeadd;
+  --color-orange-200: #ffd4bb;
+  --color-orange-300: #f9b68e;
+  --color-orange-400: #e8935e;
+  --color-orange-500: #ce6f2c;
+  --color-orange-600: #ab5200;
+  --color-orange-700: #884000;
+  --color-orange-800: #6d3200;
+  --color-orange-900: #562600;
+  --color-orange-950: #341602;
+  --color-red-50: #fff4f3;
+  --color-red-100: #ffe9e6;
+  --color-red-200: #ffd1cd;
+  --color-red-300: #ffb0a8;
+  --color-red-400: #f28881;
+  --color-red-500: #d8625c;
+  --color-red-600: #b64340;
+  --color-red-700: #933331;
+  --color-red-800: #752725;
+  --color-red-900: #5b1e1c;
+  --color-red-950: #371210;
+  --color-rose-50: #fff3f5;
+  --color-rose-100: #ffe8eb;
+  --color-rose-200: #ffd0d7;
+  --color-rose-300: #feaebb;
+  --color-rose-400: #ec889c;
+  --color-rose-500: #d2637c;
+  --color-rose-600: #b0445f;
+  --color-rose-700: #8e344b;
+  --color-rose-800: #71283a;
+  --color-rose-900: #581f2d;
+  --color-rose-950: #35121a;
+  --color-pink-50: #fff3f5;
+  --color-pink-100: #ffe8eb;
+  --color-pink-200: #ffd0d7;
+  --color-pink-300: #feaebb;
+  --color-pink-400: #ec889c;
+  --color-pink-500: #d2637c;
+  --color-pink-600: #b0445f;
+  --color-pink-700: #8e344b;
+  --color-pink-800: #71283a;
+  --color-pink-900: #581f2d;
+  --color-pink-950: #35121a;
+
+  --color-white: #ffffff;
+}
+
+@theme inline {
   --font-sans: "Estedad Variable", Tahoma, Arial, sans-serif;
   --font-heading: "Estedad Variable", Tahoma, Arial, sans-serif;
   --font-mono:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     monospace;
 
-  /* Sidebar */
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
 
-  /* Charts */
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
 
-  /* Base */
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
 
-  /* Accent */
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 
-  /* Muted */
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Secondary */
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
 
-  /* Primary */
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-
-  /* Popover */
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-
-  /* Card */
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-
-  /* Radius scale */
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  /* شعاع‌ها: کنترل‌ها کوچک‌تر، کارت‌ها متوسط، صفحه‌های شناور بزرگ‌تر */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.35);
-  --radius-2xl: calc(var(--radius) * 1.7);
-  --radius-3xl: calc(var(--radius) * 2.1);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.125rem;
+  --radius-3xl: 1.375rem;
+  --radius-4xl: 1.75rem;
 }
 
 /* =========================================================
-   LIGHT THEME
+   توکن‌های معنایی — حالت روشن
    ========================================================= */
 
 :root {
-  --background: oklch(0.965 0.008 250);
-  --foreground: oklch(0.19 0.025 250);
+  color-scheme: light;
 
-  --card: oklch(1 0 0 / 0.72);
-  --card-foreground: oklch(0.19 0.025 250);
+  --background: oklch(0.966 0.006 205);
+  --foreground: var(--color-slate-900);
 
-  --popover: oklch(1 0 0 / 0.9);
-  --popover-foreground: oklch(0.19 0.025 250);
+  --card: var(--color-white);
+  --card-foreground: var(--color-slate-900);
+  --popover: var(--color-white);
+  --popover-foreground: var(--color-slate-900);
 
-  --primary: oklch(0.26 0.045 250);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary: var(--color-blue-700);
+  --primary-foreground: #ffffff;
 
-  --secondary: oklch(0.95 0.012 250);
-  --secondary-foreground: oklch(0.25 0.03 250);
+  --secondary: var(--color-slate-100);
+  --secondary-foreground: var(--color-slate-800);
 
-  --muted: oklch(0.94 0.012 250);
-  --muted-foreground: oklch(0.49 0.025 250);
+  --muted: var(--color-slate-100);
+  --muted-foreground: var(--color-slate-500);
 
-  --accent: oklch(0.94 0.018 250);
-  --accent-foreground: oklch(0.23 0.03 250);
+  --accent: var(--color-blue-50);
+  --accent-foreground: var(--color-blue-800);
 
-  --destructive: oklch(0.58 0.22 25);
+  --destructive: var(--color-red-700);
 
-  --border: oklch(0.78 0.018 250 / 0.42);
-  --input: oklch(0.78 0.018 250 / 0.5);
-  --ring: oklch(0.42 0.08 250 / 0.45);
+  /* حاشیه‌ی تزئینی و حاشیه‌ی کنترل‌ها (حداقل ۳:۱ طبق WCAG 1.4.11) */
+  --border: var(--color-slate-300);
+  --input: oklch(0.64 0.015 205);
+  --ring: var(--color-blue-600);
 
-  --chart-1: oklch(0.61 0.17 255);
-  --chart-2: oklch(0.68 0.14 165);
-  --chart-3: oklch(0.72 0.16 80);
-  --chart-4: oklch(0.61 0.2 315);
-  --chart-5: oklch(0.65 0.19 25);
+  --chart-1: var(--color-blue-600);
+  --chart-2: var(--color-amber-600);
+  --chart-3: var(--color-emerald-600);
+  --chart-4: var(--color-violet-600);
+  --chart-5: var(--color-red-600);
 
-  --radius: 1rem;
+  --radius: 0.625rem;
 
-  /* Sidebar */
-  --sidebar: oklch(1 0 0 / 0.64);
-  --sidebar-foreground: oklch(0.19 0.025 250);
-  --sidebar-primary: oklch(0.26 0.045 250);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.94 0.018 250);
-  --sidebar-accent-foreground: oklch(0.23 0.03 250);
-  --sidebar-border: oklch(0.78 0.018 250 / 0.35);
-  --sidebar-ring: oklch(0.42 0.08 250 / 0.45);
+  --sidebar: var(--color-white);
+  --sidebar-foreground: var(--color-slate-900);
+  --sidebar-primary: var(--color-blue-700);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--color-blue-50);
+  --sidebar-accent-foreground: var(--color-blue-800);
+  --sidebar-border: var(--color-slate-300);
+  --sidebar-ring: var(--color-blue-600);
 
-  /* Glass */
-  --glass-white: rgb(255 255 255 / 0.62);
-  --glass-white-strong: rgb(255 255 255 / 0.82);
-  --glass-border: rgb(255 255 255 / 0.62);
-  --glass-border-dark: rgb(148 163 184 / 0.18);
+  --shadow-raised: 0 1px 2px rgb(9 29 31 / 0.06), 0 6px 18px rgb(9 29 31 / 0.06);
+  --shadow-float: 0 12px 40px rgb(9 29 31 / 0.16), 0 2px 8px rgb(9 29 31 / 0.08);
 
-  --glass-shadow:
-    0 20px 55px rgb(15 23 42 / 0.08),
-    0 4px 16px rgb(15 23 42 / 0.05);
-
-  --glass-shadow-hover:
-    0 28px 70px rgb(15 23 42 / 0.13),
-    0 8px 24px rgb(15 23 42 / 0.08);
+  /* برای سازگاری با کدهای قدیمی */
+  --glass-shadow: var(--shadow-raised);
+  --glass-shadow-hover: var(--shadow-raised);
 }
 
 /* =========================================================
-   DARK THEME
+   حالت تاریک
+   رمپ‌ها برای تم تاریک دوباره تعریف شده‌اند: سایه‌های روشن
+   (۵۰ تا ۳۰۰) تیره می‌شوند و سایه‌های متن (۴۰۰ تا ۹۵۰) روشن.
+   --color-white در تم تاریک سطح کارت است، نه سفید واقعی.
    ========================================================= */
 
 .dark {
-  --background: oklch(0.15 0.02 250);
-  --foreground: oklch(0.96 0.01 250);
+  color-scheme: dark;
 
-  --card: oklch(0.19 0.025 250 / 0.68);
-  --card-foreground: oklch(0.96 0.01 250);
+  --color-slate-50: #151818;
+  --color-slate-100: #1b1f1f;
+  --color-slate-200: #262b2c;
+  --color-slate-300: #373f40;
+  --color-slate-400: #94a1a3;
+  --color-slate-500: #a2b1b3;
+  --color-slate-600: #b0c2c4;
+  --color-slate-700: #bfd2d4;
+  --color-slate-800: #ccdfe1;
+  --color-slate-900: #d9ecee;
+  --color-slate-950: #e4f6f8;
+  --color-gray-50: #151818;
+  --color-gray-100: #1b1f1f;
+  --color-gray-200: #262b2c;
+  --color-gray-300: #373f40;
+  --color-gray-400: #94a1a3;
+  --color-gray-500: #a2b1b3;
+  --color-gray-600: #b0c2c4;
+  --color-gray-700: #bfd2d4;
+  --color-gray-800: #ccdfe1;
+  --color-gray-900: #d9ecee;
+  --color-gray-950: #e4f6f8;
+  --color-zinc-50: #151818;
+  --color-zinc-100: #1b1f1f;
+  --color-zinc-200: #262b2c;
+  --color-zinc-300: #373f40;
+  --color-zinc-400: #94a1a3;
+  --color-zinc-500: #a2b1b3;
+  --color-zinc-600: #b0c2c4;
+  --color-zinc-700: #bfd2d4;
+  --color-zinc-800: #ccdfe1;
+  --color-zinc-900: #d9ecee;
+  --color-zinc-950: #e4f6f8;
+  --color-neutral-50: #151818;
+  --color-neutral-100: #1b1f1f;
+  --color-neutral-200: #262b2c;
+  --color-neutral-300: #373f40;
+  --color-neutral-400: #94a1a3;
+  --color-neutral-500: #a2b1b3;
+  --color-neutral-600: #b0c2c4;
+  --color-neutral-700: #bfd2d4;
+  --color-neutral-800: #ccdfe1;
+  --color-neutral-900: #d9ecee;
+  --color-neutral-950: #e4f6f8;
+  --color-stone-50: #151818;
+  --color-stone-100: #1b1f1f;
+  --color-stone-200: #262b2c;
+  --color-stone-300: #373f40;
+  --color-stone-400: #94a1a3;
+  --color-stone-500: #a2b1b3;
+  --color-stone-600: #b0c2c4;
+  --color-stone-700: #bfd2d4;
+  --color-stone-800: #ccdfe1;
+  --color-stone-900: #d9ecee;
+  --color-stone-950: #e4f6f8;
+  --color-blue-50: #012527;
+  --color-blue-100: #003032;
+  --color-blue-200: #004144;
+  --color-blue-300: #005f63;
+  --color-blue-400: #35b9c0;
+  --color-blue-500: #30c8cf;
+  --color-blue-600: #43d5dc;
+  --color-blue-700: #65e0e7;
+  --color-blue-800: #91e9ee;
+  --color-blue-900: #bfeff2;
+  --color-blue-950: #dcf8fa;
+  --color-sky-50: #012527;
+  --color-sky-100: #003032;
+  --color-sky-200: #004144;
+  --color-sky-300: #005f63;
+  --color-sky-400: #35b9c0;
+  --color-sky-500: #30c8cf;
+  --color-sky-600: #43d5dc;
+  --color-sky-700: #65e0e7;
+  --color-sky-800: #91e9ee;
+  --color-sky-900: #bfeff2;
+  --color-sky-950: #dcf8fa;
+  --color-cyan-50: #012527;
+  --color-cyan-100: #003032;
+  --color-cyan-200: #004144;
+  --color-cyan-300: #005f63;
+  --color-cyan-400: #35b9c0;
+  --color-cyan-500: #30c8cf;
+  --color-cyan-600: #43d5dc;
+  --color-cyan-700: #65e0e7;
+  --color-cyan-800: #91e9ee;
+  --color-cyan-900: #bfeff2;
+  --color-cyan-950: #dcf8fa;
+  --color-teal-50: #012527;
+  --color-teal-100: #003032;
+  --color-teal-200: #004144;
+  --color-teal-300: #005f63;
+  --color-teal-400: #35b9c0;
+  --color-teal-500: #30c8cf;
+  --color-teal-600: #43d5dc;
+  --color-teal-700: #65e0e7;
+  --color-teal-800: #91e9ee;
+  --color-teal-900: #bfeff2;
+  --color-teal-950: #dcf8fa;
+  --color-indigo-50: #171e31;
+  --color-indigo-100: #1f2840;
+  --color-indigo-200: #29365a;
+  --color-indigo-300: #3e5082;
+  --color-indigo-400: #88a2e7;
+  --color-indigo-500: #92aefa;
+  --color-indigo-600: #a2bcff;
+  --color-indigo-700: #b4c9ff;
+  --color-indigo-800: #c7d7ff;
+  --color-indigo-900: #dae4ff;
+  --color-indigo-950: #ecf2ff;
+  --color-violet-50: #281929;
+  --color-violet-100: #342135;
+  --color-violet-200: #482c4a;
+  --color-violet-300: #69426b;
+  --color-violet-400: #c48fc7;
+  --color-violet-500: #d499d7;
+  --color-violet-600: #e1a6e4;
+  --color-violet-700: #ecb5ee;
+  --color-violet-800: #f2c7f4;
+  --color-violet-900: #f5dbf5;
+  --color-violet-950: #fcecfc;
+  --color-purple-50: #281929;
+  --color-purple-100: #342135;
+  --color-purple-200: #482c4a;
+  --color-purple-300: #69426b;
+  --color-purple-400: #c48fc7;
+  --color-purple-500: #d499d7;
+  --color-purple-600: #e1a6e4;
+  --color-purple-700: #ecb5ee;
+  --color-purple-800: #f2c7f4;
+  --color-purple-900: #f5dbf5;
+  --color-purple-950: #fcecfc;
+  --color-fuchsia-50: #281929;
+  --color-fuchsia-100: #342135;
+  --color-fuchsia-200: #482c4a;
+  --color-fuchsia-300: #69426b;
+  --color-fuchsia-400: #c48fc7;
+  --color-fuchsia-500: #d499d7;
+  --color-fuchsia-600: #e1a6e4;
+  --color-fuchsia-700: #ecb5ee;
+  --color-fuchsia-800: #f2c7f4;
+  --color-fuchsia-900: #f5dbf5;
+  --color-fuchsia-950: #fcecfc;
+  --color-emerald-50: #0f2517;
+  --color-emerald-100: #13301e;
+  --color-emerald-200: #164228;
+  --color-emerald-300: #24603d;
+  --color-emerald-400: #6cb888;
+  --color-emerald-500: #71c791;
+  --color-emerald-600: #7ed49d;
+  --color-emerald-700: #92dfad;
+  --color-emerald-800: #ade8c0;
+  --color-emerald-900: #cdefd7;
+  --color-emerald-950: #e4f8ea;
+  --color-green-50: #0f2517;
+  --color-green-100: #13301e;
+  --color-green-200: #164228;
+  --color-green-300: #24603d;
+  --color-green-400: #6cb888;
+  --color-green-500: #71c791;
+  --color-green-600: #7ed49d;
+  --color-green-700: #92dfad;
+  --color-green-800: #ade8c0;
+  --color-green-900: #cdefd7;
+  --color-green-950: #e4f8ea;
+  --color-amber-50: #281d0a;
+  --color-amber-100: #34260c;
+  --color-amber-200: #48340a;
+  --color-amber-300: #694d13;
+  --color-amber-400: #c49f58;
+  --color-amber-500: #d3aa5c;
+  --color-amber-600: #e0b769;
+  --color-amber-700: #ebc57e;
+  --color-amber-800: #f1d39e;
+  --color-amber-900: #f4e2c3;
+  --color-amber-950: #fbf1de;
+  --color-yellow-50: #281d0a;
+  --color-yellow-100: #34260c;
+  --color-yellow-200: #48340a;
+  --color-yellow-300: #694d13;
+  --color-yellow-400: #c49f58;
+  --color-yellow-500: #d3aa5c;
+  --color-yellow-600: #e0b769;
+  --color-yellow-700: #ebc57e;
+  --color-yellow-800: #f1d39e;
+  --color-yellow-900: #f4e2c3;
+  --color-yellow-950: #fbf1de;
+  --color-orange-50: #2d1a0e;
+  --color-orange-100: #3b2212;
+  --color-orange-200: #532d14;
+  --color-orange-300: #774422;
+  --color-orange-400: #d99166;
+  --color-orange-500: #ea9c6b;
+  --color-orange-600: #f8a878;
+  --color-orange-700: #ffb88e;
+  --color-orange-800: #ffcbac;
+  --color-orange-900: #ffddc9;
+  --color-orange-950: #ffeee4;
+  --color-red-50: #301715;
+  --color-red-100: #3e1e1c;
+  --color-red-200: #572825;
+  --color-red-300: #7d3d39;
+  --color-red-400: #e18881;
+  --color-red-500: #f4928a;
+  --color-red-600: #ffa098;
+  --color-red-700: #ffb5ae;
+  --color-red-800: #ffc8c3;
+  --color-red-900: #ffdbd7;
+  --color-red-950: #ffedeb;
+  --color-rose-50: #2f171c;
+  --color-rose-100: #3d1e24;
+  --color-rose-200: #542831;
+  --color-rose-300: #7a3d49;
+  --color-rose-400: #dd8898;
+  --color-rose-500: #ef92a3;
+  --color-rose-600: #fd9eb0;
+  --color-rose-700: #ffb2bf;
+  --color-rose-800: #ffc6cf;
+  --color-rose-900: #ffdadf;
+  --color-rose-950: #ffecef;
+  --color-pink-50: #2f171c;
+  --color-pink-100: #3d1e24;
+  --color-pink-200: #542831;
+  --color-pink-300: #7a3d49;
+  --color-pink-400: #dd8898;
+  --color-pink-500: #ef92a3;
+  --color-pink-600: #fd9eb0;
+  --color-pink-700: #ffb2bf;
+  --color-pink-800: #ffc6cf;
+  --color-pink-900: #ffdadf;
+  --color-pink-950: #ffecef;
 
-  --popover: oklch(0.19 0.025 250 / 0.9);
-  --popover-foreground: oklch(0.96 0.01 250);
+  --color-white: oklch(0.215 0.014 215);
 
-  --primary: oklch(0.86 0.03 250);
-  --primary-foreground: oklch(0.18 0.025 250);
+  --background: oklch(0.155 0.014 215);
+  --foreground: var(--color-slate-900);
 
-  --secondary: oklch(0.23 0.025 250);
-  --secondary-foreground: oklch(0.95 0.01 250);
+  --card: var(--color-white);
+  --card-foreground: var(--color-slate-900);
+  --popover: oklch(0.245 0.016 215);
+  --popover-foreground: var(--color-slate-900);
 
-  --muted: oklch(0.23 0.025 250);
-  --muted-foreground: oklch(0.68 0.02 250);
+  --primary: var(--color-blue-600);
+  --primary-foreground: oklch(0.15 0.02 215);
 
-  --accent: oklch(0.24 0.03 250);
-  --accent-foreground: oklch(0.96 0.01 250);
+  --secondary: var(--color-slate-100);
+  --secondary-foreground: var(--color-slate-800);
 
-  --destructive: oklch(0.68 0.19 24);
+  --muted: var(--color-slate-100);
+  --muted-foreground: var(--color-slate-500);
 
-  --border: oklch(1 0 0 / 0.1);
-  --input: oklch(1 0 0 / 0.12);
-  --ring: oklch(0.74 0.04 250 / 0.45);
+  --accent: var(--color-blue-100);
+  --accent-foreground: var(--color-blue-800);
 
-  --chart-1: oklch(0.72 0.18 255);
-  --chart-2: oklch(0.78 0.14 165);
-  --chart-3: oklch(0.8 0.16 80);
-  --chart-4: oklch(0.72 0.2 315);
-  --chart-5: oklch(0.75 0.19 25);
+  --destructive: var(--color-red-600);
 
-  /* Sidebar */
-  --sidebar: oklch(0.18 0.025 250 / 0.72);
-  --sidebar-foreground: oklch(0.96 0.01 250);
-  --sidebar-primary: oklch(0.86 0.03 250);
-  --sidebar-primary-foreground: oklch(0.18 0.025 250);
-  --sidebar-accent: oklch(0.24 0.03 250);
-  --sidebar-accent-foreground: oklch(0.96 0.01 250);
-  --sidebar-border: oklch(1 0 0 / 0.08);
-  --sidebar-ring: oklch(0.74 0.04 250 / 0.45);
+  --border: var(--color-slate-300);
+  --input: oklch(0.52 0.02 210);
+  --ring: var(--color-blue-500);
+
+  --chart-1: var(--color-blue-600);
+  --chart-2: var(--color-amber-600);
+  --chart-3: var(--color-emerald-600);
+  --chart-4: var(--color-violet-600);
+  --chart-5: var(--color-red-600);
+
+  --sidebar: var(--color-white);
+  --sidebar-foreground: var(--color-slate-900);
+  --sidebar-primary: var(--color-blue-600);
+  --sidebar-primary-foreground: oklch(0.15 0.02 215);
+  --sidebar-accent: var(--color-blue-100);
+  --sidebar-accent-foreground: var(--color-blue-800);
+  --sidebar-border: var(--color-slate-300);
+  --sidebar-ring: var(--color-blue-500);
+
+  --shadow-raised: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 18px rgb(0 0 0 / 0.3);
+  --shadow-float: 0 12px 40px rgb(0 0 0 / 0.55), 0 2px 8px rgb(0 0 0 / 0.4);
 }
 
 /* =========================================================
@@ -193,7 +661,7 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
 
   html {
@@ -202,15 +670,9 @@
     direction: rtl;
     text-rendering: optimizeLegibility;
     overflow-x: clip;
-    overflow-y: auto;
-
-    font-family:
-      "Estedad Variable",
-      Tahoma,
-      Arial,
-      sans-serif;
-
-    font-synthesis: none;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-padding-top: 5rem;
   }
 
   body {
@@ -218,25 +680,13 @@
 
     margin: 0;
     min-width: 320px;
-
-    font-family:
-      "Estedad Variable",
-      Tahoma,
-      Arial,
-      sans-serif;
-
+    font-size: 1rem;
+    /* خط فارسی به فاصله‌ی خطوط بازتری نیاز دارد */
+    line-height: 1.75;
     font-weight: 400;
-
-    font-feature-settings:
-      "kern" 1,
-      "liga" 1,
-      "calt" 1,
-      "locl" 1;
-
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1, "locl" 1;
     font-variant-numeric: proportional-nums;
-
     overflow-x: clip;
-    overflow-y: auto;
   }
 
   h1,
@@ -245,14 +695,15 @@
   h4,
   h5,
   h6 {
-    font-family:
-      "Estedad Variable",
-      Tahoma,
-      Arial,
-      sans-serif;
-
     font-weight: 700;
+    line-height: 1.5;
     text-wrap: balance;
+  }
+
+  /* اعداد جدول‌ها و آمار هم‌عرض باشند تا ستون‌ها تراز بمانند */
+  table,
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
   }
 
   button,
@@ -285,349 +736,142 @@
   }
 
   ::selection {
-    background: rgb(51 65 85 / 0.16);
+    background: color-mix(in oklab, var(--color-blue-500) 28%, transparent);
     color: inherit;
+  }
+
+  /* فوکوس کیبورد: همیشه واضح، با فاصله از لبه */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* هدف لمسی حداقل ۴۴ پیکسل روی صفحه‌های لمسی */
+  @media (pointer: coarse) {
+    button:not([data-compact]),
+    [role="button"]:not([data-compact]),
+    select {
+      min-height: 2.75rem;
+    }
   }
 }
 
 /* =========================================================
    COMPONENTS
+   کلاس‌های glass-* و app-background برای سازگاری با کدهای
+   فعلی حفظ شده‌اند، ولی دیگر شیشه‌ای نیستند: سطوح مات با
+   حاشیه‌ی مشخص. به‌تدریج با توکن‌های معنایی جایگزین می‌شوند.
    ========================================================= */
 
 @layer components {
-  /* -------------------------------------------------------
-     Main application background
-     ------------------------------------------------------- */
-
+  /* پس‌زمینه‌ی اصلی: یک رنگ ساده، بدون گرادیان و شبکه */
   .app-background {
     position: relative;
-    isolation: isolate;
-
     min-height: 100vh;
     min-height: 100dvh;
-
-    overflow: visible;
-
-    background:
-      radial-gradient(
-        circle at 8% 8%,
-        rgb(125 211 252 / 0.2),
-        transparent 27%
-      ),
-      radial-gradient(
-        circle at 92% 14%,
-        rgb(196 181 253 / 0.2),
-        transparent 28%
-      ),
-      radial-gradient(
-        circle at 75% 88%,
-        rgb(110 231 183 / 0.14),
-        transparent 26%
-      ),
-      linear-gradient(
-        145deg,
-        rgb(248 250 252),
-        rgb(239 246 255) 48%,
-        rgb(248 250 252)
-      );
+    background: var(--background);
   }
 
-  .app-background::before {
-    content: "";
-
-    position: fixed;
-    inset: 0;
-
-    z-index: -2;
-
-    pointer-events: none;
-
-    opacity: 0.34;
-
-    background-image:
-      linear-gradient(
-        rgb(255 255 255 / 0.35) 1px,
-        transparent 1px
-      ),
-      linear-gradient(
-        90deg,
-        rgb(255 255 255 / 0.35) 1px,
-        transparent 1px
-      );
-
-    background-size: 52px 52px;
-
-    mask-image: linear-gradient(
-      to bottom,
-      black,
-      transparent 72%
-    );
-  }
-
-  .app-background::after {
-    content: "";
-
-    position: fixed;
-    inset: 0;
-
-    z-index: -1;
-
-    pointer-events: none;
-
-    background:
-      radial-gradient(
-        circle at 50% -15%,
-        rgb(255 255 255 / 0.9),
-        transparent 42%
-      ),
-      linear-gradient(
-        to bottom,
-        rgb(255 255 255 / 0.16),
-        transparent 30%
-      );
-  }
-
-  /* -------------------------------------------------------
-     Glass cards
-     ------------------------------------------------------- */
-
+  /* سطح اصلی: کارت */
   .glass-card {
     position: relative;
-
-    overflow: hidden;
-
-    border: 1px solid var(--glass-border);
-
-    background:
-      linear-gradient(
-        135deg,
-        rgb(255 255 255 / 0.76),
-        rgb(255 255 255 / 0.48)
-      );
-
-    box-shadow: var(--glass-shadow);
-
-    backdrop-filter: blur(26px) saturate(155%);
-    -webkit-backdrop-filter: blur(26px) saturate(155%);
-
-    transition:
-      border-color 220ms ease,
-      box-shadow 220ms ease,
-      transform 220ms ease,
-      background-color 220ms ease;
-  }
-
-  .glass-card::before {
-    content: "";
-
-    position: absolute;
-    inset: 0;
-
-    pointer-events: none;
-
-    background:
-      linear-gradient(
-        135deg,
-        rgb(255 255 255 / 0.58),
-        transparent 35%
-      );
-
-    opacity: 0.8;
-  }
-
-  .glass-card > * {
-    position: relative;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--card-foreground);
+    transition: border-color 150ms ease;
   }
 
   .glass-card:hover {
-    border-color: rgb(255 255 255 / 0.78);
-    box-shadow: var(--glass-shadow-hover);
+    border-color: var(--color-slate-400);
   }
 
-  /* -------------------------------------------------------
-     Strong glass
-     ------------------------------------------------------- */
-
+  /* سطح شناور: منو، پنجره، پاپ‌آور */
   .glass-strong {
-    border: 1px solid rgb(255 255 255 / 0.72);
-
-    background:
-      linear-gradient(
-        145deg,
-        rgb(255 255 255 / 0.9),
-        rgb(255 255 255 / 0.66)
-      );
-
-    box-shadow:
-      0 26px 80px rgb(15 23 42 / 0.1),
-      0 8px 24px rgb(15 23 42 / 0.05);
-
-    backdrop-filter: blur(32px) saturate(165%);
-    -webkit-backdrop-filter: blur(32px) saturate(165%);
+    border: 1px solid var(--border);
+    background: var(--popover);
+    box-shadow: var(--shadow-float);
   }
 
-  /* -------------------------------------------------------
-     Glass input / field
-     ------------------------------------------------------- */
-
+  /* فیلد ورودی: حاشیه‌ی حداقل ۳:۱ */
   .glass-field {
-    border: 1px solid rgb(148 163 184 / 0.24);
-
-    background:
-      linear-gradient(
-        145deg,
-        rgb(255 255 255 / 0.66),
-        rgb(255 255 255 / 0.46)
-      );
-
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.72),
-      0 3px 14px rgb(15 23 42 / 0.035);
-
-    backdrop-filter: blur(16px) saturate(145%);
-    -webkit-backdrop-filter: blur(16px) saturate(145%);
-
+    border: 1px solid var(--input);
+    background: var(--card);
+    color: var(--foreground);
     transition:
-      border-color 180ms ease,
-      background-color 180ms ease,
-      box-shadow 180ms ease;
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+
+  .glass-field:hover {
+    border-color: var(--color-slate-500);
   }
 
   .glass-field:focus,
   .glass-field:focus-visible {
-    border-color: rgb(100 116 139 / 0.42);
-
-    background: rgb(255 255 255 / 0.78);
-
-    box-shadow:
-      0 0 0 4px rgb(148 163 184 / 0.11),
-      inset 0 1px 0 rgb(255 255 255 / 0.82),
-      0 8px 22px rgb(15 23 42 / 0.045);
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 28%, transparent);
+    outline: none;
   }
 
   .glass-field:disabled {
-    background: rgb(226 232 240 / 0.3);
+    background: var(--muted);
+    color: var(--muted-foreground);
+    cursor: not-allowed;
   }
 
-  /* -------------------------------------------------------
-     Glass chips
-     ------------------------------------------------------- */
+  .glass-field::placeholder {
+    color: var(--color-slate-400);
+  }
 
+  /* چیپ */
   .glass-chip {
-    border: 1px solid rgb(255 255 255 / 0.7);
-
-    background: rgb(255 255 255 / 0.48);
-
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.74),
-      0 3px 10px rgb(15 23 42 / 0.035);
-
-    backdrop-filter: blur(12px) saturate(145%);
-    -webkit-backdrop-filter: blur(12px) saturate(145%);
+    border: 1px solid var(--border);
+    background: var(--muted);
+    color: var(--foreground);
   }
-
-  /* -------------------------------------------------------
-     Divider
-     ------------------------------------------------------- */
 
   .glass-divider {
-    border-color: rgb(148 163 184 / 0.12);
+    border-color: var(--border);
   }
 
-  /* -------------------------------------------------------
-     Sidebar
-     ------------------------------------------------------- */
-
+  /* سایدبار: سطح مات با خط جداکننده */
   .glass-sidebar {
-    background:
-      linear-gradient(
-        180deg,
-        rgb(255 255 255 / 0.82),
-        rgb(255 255 255 / 0.52)
-      );
-
-    border-color: rgb(255 255 255 / 0.72);
-
-    box-shadow:
-      16px 0 55px rgb(15 23 42 / 0.07),
-      inset 0 1px 0 rgb(255 255 255 / 0.72);
-
-    backdrop-filter: blur(28px) saturate(160%);
-    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    border-color: var(--sidebar-border);
+    background: var(--sidebar);
+    color: var(--sidebar-foreground);
   }
 
-  /* -------------------------------------------------------
-     Glass icon
-     ------------------------------------------------------- */
-
+  /* کاشی آیکون */
   .glass-icon {
-    border: 1px solid rgb(255 255 255 / 0.72);
-
-    background:
-      linear-gradient(
-        145deg,
-        rgb(255 255 255 / 0.78),
-        rgb(255 255 255 / 0.44)
-      );
-
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.78),
-      0 8px 20px rgb(15 23 42 / 0.05);
-
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--border);
+    background: var(--accent);
+    color: var(--accent-foreground);
   }
-
-  /* -------------------------------------------------------
-     Grid
-     ------------------------------------------------------- */
 
   .soft-grid {
     background-image:
-      linear-gradient(
-        rgb(148 163 184 / 0.07) 1px,
-        transparent 1px
-      ),
-      linear-gradient(
-        90deg,
-        rgb(148 163 184 / 0.07) 1px,
-        transparent 1px
-      );
-
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
     background-size: 24px 24px;
   }
 
-  /* -------------------------------------------------------
-     Hover elevation
-     ------------------------------------------------------- */
-
+  /* به‌جای بالا‌رفتن کارت، فقط حاشیه پررنگ‌تر می‌شود */
   .elevated-hover {
-    transition:
-      transform 220ms ease,
-      box-shadow 220ms ease,
-      border-color 220ms ease;
+    transition: border-color 150ms ease;
   }
 
   .elevated-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--glass-shadow-hover);
+    border-color: var(--color-slate-400);
   }
-
-  /* -------------------------------------------------------
-     Thin scrollbar
-     ------------------------------------------------------- */
 
   .thin-scrollbar {
     scrollbar-width: thin;
-
-    scrollbar-color:
-      rgb(100 116 139 / 0.24)
-      transparent;
+    scrollbar-color: var(--color-slate-300) transparent;
   }
 
   .thin-scrollbar::-webkit-scrollbar {
-    width: 7px;
-    height: 7px;
+    width: 8px;
+    height: 8px;
   }
 
   .thin-scrollbar::-webkit-scrollbar-track {
@@ -636,21 +880,62 @@
 
   .thin-scrollbar::-webkit-scrollbar-thumb {
     border-radius: 999px;
-    background: rgb(100 116 139 / 0.24);
+    background: var(--color-slate-300);
   }
 
   .thin-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgb(100 116 139 / 0.38);
+    background: var(--color-slate-400);
   }
-}
 
-/* =========================================================
-   RESPONSIVE
-   ========================================================= */
+  /* لینک «پرش به محتوا» برای کاربران کیبورد و صفحه‌خوان */
+  .skip-link {
+    position: fixed;
+    inset-inline-start: 0.75rem;
+    top: 0.75rem;
+    z-index: 100;
+    padding: 0.625rem 1rem;
+    border-radius: var(--radius-md);
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-weight: 700;
+    transform: translateY(-200%);
+  }
 
-@media (max-width: 1023px) {
-  .app-background::before {
-    background-size: 42px 42px;
+  .skip-link:focus {
+    transform: translateY(0);
+  }
+
+  /* نوار رنگی وضعیت: لبه‌ی رنگی کارت یا ردیف که وضعیت را نشان می‌دهد.
+     رنگ با متغیر --rail تعیین می‌شود. */
+  .status-rail {
+    position: relative;
+  }
+
+  .status-rail::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 4px;
+    border-start-start-radius: inherit;
+    border-end-start-radius: inherit;
+    background: var(--rail, var(--color-slate-300));
+  }
+
+  .status-rail[data-status="TODO"] {
+    --rail: var(--color-slate-400);
+  }
+  .status-rail[data-status="IN_PROGRESS"] {
+    --rail: var(--color-blue-600);
+  }
+  .status-rail[data-status="COMPLETED"] {
+    --rail: var(--color-emerald-600);
+  }
+  .status-rail[data-status="CANCELLED"] {
+    --rail: var(--color-red-600);
+  }
+  .status-rail[data-status="OVERDUE"] {
+    --rail: var(--color-amber-600);
   }
 }
 
@@ -673,3 +958,20 @@
   }
 }
 
+/* =========================================================
+   HIGH CONTRAST / FORCED COLORS
+   ========================================================= */
+
+@media (forced-colors: active) {
+  .glass-card,
+  .glass-strong,
+  .glass-field,
+  .glass-chip,
+  .glass-icon {
+    border: 1px solid CanvasText;
+  }
+
+  .status-rail::before {
+    background: Highlight;
+  }
+}

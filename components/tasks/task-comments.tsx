@@ -158,7 +158,7 @@ export default function TaskComments({
                   key={
                     comment.id
                   }
-                  className="rounded-3xl border border-white/50 bg-white/25 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.62)] sm:p-5"
+                  className="rounded-3xl border border-border bg-white/25 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.62)] sm:p-5"
                 >
                   <div className="flex items-start gap-3">
                     <div className="glass-icon flex size-10 shrink-0 items-center justify-center rounded-2xl text-xs font-extrabold text-slate-600">
@@ -180,7 +180,7 @@ export default function TaskComments({
                           }
                         </span>
 
-                        <span className="glass-chip rounded-full px-2.5 py-1 text-[10px] font-bold text-slate-500">
+                        <span className="glass-chip rounded-full px-2.5 py-1 text-xs font-bold text-slate-500">
                           {isAdmin
                             ? "مدیر"
                             : "کارمند"}
@@ -193,7 +193,7 @@ export default function TaskComments({
                         }
                       </p>
 
-                      <p className="mt-3 text-[11px] text-slate-400">
+                      <p className="mt-3 text-xs text-slate-400">
                         {formatDate(
                           comment.createdAt,
                         )}

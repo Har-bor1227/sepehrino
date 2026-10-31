@@ -35,12 +35,12 @@ function StatusBadge({
   isActive: boolean;
 }) {
   return isActive ? (
-    <span className="inline-flex h-8 items-center gap-1 whitespace-nowrap rounded-lg border border-emerald-200/60 bg-emerald-50/60 px-2 text-[11px] font-bold text-emerald-700">
+    <span className="inline-flex h-8 items-center gap-1 whitespace-nowrap rounded-lg border border-emerald-200/60 bg-emerald-50/60 px-2 text-xs font-bold text-emerald-700">
       <CheckCircle2 className="size-3.5 shrink-0" />
       فعال
     </span>
   ) : (
-    <span className="inline-flex h-8 items-center gap-1 whitespace-nowrap rounded-lg border border-white/55 bg-white/38 px-2 text-[11px] font-bold text-slate-500">
+    <span className="inline-flex h-8 items-center gap-1 whitespace-nowrap rounded-lg border border-border bg-white/38 px-2 text-xs font-bold text-slate-500">
       <CircleOff className="size-3.5 shrink-0" />
       غیرفعال
     </span>
@@ -110,7 +110,7 @@ export function EmployeeTable({
             </div>
           </div>
 
-          <span className="glass-chip shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-bold text-slate-500">
+          <span className="glass-chip shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-500">
             {employees.length.toLocaleString("fa-IR")} کارمند
           </span>
         </div>
@@ -130,7 +130,7 @@ export function EmployeeTable({
           </colgroup>
 
           <thead>
-            <tr className="border-y border-white/40 bg-white/25 text-right">
+            <tr className="border-y border-border bg-white/25 text-right">
               <th className="px-3 py-3 text-xs font-bold text-slate-500">
                 کارمند
               </th>
@@ -172,7 +172,7 @@ export function EmployeeTable({
 
                       <p
                         dir="ltr"
-                        className="mt-0.5 truncate text-[10px] text-slate-400"
+                        className="mt-0.5 truncate text-xs text-slate-400"
                       >
                         {employee.email}
                       </p>
@@ -228,14 +228,14 @@ export function EmployeeTable({
                       [&_button]:!rounded-lg
                       [&_button]:!px-2
                       [&_button]:!py-1
-                      [&_button]:!text-[10px]
+                      [&_button]:!text-xs
                       [&_button]:!whitespace-nowrap
                       [&_a]:!h-8
                       [&_a]:!min-h-8
                       [&_a]:!rounded-lg
                       [&_a]:!px-2
                       [&_a]:!py-1
-                      [&_a]:!text-[10px]
+                      [&_a]:!text-xs
                       [&_a]:!whitespace-nowrap
                     "
                   >

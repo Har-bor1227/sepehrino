@@ -85,7 +85,7 @@ function getStatusClass(
     COMPLETED:
       "border-emerald-200/60 bg-emerald-500/8 text-emerald-700",
     ARCHIVED:
-      "border-white/60 bg-white/40 text-slate-500",
+      "border-border bg-card text-slate-500",
   };
 
   return classes[status];
@@ -221,7 +221,7 @@ export default async function ProjectDetailsPage({
             <Link
               href="/admin/projects"
               aria-label="بازگشت به لیست پروژه‌ها"
-              className="glass-icon flex size-10 shrink-0 items-center justify-center rounded-2xl text-slate-600 transition hover:-translate-y-px hover:bg-white/80"
+              className="glass-icon flex size-10 shrink-0 items-center justify-center rounded-2xl text-slate-600 transition hover:-translate-y-px hover:bg-muted"
             >
               <ArrowRight className="size-5" />
             </Link>
@@ -298,7 +298,7 @@ export default async function ProjectDetailsPage({
                 </div>
 
                 <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="elevated-hover rounded-2xl border border-white/50 bg-white/28 p-4">
+                  <div className="elevated-hover rounded-2xl border border-border bg-white/28 p-4">
                     <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
                       <ListTodo className="size-4" />
                       کل Taskها
@@ -377,7 +377,7 @@ export default async function ProjectDetailsPage({
                         progress,
                       )}
                     >
-                      <div className="flex size-full items-center justify-center rounded-full bg-white/90 shadow-inner">
+                      <div className="flex size-full items-center justify-center rounded-full bg-card shadow-inner">
                         <CheckCircle2 className="size-5 text-slate-700" />
                       </div>
                     </div>
@@ -394,8 +394,8 @@ export default async function ProjectDetailsPage({
                 </div>
 
                 <div className="mt-5 grid grid-cols-2 gap-2">
-                  <div className="rounded-2xl border border-white/55 bg-white/35 p-3">
-                    <p className="text-[11px] font-medium text-slate-400">
+                  <div className="rounded-2xl border border-border bg-white/35 p-3">
+                    <p className="text-xs font-medium text-slate-400">
                       Taskهای تکمیل‌شده
                     </p>
 
@@ -406,8 +406,8 @@ export default async function ProjectDetailsPage({
                     </p>
                   </div>
 
-                  <div className="rounded-2xl border border-white/55 bg-white/35 p-3">
-                    <p className="text-[11px] font-medium text-slate-400">
+                  <div className="rounded-2xl border border-border bg-white/35 p-3">
+                    <p className="text-xs font-medium text-slate-400">
                       اعضای پروژه
                     </p>
 
@@ -461,7 +461,7 @@ export default async function ProjectDetailsPage({
             </CardHeader>
 
             <CardContent className="space-y-2">
-              <div className="flex items-center justify-between rounded-2xl border border-white/45 bg-white/24 p-4">
+              <div className="flex items-center justify-between rounded-2xl border border-border bg-white/24 p-4">
                 <span className="text-sm font-medium text-slate-600">
                   در انتظار
                 </span>
@@ -582,7 +582,7 @@ export default async function ProjectDetailsPage({
               <div className="thin-scrollbar overflow-x-auto">
                 <table className="w-full min-w-[980px] text-sm">
                   <thead>
-                    <tr className="border-y border-white/40 bg-white/25 text-right">
+                    <tr className="border-y border-border bg-white/25 text-right">
                       <th className="px-6 py-4 font-semibold text-slate-500">
                         Task
                       </th>
@@ -623,7 +623,7 @@ export default async function ProjectDetailsPage({
 
                           <td className="px-6 py-5">
                             {task.subProject ? (
-                              <span className="inline-flex rounded-full border border-slate-200/60 bg-white/45 px-2.5 py-1 text-xs font-bold text-slate-600">
+                              <span className="inline-flex rounded-full border border-slate-200/60 bg-card px-2.5 py-1 text-xs font-bold text-slate-600">
                                 {
                                   SUB_PROJECT_LABELS[
                                     task
@@ -655,7 +655,7 @@ export default async function ProjectDetailsPage({
                                       }
                                       className="flex items-center gap-2"
                                     >
-                                      <span className="glass-icon flex size-7 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold text-slate-500">
+                                      <span className="glass-icon flex size-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-slate-500">
                                         {assignee.user.name
                                           .trim()
                                           .slice(

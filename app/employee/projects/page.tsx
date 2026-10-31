@@ -145,7 +145,7 @@ export default async function EmployeeProjectsPage() {
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:min-w-[430px]">
               <div className="glass-chip rounded-2xl p-3.5">
-                <p className="text-[11px] text-slate-400">
+                <p className="text-xs text-slate-400">
                   کل پروژه‌ها
                 </p>
 
@@ -157,7 +157,7 @@ export default async function EmployeeProjectsPage() {
               </div>
 
               <div className="rounded-2xl border border-blue-200/40 bg-blue-50/35 p-3.5">
-                <p className="text-[11px] text-blue-600">
+                <p className="text-xs text-blue-600">
                   فعال
                 </p>
 
@@ -169,7 +169,7 @@ export default async function EmployeeProjectsPage() {
               </div>
 
               <div className="rounded-2xl border border-emerald-200/40 bg-emerald-50/35 p-3.5">
-                <p className="text-[11px] text-emerald-600">
+                <p className="text-xs text-emerald-600">
                   تکمیل شده
                 </p>
 
@@ -181,7 +181,7 @@ export default async function EmployeeProjectsPage() {
               </div>
 
               <div className="rounded-2xl border border-violet-200/40 bg-violet-50/35 p-3.5">
-                <p className="text-[11px] text-violet-600">
+                <p className="text-xs text-violet-600">
                   کل Task
                 </p>
 
@@ -251,9 +251,9 @@ export default async function EmployeeProjectsPage() {
                       project.id
                     }
                     href={`/employee/projects/${project.id}`}
-                    className="glass-card group relative overflow-hidden rounded-[2rem] p-5 transition duration-200 hover:-translate-y-1 hover:bg-white/42 sm:p-6"
+                    className="glass-card group relative overflow-hidden rounded-[2rem] p-5 transition duration-200 hover:-translate-y-1 hover:bg-muted sm:p-6"
                   >
-                    <div className="absolute inset-x-0 top-0 h-px bg-white/80" />
+                    <div className="absolute inset-x-0 top-0 h-px bg-card" />
 
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex min-w-0 items-center gap-3">
@@ -268,14 +268,14 @@ export default async function EmployeeProjectsPage() {
                             }
                           </h2>
 
-                          <p className="mt-1 text-[11px] text-slate-400">
+                          <p className="mt-1 text-xs text-slate-400">
                             پروژه کاری شما
                           </p>
                         </div>
                       </div>
 
                       <span
-                        className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-bold ${getProjectStatusClass(
+                        className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold ${getProjectStatusClass(
                           project.status,
                         )}`}
                       >
@@ -294,14 +294,14 @@ export default async function EmployeeProjectsPage() {
                         }
                       </p>
                     ) : (
-                      <div className="mt-5 min-h-[4.5rem] rounded-2xl border border-dashed border-white/45 bg-white/15 px-4 py-3">
+                      <div className="mt-5 min-h-[4.5rem] rounded-2xl border border-dashed border-border bg-white/15 px-4 py-3">
                         <p className="text-xs leading-6 text-slate-300">
                           توضیحی برای این پروژه ثبت نشده است.
                         </p>
                       </div>
                     )}
 
-                    <div className="mt-6 rounded-2xl border border-white/45 bg-white/22 p-4">
+                    <div className="mt-6 rounded-2xl border border-border bg-white/22 p-4">
                       <div className="mb-2 flex items-center justify-between gap-3">
                         <span className="text-xs font-medium text-slate-400">
                           پیشرفت Taskهای من
@@ -328,7 +328,7 @@ export default async function EmployeeProjectsPage() {
                         />
                       </div>
 
-                      <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400">
+                      <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
                         <span>
                           {completedTasks.toLocaleString(
                             "fa-IR",
@@ -347,7 +347,7 @@ export default async function EmployeeProjectsPage() {
                     </div>
 
                     <div className="mt-4 grid grid-cols-2 gap-3">
-                      <div className="rounded-2xl border border-white/45 bg-white/22 p-3.5">
+                      <div className="rounded-2xl border border-border bg-white/22 p-3.5">
                         <div className="flex items-center gap-2 text-xs text-slate-400">
                           <ListChecks className="size-3.5" />
                           کل Task
@@ -375,7 +375,7 @@ export default async function EmployeeProjectsPage() {
                     </div>
 
                     <div className="mt-4 flex flex-wrap items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/50 bg-white/24 px-3 py-1.5 text-[11px] font-medium text-slate-400">
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white/24 px-3 py-1.5 text-xs font-medium text-slate-400">
                         <Clock3 className="size-3.5" />
                         {inProgressTasks.toLocaleString(
                           "fa-IR",
@@ -383,7 +383,7 @@ export default async function EmployeeProjectsPage() {
                         در حال انجام
                       </span>
 
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/50 bg-white/24 px-3 py-1.5 text-[11px] font-medium text-slate-400">
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white/24 px-3 py-1.5 text-xs font-medium text-slate-400">
                         <CalendarDays className="size-3.5" />
                         {formatDate(
                           project.deadline,

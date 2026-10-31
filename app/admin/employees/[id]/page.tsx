@@ -38,7 +38,7 @@ export default async function EmployeeDetailsPage({
               <Link
                 href="/admin/employees"
                 aria-label="بازگشت به لیست کارمندان"
-                className="glass-icon flex size-10 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-white/70 hover:text-slate-900"
+                className="glass-icon flex size-10 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-muted hover:text-slate-900"
               >
                 <ArrowRight className="size-5" />
               </Link>

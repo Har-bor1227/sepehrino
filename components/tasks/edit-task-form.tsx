@@ -783,7 +783,7 @@ export default function EditTaskForm({
                     return (
                       <span
                         key={employeeId}
-                        className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-white/80 bg-white/80 px-3 py-2 text-sm font-semibold text-slate-700"
+                        className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-slate-700"
                       >
                         <Check className="size-4 text-indigo-600" />
                         {employee?.name ?? "مسئول ثبت‌شده در مراحل"}
@@ -811,7 +811,7 @@ export default function EditTaskForm({
                       "flex min-h-16 items-center gap-3 rounded-2xl border px-3.5 py-3 text-right transition",
                       isSelected
                         ? "border-slate-900 bg-slate-900 text-white shadow-[0_12px_24px_rgba(15,23,42,0.12)]"
-                        : "border-white/60 bg-white/30 text-slate-700 hover:bg-white/50",
+                        : "border-border bg-white/30 text-slate-700 hover:bg-muted",
                     ].join(" ")}
                   >
                     <span
@@ -819,7 +819,7 @@ export default function EditTaskForm({
                         "flex size-5 shrink-0 items-center justify-center rounded-md border",
                         isSelected
                           ? "border-white/20 bg-white text-slate-900"
-                          : "border-slate-300 bg-white/50",
+                          : "border-slate-300 bg-card",
                       ].join(" ")}
                     >
                       {isSelected ? (
@@ -941,7 +941,7 @@ export default function EditTaskForm({
       </div>
 
       {isStaged ? (
-        <section className="overflow-hidden rounded-3xl border border-indigo-200/80 bg-white/60">
+        <section className="overflow-hidden rounded-3xl border border-indigo-200/80 bg-card">
           <div className="flex flex-col gap-4 border-b border-indigo-100 bg-gradient-to-l from-indigo-50 to-white p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="flex items-center gap-3">
@@ -1376,7 +1376,7 @@ export default function EditTaskForm({
         />
       )}
 
-      <div className="rounded-3xl border border-white/55 bg-white/24 p-4">
+      <div className="rounded-3xl border border-border bg-white/24 p-4">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
           <span className="text-slate-400">
             زیرپروژه:
@@ -1402,7 +1402,7 @@ export default function EditTaskForm({
         </div>
       </div>
 
-      <div className="flex justify-end border-t border-white/40 pt-5">
+      <div className="flex justify-end border-t border-border pt-5">
         <button
           type="submit"
           disabled={isSubmitting}

@@ -22,7 +22,9 @@ export function SearchForm({
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute right-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
 
+          <label htmlFor="employee-global-search" className="sr-only">جست‌وجو در تسک‌ها و پروژه‌ها</label>
           <input
+            id="employee-global-search"
             type="search"
             name="q"
             defaultValue={
